@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Igreja App — Gestão de Voluntários</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg-primary:#ffffff;--bg-secondary:#f8f7f5;--bg-tertiary:#f0ede8;
+  --text-primary:#1a1a18;--text-secondary:#6b6b67;--text-tertiary:#9b9b96;
+  --border:rgba(0,0,0,.12);--border-md:rgba(0,0,0,.2);
+  --radius:8px;--radius-lg:12px;
+  --purple-bg:#EEEDFE;--purple-text:#534AB7;--purple-icon:#7F77DD;
+  --teal-bg:#E1F5EE;--teal-text:#0F6E56;--teal-icon:#1D9E75;
+  --blue-bg:#E6F1FB;--blue-text:#185FA5;--blue-icon:#378ADD;
+  --coral-bg:#FAECE7;--coral-text:#993C1D;--coral-icon:#D85A30;
+  --amber-bg:#FAEEDA;--amber-text:#854F0B;--amber-icon:#BA7517;
+  --pink-bg:#FBEAF0;--pink-text:#993556;--pink-icon:#D4537E;
+  --green-bg:#EAF3DE;--green-text:#3B6D11;--green-icon:#639922;
+  --success-bg:#EAF3DE;--success-text:#3B6D11;
+  --warning-bg:#FAEEDA;--warning-text:#854F0B;
+  --info-bg:#E6F1FB;--info-text:#185FA5;
+  --danger-bg:#FCEBEB;--danger-text:#A32D2D;--danger-border:rgba(163,45,45,.3);
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg-primary:#1e1e1c;--bg-secondary:#252523;--bg-tertiary:#2c2c2a;
+    --text-primary:#f0ede8;--text-secondary:#9b9b96;--text-tertiary:#6b6b67;
+    --border:rgba(255,255,255,.1);--border-md:rgba(255,255,255,.2);
+    --purple-bg:#26215C;--purple-text:#AFA9EC;
+    --teal-bg:#04342C;--teal-text:#5DCAA5;
+    --blue-bg:#042C53;--blue-text:#85B7EB;
+    --coral-bg:#4A1B0C;--coral-text:#F0997B;
+    --amber-bg:#412402;--amber-text:#FAC775;
+    --pink-bg:#4B1528;--pink-text:#ED93B1;
+    --green-bg:#173404;--green-text:#97C459;
+    --success-bg:#173404;--success-text:#97C459;
+    --warning-bg:#412402;--warning-text:#FAC775;
+    --info-bg:#042C53;--info-text:#85B7EB;
+    --danger-bg:#501313;--danger-text:#F09595;--danger-border:rgba(240,149,149,.3);
+  }
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg-tertiary);color:var(--text-primary);min-height:100vh;font-size:14px}
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:220px;background:var(--bg-primary);border-right:0.5px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.sidebar-logo{padding:20px 16px 12px;border-bottom:0.5px solid var(--border)}
+.sidebar-logo h2{font-size:14px;font-weight:500;display:flex;align-items:center;gap:6px}
+.sidebar-logo p{font-size:11px;color:var(--text-secondary);margin-top:2px}
+.sidebar-user{padding:12px 16px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:8px}
+.avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;flex-shrink:0}
+.avatar.admin{background:var(--warning-bg);color:var(--warning-text)}
+.avatar.lider{background:var(--info-bg);color:var(--info-text)}
+.avatar.voluntario{background:var(--success-bg);color:var(--success-text)}
+.user-info{flex:1;min-width:0}
+.user-info p{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-info span{font-size:10px;color:var(--text-secondary)}
+.badge{font-size:10px;padding:2px 7px;border-radius:var(--radius);font-weight:500;display:inline-block}
+.badge.admin{background:var(--warning-bg);color:var(--warning-text)}
+.badge.lider{background:var(--info-bg);color:var(--info-text)}
+.badge.voluntario{background:var(--success-bg);color:var(--success-text)}
+.nav{flex:1;padding:8px 0}
+.nav-section{padding:8px 16px 4px;font-size:10px;font-weight:500;color:var(--text-tertiary);letter-spacing:.5px;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 16px;font-size:13px;color:var(--text-secondary);cursor:pointer;border-left:2px solid transparent;transition:all .15s}
+.nav-item:hover{background:var(--bg-secondary);color:var(--text-primary)}
+.nav-item.active{background:var(--bg-secondary);color:var(--text-primary);border-left:2px solid #7F77DD}
+.nav-item i{font-size:16px;width:18px;text-align:center}
+.main{flex:1;overflow-y:auto;display:flex;flex-direction:column;min-width:0}
+.topbar{background:var(--bg-primary);border-bottom:0.5px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:10}
+.topbar h1{font-size:16px;font-weight:500}
+.topbar-actions{display:flex;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;border:0.5px solid var(--border-md);background:transparent;color:var(--text-primary);transition:all .15s;font-family:inherit}
+.btn:hover{background:var(--bg-secondary)}
+.btn.primary{background:#7F77DD;color:#fff;border-color:#7F77DD}
+.btn.primary:hover{background:#534AB7;border-color:#534AB7}
+.btn.danger{background:transparent;color:var(--danger-text);border-color:var(--danger-border)}
+.btn.danger:hover{background:var(--danger-bg)}
+.btn.sm{padding:5px 10px;font-size:12px}
+.content{padding:24px;flex:1}
+.section{display:none}
+.section.active{display:block}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:900px){.grid-4{grid-template-columns:repeat(2,1fr)}.grid-2,.grid-3{grid-template-columns:1fr}}
+.card{background:var(--bg-primary);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:16px 20px}
+.metric{background:var(--bg-secondary);border-radius:var(--radius);padding:14px 16px}
+.metric p{font-size:12px;color:var(--text-secondary);margin-bottom:4px}
+.metric h3{font-size:24px;font-weight:500}
+.metric span{font-size:11px;color:var(--text-tertiary)}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;font-size:11px;font-weight:500;color:var(--text-secondary);border-bottom:0.5px solid var(--border);text-transform:uppercase;letter-spacing:.3px;white-space:nowrap}
+td{padding:12px;color:var(--text-primary);border-bottom:0.5px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg-secondary)}
+.tag{display:inline-flex;align-items:center;gap:3px;font-size:11px;padding:3px 7px;border-radius:var(--radius);font-weight:500;margin:2px}
+.tag.purple{background:var(--purple-bg);color:var(--purple-text)}
+.tag.teal{background:var(--teal-bg);color:var(--teal-text)}
+.tag.coral{background:var(--coral-bg);color:var(--coral-text)}
+.tag.blue{background:var(--blue-bg);color:var(--blue-text)}
+.tag.amber{background:var(--amber-bg);color:var(--amber-text)}
+.tag.pink{background:var(--pink-bg);color:var(--pink-text)}
+.tag.green{background:var(--green-bg);color:var(--green-text)}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:5px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:8px 12px;border:0.5px solid var(--border-md);border-radius:var(--radius);font-size:13px;background:var(--bg-primary);color:var(--text-primary);font-family:inherit;transition:border-color .15s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:#7F77DD;box-shadow:0 0 0 2px var(--purple-bg)}
+.form-group textarea{resize:vertical;min-height:72px}
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center;padding:16px}
+.modal-backdrop.open{display:flex}
+.modal{background:var(--bg-primary);border-radius:var(--radius-lg);border:0.5px solid var(--border);width:100%;max-width:480px;max-height:90vh;overflow-y:auto;padding:24px}
+.modal h2{font-size:16px;font-weight:500;margin-bottom:16px}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:14px;border-top:0.5px solid var(--border)}
+.ministry-card{background:var(--bg-primary);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:16px;cursor:pointer;transition:all .15s}
+.ministry-card:hover:not(.locked){border-color:var(--border-md);box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.ministry-card.locked{opacity:.55;cursor:default}
+.ministry-card .icon{width:40px;height:40px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:10px}
+.ministry-card h3{font-size:14px;font-weight:500;margin-bottom:4px}
+.ministry-card p{font-size:12px;color:var(--text-secondary);margin-bottom:10px}
+.cal-header-days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
+.cal-header-days span{font-size:11px;font-weight:500;color:var(--text-secondary);text-align:center;padding:4px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-day{min-height:64px;border:0.5px solid var(--border);border-radius:var(--radius);padding:4px;font-size:11px;background:var(--bg-primary)}
+.cal-day.today{border-color:#7F77DD;background:var(--purple-bg)}
+.cal-day.other-month{opacity:.4}
+.day-num{font-weight:500;color:var(--text-secondary);margin-bottom:2px}
+.today .day-num{color:var(--purple-text)}
+.cal-event{font-size:10px;padding:1px 4px;border-radius:3px;margin-top:2px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.empty{text-align:center;padding:40px 24px;color:var(--text-secondary);font-size:14px}
+.empty i{font-size:36px;display:block;margin-bottom:10px;opacity:.35}
+hr{border:none;border-top:0.5px solid var(--border);margin:14px 0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:999px;font-size:12px;border:0.5px solid var(--border-md);cursor:pointer;color:var(--text-secondary);transition:all .15s;background:transparent}
+.chip.selected{background:var(--purple-bg);color:var(--purple-text);border-color:#AFA9EC}
+.chip:hover:not(.selected){background:var(--bg-secondary)}
+.progress-bar{height:5px;background:var(--bg-tertiary);border-radius:999px;overflow:hidden;margin-top:5px}
+.progress-bar div{height:100%;background:#7F77DD;border-radius:999px}
+.event-detail-card{background:var(--bg-secondary);border-radius:var(--radius);padding:12px 14px;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <h2><i class="ti ti-building-church"></i>Igreja App</h2>
+      <p>Gestão de voluntários</p>
+    </div>
+    <div class="sidebar-user">
+      <div class="avatar" id="sb-avatar">PA</div>
+      <div class="user-info">
+        <p id="sb-name">Pastor Admin</p>
+        <span id="sb-role">Administrador</span>
+      </div>
+    </div>
+    <nav class="nav">
+      <div class="nav-section">Geral</div>
+      <div class="nav-item active" onclick="navigate('dashboard')"><i class="ti ti-dashboard"></i>Dashboard</div>
+      <div class="nav-item" onclick="navigate('calendario')"><i class="ti ti-calendar"></i>Calendário</div>
+      <div class="nav-item" onclick="navigate('ministerios')"><i class="ti ti-users-group"></i>Ministérios</div>
+      <div class="nav-section" id="admin-section">Administração</div>
+      <div class="nav-item" id="nav-voluntarios" onclick="navigate('voluntarios')"><i class="ti ti-user-check"></i>Voluntários</div>
+      <div class="nav-item" id="nav-eventos" onclick="navigate('eventos')"><i class="ti ti-calendar-event"></i>Eventos</div>
+      <div class="nav-section">Conta</div>
+      <div class="nav-item" onclick="navigate('perfil')"><i class="ti ti-user"></i>Meu perfil</div>
+      <div class="nav-item" onclick="switchUser()"><i class="ti ti-switch-horizontal"></i>Trocar usuário</div>
+    </nav>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <h1 id="page-title">Dashboard geral</h1>
+      <div class="topbar-actions" id="topbar-actions"></div>
+    </div>
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="section active" id="section-dashboard">
+        <div class="grid-4" style="margin-bottom:20px">
+          <div class="metric"><p>Total de membros</p><h3>500</h3><span>Igreja ativa</span></div>
+          <div class="metric"><p>Voluntários</p><h3 id="m-vol">0</h3><span>Cadastrados</span></div>
+          <div class="metric"><p>Ministérios</p><h3 id="m-min">0</h3><span>Ativos</span></div>
+          <div class="metric"><p>Eventos este mês</p><h3 id="m-ev">0</h3><span>Programados</span></div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+              <h3 style="font-size:14px;font-weight:500">Ministérios</h3>
+              <span style="font-size:12px;color:var(--text-secondary)" id="dash-min-count"></span>
+            </div>
+            <div id="dash-ministerios-list"><div class="empty"><i class="ti ti-users-group"></i>Nenhum ministério</div></div>
+          </div>
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+              <h3 style="font-size:14px;font-weight:500">Próximos eventos</h3>
+            </div>
+            <div id="dash-eventos-list"><div class="empty"><i class="ti ti-calendar"></i>Sem eventos</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CALENDÁRIO -->
+      <div class="section" id="section-calendario">
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <button class="btn sm" onclick="changeMonth(-1)"><i class="ti ti-chevron-left"></i></button>
+              <h3 style="font-size:15px;font-weight:500" id="cal-month-title"></h3>
+              <button class="btn sm" onclick="changeMonth(1)"><i class="ti ti-chevron-right"></i></button>
+            </div>
+            <button class="btn primary sm" id="btn-inscricao" style="display:none" onclick="openInscricao()"><i class="ti ti-plus"></i>Me inscrever</button>
+          </div>
+          <div class="cal-header-days">
+            <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
+          </div>
+          <div class="cal-grid" id="cal-grid"></div>
+        </div>
+        <div class="card" style="margin-top:14px">
+          <div id="cal-event-detail"><p style="color:var(--text-secondary);font-size:13px">Clique em um evento no calendário para ver os detalhes.</p></div>
+        </div>
+      </div>
+
+      <!-- MINISTÉRIOS -->
+      <div class="section" id="section-ministerios">
+        <div class="grid-3" id="ministerios-grid"></div>
+      </div>
+
+      <!-- DETALHE MINISTÉRIO -->
+      <div class="section" id="section-ministerio-detalhe">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+          <button class="btn sm" onclick="navigate('ministerios')"><i class="ti ti-arrow-left"></i>Voltar</button>
+          <h2 style="font-size:15px;font-weight:500" id="detalhe-nome"></h2>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <h3 style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:14px;text-transform:uppercase;letter-spacing:.3px">Voluntários</h3>
+            <div id="detalhe-vols"></div>
+          </div>
+          <div class="card">
+            <h3 style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:14px;text-transform:uppercase;letter-spacing:.3px">Eventos</h3>
+            <div id="detalhe-eventos"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VOLUNTÁRIOS -->
+      <div class="section" id="section-voluntarios">
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Nome</th><th>Email</th><th>Telefone</th><th>Ministérios</th><th>Nível</th><th></th></tr></thead>
+              <tbody id="vol-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- EVENTOS -->
+      <div class="section" id="section-eventos">
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Evento</th><th>Data/Hora</th><th>Ministérios</th><th>Inscritos</th><th></th></tr></thead>
+              <tbody id="ev-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PERFIL -->
+      <div class="section" id="section-perfil">
+        <div style="max-width:480px">
+          <div class="card" style="margin-bottom:14px">
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+              <div class="avatar" id="perfil-avatar" style="width:52px;height:52px;font-size:17px"></div>
+              <div>
+                <h2 style="font-size:16px;font-weight:500" id="perfil-nome"></h2>
+                <span class="badge" id="perfil-badge" style="margin-top:4px"></span>
+              </div>
+            </div>
+            <hr>
+            <div style="display:grid;gap:10px;font-size:13px">
+              <div style="display:flex;gap:8px;align-items:center"><i class="ti ti-mail" style="color:var(--text-tertiary);font-size:16px"></i><span id="perfil-email"></span></div>
+              <div style="display:flex;gap:8px;align-items:center"><i class="ti ti-phone" style="color:var(--text-tertiary);font-size:16px"></i><span id="perfil-tel"></span></div>
+            </div>
+          </div>
+          <div class="card">
+            <h3 style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:12px;text-transform:uppercase;letter-spacing:.3px">Meus ministérios</h3>
+            <div id="perfil-ministerios"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: VOLUNTÁRIO -->
+<div class="modal-backdrop" id="modal-vol">
+  <div class="modal">
+    <h2 id="modal-vol-title">Cadastrar voluntário</h2>
+    <div class="form-group"><label>Nome completo *</label><input id="vol-nome" type="text" placeholder="Nome do voluntário"></div>
+    <div class="form-group"><label>Email *</label><input id="vol-email" type="email" placeholder="email@exemplo.com"></div>
+    <div class="form-group"><label>Telefone</label><input id="vol-tel" type="text" placeholder="(11) 99999-9999"></div>
+    <div class="form-group">
+      <label>Nível de acesso</label>
+      <select id="vol-nivel">
+        <option value="voluntario">Voluntário</option>
+        <option value="lider">Líder de ministério</option>
+        <option value="admin">Administrador</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Ministérios</label>
+      <div class="chips" id="vol-ministerios-chips"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-vol')">Cancelar</button>
+      <button class="btn primary" onclick="saveVoluntario()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: MINISTÉRIO -->
+<div class="modal-backdrop" id="modal-min">
+  <div class="modal">
+    <h2>Criar ministério</h2>
+    <div class="form-group"><label>Nome *</label><input id="min-nome" type="text" placeholder="ex: Louvor, Infantil..."></div>
+    <div class="form-group"><label>Descrição</label><textarea id="min-desc" placeholder="Descreva o ministério"></textarea></div>
+    <div class="form-group">
+      <label>Ícone</label>
+      <select id="min-icone">
+        <option value="ti-music">🎵 Louvor/Música</option>
+        <option value="ti-baby-carriage">👶 Infantil</option>
+        <option value="ti-heart-handshake">🤝 Acolhimento</option>
+        <option value="ti-book">📖 Escola Bíblica</option>
+        <option value="ti-device-speaker">📢 Comunicação</option>
+        <option value="ti-camera">📷 Fotografia/Mídia</option>
+        <option value="ti-users">👥 Jovens</option>
+        <option value="ti-leaf">🌿 Social</option>
+        <option value="ti-pray">🙏 Intercessão</option>
+        <option value="ti-tool">🔧 Apoio/Infraestrutura</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Cor</label>
+      <select id="min-cor">
+        <option value="purple">Roxo</option>
+        <option value="teal">Verde-água</option>
+        <option value="blue">Azul</option>
+        <option value="coral">Coral</option>
+        <option value="amber">Âmbar</option>
+        <option value="pink">Rosa</option>
+        <option value="green">Verde</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-min')">Cancelar</button>
+      <button class="btn primary" onclick="saveMinisterio()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: EVENTO -->
+<div class="modal-backdrop" id="modal-ev">
+  <div class="modal">
+    <h2>Criar evento</h2>
+    <div class="form-group"><label>Nome do evento *</label><input id="ev-nome" type="text" placeholder="Nome do evento"></div>
+    <div class="form-group"><label>Data *</label><input id="ev-data" type="date"></div>
+    <div class="form-group"><label>Horário</label><input id="ev-hora" type="time" value="09:00"></div>
+    <div class="form-group"><label>Descrição</label><textarea id="ev-desc" placeholder="Descreva o evento"></textarea></div>
+    <div class="form-group">
+      <label>Ministérios envolvidos</label>
+      <div class="chips" id="ev-ministerios-chips"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-ev')">Cancelar</button>
+      <button class="btn primary" onclick="saveEvento()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: TROCAR USUÁRIO -->
+<div class="modal-backdrop" id="modal-switch">
+  <div class="modal">
+    <h2>Trocar usuário</h2>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px">Selecione um usuário para simular o acesso:</p>
+    <div id="switch-user-list"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-switch')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: INSCRIÇÃO -->
+<div class="modal-backdrop" id="modal-inscricao">
+  <div class="modal">
+    <h2 id="inscricao-titulo"></h2>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px" id="inscricao-info"></p>
+    <hr>
+    <p style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:8px;text-transform:uppercase;letter-spacing:.3px">Inscritos</p>
+    <div id="inscricao-lista"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-inscricao')">Fechar</button>
+      <button class="btn primary" id="btn-toggle-inscricao" onclick="toggleInscricao()"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+const ICONES={'ti-music':'🎵','ti-baby-carriage':'👶','ti-heart-handshake':'🤝','ti-book':'📖','ti-device-speaker':'📢','ti-camera':'📷','ti-users':'👥','ti-leaf':'🌿','ti-pray':'🙏','ti-tool':'🔧'};
+const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const CORES=['purple','teal','blue','coral','amber','pink','green'];
+
+let ministerios=[
+  {id:1,nome:'Louvor',desc:'Ministério de música e adoração',icone:'ti-music',cor:'purple'},
+  {id:2,nome:'Infantil',desc:'Atendimento às crianças',icone:'ti-baby-carriage',cor:'teal'},
+  {id:3,nome:'Acolhimento',desc:'Recepção e hospitalidade',icone:'ti-heart-handshake',cor:'coral'},
+  {id:4,nome:'Comunicação',desc:'Mídias e comunicação digital',icone:'ti-device-speaker',cor:'blue'},
+  {id:5,nome:'Jovens',desc:'Ministério para jovens',icone:'ti-users',cor:'amber'}
+];
+let voluntarios=[
+  {id:1,nome:'Pastor Admin',email:'pastor@igreja.com',tel:'(19) 99999-0001',nivel:'admin',ministerios:[1,2,3,4,5]},
+  {id:2,nome:'Maria Lima',email:'maria@igreja.com',tel:'(19) 99999-0002',nivel:'lider',ministerios:[1]},
+  {id:3,nome:'João Silva',email:'joao@igreja.com',tel:'(19) 99999-0003',nivel:'voluntario',ministerios:[2]},
+  {id:4,nome:'Ana Costa',email:'ana@igreja.com',tel:'(19) 99999-0004',nivel:'lider',ministerios:[3,4]},
+  {id:5,nome:'Pedro Souza',email:'pedro@igreja.com',tel:'(19) 99999-0005',nivel:'voluntario',ministerios:[1,5]}
+];
+let eventos=[
+  {id:1,nome:'Culto de Louvor',data:'2026-06-21',hora:'19:00',desc:'Culto especial de louvor e adoração',ministerios:[1,3],inscritos:[]},
+  {id:2,nome:'EBD Infantil',data:'2026-06-22',hora:'09:00',desc:'Escola Bíblica Dominical para crianças',ministerios:[2],inscritos:[]},
+  {id:3,nome:'Reunião de Jovens',data:'2026-06-27',hora:'20:00',desc:'Encontro semanal dos jovens',ministerios:[5,1],inscritos:[]},
+  {id:4,nome:'Live de Worship',data:'2026-07-03',hora:'19:30',desc:'Transmissão ao vivo de adoração',ministerios:[1,4],inscritos:[]}
+];
+let minId=6,volId=6,evId=5;
+let currentUser=voluntarios[0];
+let calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
+let selectedEvento=null;
+
+function ini(n){return n.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();}
+function canAccess(mId){return currentUser.nivel==='admin'||currentUser.ministerios.includes(mId);}
+
+function navigate(sec,extra){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+  const el=document.getElementById('section-'+sec);
+  if(el)el.classList.add('active');
+  const titles={dashboard:'Dashboard geral',calendario:'Calendário de eventos',ministerios:'Ministérios',voluntarios:'Voluntários',eventos:'Eventos',perfil:'Meu perfil','ministerio-detalhe':'Detalhes do ministério'};
+  document.getElementById('page-title').textContent=titles[sec]||'';
+  const acts=document.getElementById('topbar-actions');
+  acts.innerHTML='';
+  if(currentUser.nivel==='admin'){
+    if(sec==='ministerios') acts.innerHTML=`<button class="btn primary" onclick="openModal('modal-min')"><i class="ti ti-plus"></i>Novo ministério</button>`;
+    if(sec==='voluntarios') acts.innerHTML=`<button class="btn primary" onclick="openModal('modal-vol')"><i class="ti ti-user-plus"></i>Novo voluntário</button>`;
+    if(sec==='eventos') acts.innerHTML=`<button class="btn primary" onclick="openModal('modal-ev')"><i class="ti ti-plus"></i>Novo evento</button>`;
+  }
+  const renders={dashboard:renderDashboard,calendario:renderCalendario,ministerios:renderMinisterios,voluntarios:renderVoluntarios,eventos:renderEventos,perfil:renderPerfil};
+  if(renders[sec])renders[sec]();
+  if(sec==='ministerio-detalhe'&&extra)renderDetalhe(extra);
+}
+
+function renderDashboard(){
+  document.getElementById('m-vol').textContent=voluntarios.length;
+  document.getElementById('m-min').textContent=ministerios.length;
+  const now=new Date();
+  document.getElementById('m-ev').textContent=eventos.filter(e=>{const d=new Date(e.data);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();}).length;
+  document.getElementById('dash-min-count').textContent=ministerios.length+' ativos';
+  const vMin=ministerios.filter(m=>canAccess(m.id));
+  const ml=document.getElementById('dash-ministerios-list');
+  ml.innerHTML=vMin.length?vMin.map(m=>{
+    const vols=voluntarios.filter(v=>v.ministerios.includes(m.id));
+    const pct=Math.min(100,Math.round(vols.length/15*100));
+    return `<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:0.5px solid var(--border)">
+      <div style="width:32px;height:32px;border-radius:var(--radius);background:var(--${m.cor}-bg);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${ICONES[m.icone]||'⭐'}</div>
+      <div style="flex:1;min-width:0">
+        <p style="font-size:13px;font-weight:500">${m.nome}</p>
+        <div class="progress-bar"><div style="width:${pct}%"></div></div>
+      </div>
+      <span style="font-size:12px;color:var(--text-secondary);white-space:nowrap">${vols.length} vol.</span>
+    </div>`;
+  }).join(''):'<div class="empty"><i class="ti ti-users-group"></i>Nenhum ministério</div>';
+  const evup=eventos.filter(e=>new Date(e.data)>=new Date()).sort((a,b)=>new Date(a.data)-new Date(b.data)).slice(0,4);
+  const el=document.getElementById('dash-eventos-list');
+  el.innerHTML=evup.length?evup.map(e=>{
+    const d=new Date(e.data+'T12:00:00');
+    const ds=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
+    const mins=e.ministerios.map(id=>{const m=ministerios.find(m=>m.id===id);return m?m.nome:''}).filter(Boolean).join(', ');
+    return `<div style="display:flex;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border);align-items:flex-start">
+      <div style="background:var(--purple-bg);color:var(--purple-text);border-radius:var(--radius);padding:3px 8px;font-size:11px;font-weight:500;white-space:nowrap;flex-shrink:0">${ds}</div>
+      <div><p style="font-size:13px;font-weight:500">${e.nome}</p><p style="font-size:11px;color:var(--text-secondary)">${e.hora} · ${mins}</p></div>
+    </div>`;
+  }).join(''):'<div class="empty"><i class="ti ti-calendar"></i>Sem eventos próximos</div>';
+}
+
+function renderCalendario(){
+  document.getElementById('cal-month-title').textContent=MESES[calMonth]+' '+calYear;
+  document.getElementById('btn-inscricao').style.display=selectedEvento?'inline-flex':'none';
+  const grid=document.getElementById('cal-grid');
+  const firstDay=new Date(calYear,calMonth,1).getDay();
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+  const today=new Date();
+  let html='';
+  for(let i=0;i<firstDay;i++){
+    const pd=new Date(calYear,calMonth,0-firstDay+i+1);
+    html+=`<div class="cal-day other-month"><div class="day-num">${pd.getDate()}</div></div>`;
+  }
+  for(let d=1;d<=daysInMonth;d++){
+    const isToday=today.getFullYear()===calYear&&today.getMonth()===calMonth&&today.getDate()===d;
+    const ds=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const devs=eventos.filter(e=>e.data===ds);
+    const evHtml=devs.map(e=>{
+      const m=ministerios.find(m=>e.ministerios.includes(m.id));
+      const c=m?m.cor:'purple';
+      return `<div class="cal-event" style="background:var(--${c}-bg);color:var(--${c}-text)" onclick="showEventDetail(${e.id})">${e.nome}</div>`;
+    }).join('');
+    html+=`<div class="cal-day${isToday?' today':''}"><div class="day-num">${d}</div>${evHtml}</div>`;
+  }
+  grid.innerHTML=html;
+}
+
+function showEventDetail(evId){
+  const ev=eventos.find(e=>e.id===evId);
+  if(!ev)return;
+  selectedEvento=ev;
+  document.getElementById('btn-inscricao').style.display='inline-flex';
+  const d=new Date(ev.data+'T12:00:00');
+  const ds=d.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});
+  const inscrito=ev.inscritos.includes(currentUser.id);
+  const mins=ev.ministerios.map(id=>{const m=ministerios.find(m=>m.id===id);return m?`<span class="tag ${m.cor}">${ICONES[m.icone]} ${m.nome}</span>`:''}).join('');
+  document.getElementById('cal-event-detail').innerHTML=`
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
+      <div>
+        <h3 style="font-size:15px;font-weight:500;margin-bottom:3px">${ev.nome}</h3>
+        <p style="font-size:13px;color:var(--text-secondary)">${ds} às ${ev.hora}</p>
+      </div>
+      ${inscrito?'<span class="badge voluntario">Inscrito ✓</span>':''}
+    </div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:10px">${ev.desc}</p>
+    <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">${mins}</div>
+    <p style="font-size:12px;color:var(--text-tertiary)">${ev.inscritos.length} voluntário(s) inscrito(s)</p>`;
+}
+
+function openInscricao(){
+  if(!selectedEvento)return;
+  const ev=selectedEvento;
+  const inscrito=ev.inscritos.includes(currentUser.id);
+  document.getElementById('inscricao-titulo').textContent=ev.nome;
+  const d=new Date(ev.data+'T12:00:00');
+  document.getElementById('inscricao-info').textContent=d.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'})+' às '+ev.hora;
+  const lista=document.getElementById('inscricao-lista');
+  const inscritos=ev.inscritos.map(id=>{const v=voluntarios.find(v=>v.id===id);return v?`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:0.5px solid var(--border)"><div class="avatar voluntario" style="width:28px;height:28px;font-size:10px">${ini(v.nome)}</div><span style="font-size:13px">${v.nome}</span></div>`:''}).join('');
+  lista.innerHTML=inscritos||'<p style="font-size:13px;color:var(--text-secondary);padding:8px 0">Nenhum inscrito ainda.</p>';
+  const btn=document.getElementById('btn-toggle-inscricao');
+  btn.textContent=inscrito?'Cancelar inscrição':'Quero me inscrever';
+  btn.className='btn '+(inscrito?'danger':'primary');
+  openModal('modal-inscricao');
+}
+
+function toggleInscricao(){
+  if(!selectedEvento)return;
+  const idx=selectedEvento.inscritos.indexOf(currentUser.id);
+  if(idx===-1)selectedEvento.inscritos.push(currentUser.id);
+  else selectedEvento.inscritos.splice(idx,1);
+  closeModal('modal-inscricao');
+  showEventDetail(selectedEvento.id);
+  renderCalendario();
+}
+
+function changeMonth(d){
+  calMonth+=d;
+  if(calMonth<0){calMonth=11;calYear--;}
+  if(calMonth>11){calMonth=0;calYear++;}
+  selectedEvento=null;
+  renderCalendario();
+  document.getElementById('cal-event-detail').innerHTML='<p style="color:var(--text-secondary);font-size:13px">Clique em um evento no calendário para ver os detalhes.</p>';
+  document.getElementById('btn-inscricao').style.display='none';
+}
+
+function renderMinisterios(){
+  const grid=document.getElementById('ministerios-grid');
+  if(!ministerios.length){grid.innerHTML='<div class="empty" style="grid-column:1/-1"><i class="ti ti-users-group"></i>Nenhum ministério criado</div>';return;}
+  grid.innerHTML=ministerios.map(m=>{
+    const locked=!canAccess(m.id);
+    const vols=voluntarios.filter(v=>v.ministerios.includes(m.id));
+    return `<div class="ministry-card${locked?' locked':''}" onclick="${locked?'':  'openDetalhe('+m.id+')'}">
+      <div class="icon" style="background:var(--${m.cor}-bg)">${locked?`<i class="ti ti-lock" style="font-size:18px;color:var(--${m.cor}-icon)"></i>`:ICONES[m.icone]||'⭐'}</div>
+      <h3>${m.nome}</h3>
+      <p>${m.desc}</p>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:12px;color:var(--text-secondary)">${vols.length} voluntário(s)</span>
+        ${locked?'<span class="tag" style="background:var(--bg-secondary);color:var(--text-tertiary)">Sem acesso</span>':`<span class="tag ${m.cor}">Aberto</span>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openDetalhe(id){navigate('ministerio-detalhe',id);}
+
+function renderDetalhe(id){
+  const m=ministerios.find(m=>m.id===id);
+  if(!m)return;
+  document.getElementById('detalhe-nome').textContent=m.nome;
+  const vols=voluntarios.filter(v=>v.ministerios.includes(id));
+  document.getElementById('detalhe-vols').innerHTML=vols.length?vols.map(v=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border)">
+      <div class="avatar ${v.nivel}" style="width:32px;height:32px;font-size:11px">${ini(v.nome)}</div>
+      <div><p style="font-size:13px;font-weight:500">${v.nome}</p><p style="font-size:11px;color:var(--text-secondary)">${v.email}</p></div>
+      <span class="badge ${v.nivel}" style="margin-left:auto">${v.nivel==='admin'?'Admin':v.nivel==='lider'?'Líder':'Vol.'}</span>
+    </div>`).join(''):'<p style="font-size:13px;color:var(--text-secondary)">Nenhum voluntário.</p>';
+  const evs=eventos.filter(e=>e.ministerios.includes(id));
+  document.getElementById('detalhe-eventos').innerHTML=evs.length?evs.map(e=>{
+    const d=new Date(e.data+'T12:00:00');
+    const ds=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
+    return `<div style="display:flex;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border);align-items:center">
+      <span style="background:var(--purple-bg);color:var(--purple-text);border-radius:4px;padding:2px 8px;font-size:11px;white-space:nowrap">${ds}</span>
+      <div><p style="font-size:13px;font-weight:500">${e.nome}</p><p style="font-size:11px;color:var(--text-secondary)">${e.hora} · ${e.inscritos.length} inscritos</p></div>
+    </div>`;
+  }).join(''):'<p style="font-size:13px;color:var(--text-secondary)">Nenhum evento.</p>';
+}
+
+function renderVoluntarios(){
+  document.getElementById('vol-tbody').innerHTML=voluntarios.map(v=>{
+    const mins=v.ministerios.map(id=>{const m=ministerios.find(m=>m.id===id);return m?`<span class="tag ${m.cor}">${m.nome}</span>`:''}).join('');
+    return `<tr>
+      <td><div style="display:flex;align-items:center;gap:8px"><div class="avatar ${v.nivel}" style="width:28px;height:28px;font-size:10px">${ini(v.nome)}</div>${v.nome}</div></td>
+      <td style="color:var(--text-secondary)">${v.email}</td>
+      <td style="color:var(--text-secondary)">${v.tel||'—'}</td>
+      <td>${mins||'—'}</td>
+      <td><span class="badge ${v.nivel}">${v.nivel==='admin'?'Admin':v.nivel==='lider'?'Líder':'Voluntário'}</span></td>
+      <td>${currentUser.nivel==='admin'?`<button class="btn sm danger" onclick="deleteVol(${v.id})"><i class="ti ti-trash"></i></button>`:''}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderEventos(){
+  document.getElementById('ev-tbody').innerHTML=eventos.map(e=>{
+    const d=new Date(e.data+'T12:00:00');
+    const ds=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
+    const mins=e.ministerios.map(id=>{const m=ministerios.find(m=>m.id===id);return m?`<span class="tag ${m.cor}">${m.nome}</span>`:''}).join('');
+    return `<tr>
+      <td style="font-weight:500">${e.nome}</td>
+      <td style="color:var(--text-secondary);white-space:nowrap">${ds} ${e.hora}</td>
+      <td>${mins}</td>
+      <td>${e.inscritos.length}</td>
+      <td>${currentUser.nivel==='admin'?`<button class="btn sm danger" onclick="deleteEv(${e.id})"><i class="ti ti-trash"></i></button>`:''}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderPerfil(){
+  const av=document.getElementById('perfil-avatar');
+  av.textContent=ini(currentUser.nome);
+  av.className=`avatar ${currentUser.nivel}`;
+  av.style.cssText='width:52px;height:52px;font-size:17px';
+  document.getElementById('perfil-nome').textContent=currentUser.nome;
+  const badge=document.getElementById('perfil-badge');
+  badge.className='badge '+currentUser.nivel;
+  badge.textContent=currentUser.nivel==='admin'?'Administrador':currentUser.nivel==='lider'?'Líder de ministério':'Voluntário';
+  document.getElementById('perfil-email').textContent=currentUser.email;
+  document.getElementById('perfil-tel').textContent=currentUser.tel||'—';
+  const myMins=ministerios.filter(m=>currentUser.ministerios.includes(m.id));
+  document.getElementById('perfil-ministerios').innerHTML=myMins.length?myMins.map(m=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border)">
+      <div style="width:28px;height:28px;border-radius:var(--radius);background:var(--${m.cor}-bg);display:flex;align-items:center;justify-content:center;font-size:14px">${ICONES[m.icone]||'⭐'}</div>
+      <span style="font-size:13px">${m.nome}</span>
+    </div>`).join(''):'<p style="font-size:13px;color:var(--text-secondary)">Nenhum ministério.</p>';
+}
+
+function updateSidebar(){
+  document.getElementById('sb-avatar').textContent=ini(currentUser.nome);
+  document.getElementById('sb-avatar').className='avatar '+currentUser.nivel;
+  document.getElementById('sb-name').textContent=currentUser.nome;
+  document.getElementById('sb-role').textContent=currentUser.nivel==='admin'?'Administrador':currentUser.nivel==='lider'?'Líder':'Voluntário';
+  const isAdmin=currentUser.nivel==='admin';
+  document.getElementById('nav-voluntarios').style.display=isAdmin?'flex':'none';
+  document.getElementById('nav-eventos').style.display=isAdmin?'flex':'none';
+  document.getElementById('admin-section').style.display=isAdmin?'block':'none';
+}
+
+function openModal(id){
+  if(id==='modal-vol') populateChips('vol-ministerios-chips','vol');
+  if(id==='modal-ev'){
+    populateChips('ev-ministerios-chips','ev');
+    document.getElementById('ev-data').value=new Date().toISOString().split('T')[0];
+  }
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+function populateChips(cId){
+  document.getElementById(cId).innerHTML=ministerios.map(m=>`<div class="chip" data-id="${m.id}" onclick="this.classList.toggle('selected')">${ICONES[m.icone]} ${m.nome}</div>`).join('');
+}
+
+function getChips(cId){return[...document.querySelectorAll(`#${cId} .chip.selected`)].map(c=>parseInt(c.dataset.id));}
+
+function saveVoluntario(){
+  const nome=document.getElementById('vol-nome').value.trim();
+  const email=document.getElementById('vol-email').value.trim();
+  if(!nome||!email){alert('Nome e email são obrigatórios.');return;}
+  voluntarios.push({id:volId++,nome,email,tel:document.getElementById('vol-tel').value.trim(),nivel:document.getElementById('vol-nivel').value,ministerios:getChips('vol-ministerios-chips')});
+  closeModal('modal-vol');
+  ['vol-nome','vol-email','vol-tel'].forEach(id=>document.getElementById(id).value='');
+  renderVoluntarios();renderDashboard();
+}
+
+function saveMinisterio(){
+  const nome=document.getElementById('min-nome').value.trim();
+  if(!nome){alert('Nome é obrigatório.');return;}
+  ministerios.push({id:minId++,nome,desc:document.getElementById('min-desc').value.trim(),icone:document.getElementById('min-icone').value,cor:document.getElementById('min-cor').value});
+  closeModal('modal-min');
+  document.getElementById('min-nome').value='';document.getElementById('min-desc').value='';
+  renderMinisterios();renderDashboard();
+}
+
+function saveEvento(){
+  const nome=document.getElementById('ev-nome').value.trim();
+  const data=document.getElementById('ev-data').value;
+  if(!nome||!data){alert('Nome e data são obrigatórios.');return;}
+  eventos.push({id:evId++,nome,data,hora:document.getElementById('ev-hora').value,desc:document.getElementById('ev-desc').value.trim(),ministerios:getChips('ev-ministerios-chips'),inscritos:[]});
+  closeModal('modal-ev');
+  document.getElementById('ev-nome').value='';document.getElementById('ev-desc').value='';
+  renderEventos();renderDashboard();
+}
+
+function deleteVol(id){if(!confirm('Remover voluntário?'))return;voluntarios=voluntarios.filter(v=>v.id!==id);renderVoluntarios();renderDashboard();}
+function deleteEv(id){if(!confirm('Remover evento?'))return;eventos=eventos.filter(e=>e.id!==id);renderEventos();renderDashboard();}
+
+function switchUser(){
+  document.getElementById('switch-user-list').innerHTML=voluntarios.map(v=>`
+    <div onclick="selectUser(${v.id})" style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:var(--radius);cursor:pointer;border:0.5px solid ${currentUser.id===v.id?'#7F77DD':'var(--border)'};background:${currentUser.id===v.id?'var(--purple-bg)':'transparent'};margin-bottom:6px">
+      <div class="avatar ${v.nivel}" style="width:32px;height:32px;font-size:11px">${ini(v.nome)}</div>
+      <div><p style="font-size:13px;font-weight:500">${v.nome}</p><p style="font-size:11px;color:var(--text-secondary)">${v.email}</p></div>
+      <span class="badge ${v.nivel}" style="margin-left:auto">${v.nivel==='admin'?'Admin':v.nivel==='lider'?'Líder':'Vol.'}</span>
+    </div>`).join('');
+  openModal('modal-switch');
+}
+
+function selectUser(id){
+  currentUser=voluntarios.find(v=>v.id===id);
+  closeModal('modal-switch');
+  updateSidebar();
+  selectedEvento=null;
+  navigate('dashboard');
+}
+
+document.querySelectorAll('.modal-backdrop').forEach(m=>{
+  m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');});
+});
+
+updateSidebar();
+renderDashboard();
+renderCalendario();
+</script>
+</body>
+</html>
