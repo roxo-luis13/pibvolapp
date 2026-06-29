@@ -918,7 +918,6 @@ function renderDetalhe(id){
 
   // Admin buttons (edit/delete)
   const isLiderOuAdmin=isAdmin||currentUser.nivel==='lider';
-  const isLiderOuAdmin=isAdmin||currentUser.nivel==='lider';
   document.getElementById('detalhe-admin-btns').innerHTML=isAdmin?`
     <div style="display:flex;gap:6px">
       <button class="btn sm" onclick="editMinisterio(${id})"><i class="ti ti-edit"></i>Editar ministério</button>
@@ -1014,8 +1013,8 @@ function saveAddVolMin(){
 function renderVoluntarios(){
   document.getElementById('vol-tbody').innerHTML=voluntarios.map(v=>{
     const mins=v.ministerios.map(id=>{const m=ministerios.find(m=>m.id===id);return m?`<span class="tag ${m.cor}">${m.nome}</span>`:''}).join('');
-    const isLiderOuAdmin=currentUser.nivel==='admin'||currentUser.nivel==='lider';
-    const adminBtns=isLiderOuAdmin?`
+    const canManageVol=currentUser.nivel==='admin'||currentUser.nivel==='lider';
+    const adminBtns=canManageVol?`
       <div style="display:flex;gap:4px">
         <button class="btn sm" onclick="editVoluntario(${v.id})"><i class="ti ti-edit"></i></button>
         ${v.id!==currentUser.id?`<button class="btn sm danger" onclick="deleteVol(${v.id})"><i class="ti ti-trash"></i></button>`:''}
