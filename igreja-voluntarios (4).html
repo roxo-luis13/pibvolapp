@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Igreja App — Gestão de Voluntários</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg-primary:#ffffff;--bg-secondary:#f8f7f5;--bg-tertiary:#f0ede8;
+  --text-primary:#1a1a18;--text-secondary:#6b6b67;--text-tertiary:#9b9b96;
+  --border:rgba(0,0,0,.12);--border-md:rgba(0,0,0,.2);
+  --radius:8px;--radius-lg:12px;
+  --purple-bg:#EEEDFE;--purple-text:#534AB7;--purple-icon:#7F77DD;
+  --teal-bg:#E1F5EE;--teal-text:#0F6E56;
+  --blue-bg:#E6F1FB;--blue-text:#185FA5;
+  --coral-bg:#FAECE7;--coral-text:#993C1D;
+  --amber-bg:#FAEEDA;--amber-text:#854F0B;
+  --pink-bg:#FBEAF0;--pink-text:#993556;
+  --green-bg:#EAF3DE;--green-text:#3B6D11;
+  --success-bg:#EAF3DE;--success-text:#3B6D11;
+  --warning-bg:#FAEEDA;--warning-text:#854F0B;
+  --info-bg:#E6F1FB;--info-text:#185FA5;
+  --danger-bg:#FCEBEB;--danger-text:#A32D2D;--danger-border:rgba(163,45,45,.3);
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg-primary:#1e1e1c;--bg-secondary:#252523;--bg-tertiary:#2c2c2a;
+    --text-primary:#f0ede8;--text-secondary:#9b9b96;--text-tertiary:#6b6b67;
+    --border:rgba(255,255,255,.1);--border-md:rgba(255,255,255,.2);
+    --purple-bg:#26215C;--purple-text:#AFA9EC;
+    --teal-bg:#04342C;--teal-text:#5DCAA5;
+    --blue-bg:#042C53;--blue-text:#85B7EB;
+    --coral-bg:#4A1B0C;--coral-text:#F0997B;
+    --amber-bg:#412402;--amber-text:#FAC775;
+    --pink-bg:#4B1528;--pink-text:#ED93B1;
+    --green-bg:#173404;--green-text:#97C459;
+    --success-bg:#173404;--success-text:#97C459;
+    --warning-bg:#412402;--warning-text:#FAC775;
+    --info-bg:#042C53;--info-text:#85B7EB;
+    --danger-bg:#501313;--danger-text:#F09595;--danger-border:rgba(240,149,149,.3);
+  }
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg-tertiary);color:var(--text-primary);min-height:100vh;font-size:14px}
+
+/* LOGIN */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg-tertiary);padding:16px}
+.login-box{background:var(--bg-primary);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:40px 36px;width:100%;max-width:380px}
+.login-logo{text-align:center;margin-bottom:28px}
+.login-logo i{font-size:40px;color:#7F77DD;display:block;margin-bottom:8px}
+.login-logo h1{font-size:20px;font-weight:500}
+.login-logo p{font-size:13px;color:var(--text-secondary);margin-top:4px}
+.login-error{background:var(--danger-bg);color:var(--danger-text);border:0.5px solid var(--danger-border);border-radius:var(--radius);padding:10px 14px;font-size:13px;margin-bottom:14px;display:none}
+.first-access-notice{background:var(--warning-bg);color:var(--warning-text);border-radius:var(--radius);padding:10px 14px;font-size:13px;margin-bottom:14px;display:none}
+
+/* APP */
+.app{display:none;flex:1;height:100vh;overflow:hidden}
+.app.visible{display:flex}
+.sidebar{width:220px;background:var(--bg-primary);border-right:0.5px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;transition:width .22s cubic-bezier(.4,0,.2,1),transform .22s cubic-bezier(.4,0,.2,1);z-index:50;position:relative}
+.sidebar.collapsed{width:56px}
+.sidebar-logo{padding:20px 16px 12px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;overflow:hidden}
+.sidebar-logo h2{font-size:14px;font-weight:500;display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden}
+.sidebar-logo p{font-size:11px;color:var(--text-secondary);margin-top:2px;white-space:nowrap;overflow:hidden}
+.sidebar-logo .logo-text{overflow:hidden;transition:opacity .15s,width .22s;opacity:1}
+.sidebar.collapsed .logo-text{opacity:0;width:0;pointer-events:none}
+.sidebar-toggle{background:none;border:none;cursor:pointer;color:var(--text-secondary);padding:4px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
+.sidebar-toggle:hover{background:var(--bg-secondary)}
+.sidebar-user{padding:12px 16px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:8px;overflow:hidden}
+.sidebar-user .user-details{overflow:hidden;transition:opacity .15s,width .22s;opacity:1;white-space:nowrap}
+.sidebar.collapsed .user-details{opacity:0;width:0;pointer-events:none}
+.nav-item-text{transition:opacity .15s;opacity:1;white-space:nowrap;overflow:hidden}
+.sidebar.collapsed .nav-item-text{opacity:0;width:0;pointer-events:none}
+.nav-item{position:relative}
+.sidebar.collapsed .nav-item{padding:10px;justify-content:center}
+.sidebar.collapsed .nav-section{opacity:0;height:20px;overflow:hidden}
+.nav-tooltip{display:none;position:absolute;left:60px;top:50%;transform:translateY(-50%);background:var(--text-primary);color:var(--bg-primary);font-size:12px;padding:5px 10px;border-radius:var(--radius);white-space:nowrap;z-index:200;pointer-events:none}
+.sidebar.collapsed .nav-item:hover .nav-tooltip{display:block}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:40}
+.sidebar-overlay.open{display:block}
+@media(max-width:768px){
+  .sidebar{position:fixed;top:0;left:0;height:100vh;transform:translateX(-100%);width:240px !important;z-index:50}
+  .sidebar.mobile-open{transform:translateX(0)}
+  .sidebar.collapsed{transform:translateX(-100%);width:240px !important}
+  .main{margin-left:0 !important}
+  .topbar{padding:12px 16px}
+}
+.avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;flex-shrink:0}
+.avatar.admin{background:var(--warning-bg);color:var(--warning-text)}
+.avatar.lider{background:var(--info-bg);color:var(--info-text)}
+.avatar.voluntario{background:var(--success-bg);color:var(--success-text)}
+.user-info{flex:1;min-width:0}
+.user-info p{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-info span{font-size:10px;color:var(--text-secondary)}
+.badge{font-size:10px;padding:2px 7px;border-radius:var(--radius);font-weight:500;display:inline-block}
+.badge.admin{background:var(--warning-bg);color:var(--warning-text)}
+.badge.lider{background:var(--info-bg);color:var(--info-text)}
+.badge.voluntario{background:var(--success-bg);color:var(--success-text)}
+.nav{flex:1;padding:8px 0}
+.nav-section{padding:8px 16px 4px;font-size:10px;font-weight:500;color:var(--text-tertiary);letter-spacing:.5px;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 16px;font-size:13px;color:var(--text-secondary);cursor:pointer;border-left:2px solid transparent;transition:all .15s}
+.nav-item:hover{background:var(--bg-secondary);color:var(--text-primary)}
+.nav-item.active{background:var(--bg-secondary);color:var(--text-primary);border-left:2px solid #7F77DD}
+.nav-item i{font-size:16px;width:18px;text-align:center}
+.main{flex:1;overflow-y:auto;display:flex;flex-direction:column;min-width:0}
+.topbar{background:var(--bg-primary);border-bottom:0.5px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:sticky;top:0;z-index:10}
+.topbar h1{font-size:16px;font-weight:500}
+.topbar-actions{display:flex;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;border:0.5px solid var(--border-md);background:transparent;color:var(--text-primary);transition:all .15s;font-family:inherit}
+.btn:hover{background:var(--bg-secondary)}
+.btn.primary{background:#7F77DD;color:#fff;border-color:#7F77DD}
+.btn.primary:hover{background:#534AB7;border-color:#534AB7}
+.btn.danger{background:transparent;color:var(--danger-text);border-color:var(--danger-border)}
+.btn.danger:hover{background:var(--danger-bg)}
+.btn.sm{padding:5px 10px;font-size:12px}
+.btn.full{width:100%;justify-content:center;margin-top:6px}
+.content{padding:24px;flex:1}
+.section{display:none}
+.section.active{display:block}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:900px){.grid-4{grid-template-columns:repeat(2,1fr)}.grid-2,.grid-3{grid-template-columns:1fr}}
+.card{background:var(--bg-primary);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:16px 20px}
+.metric{background:var(--bg-secondary);border-radius:var(--radius);padding:14px 16px}
+.metric p{font-size:12px;color:var(--text-secondary);margin-bottom:4px}
+.metric h3{font-size:24px;font-weight:500}
+.metric span{font-size:11px;color:var(--text-tertiary)}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;font-size:11px;font-weight:500;color:var(--text-secondary);border-bottom:0.5px solid var(--border);text-transform:uppercase;letter-spacing:.3px;white-space:nowrap}
+td{padding:12px;color:var(--text-primary);border-bottom:0.5px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg-secondary)}
+.tag{display:inline-flex;align-items:center;gap:3px;font-size:11px;padding:3px 7px;border-radius:var(--radius);font-weight:500;margin:2px}
+.tag.purple{background:var(--purple-bg);color:var(--purple-text)}
+.tag.teal{background:var(--teal-bg);color:var(--teal-text)}
+.tag.coral{background:var(--coral-bg);color:var(--coral-text)}
+.tag.blue{background:var(--blue-bg);color:var(--blue-text)}
+.tag.amber{background:var(--amber-bg);color:var(--amber-text)}
+.tag.pink{background:var(--pink-bg);color:var(--pink-text)}
+.tag.green{background:var(--green-bg);color:var(--green-text)}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:5px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:8px 12px;border:0.5px solid var(--border-md);border-radius:var(--radius);font-size:13px;background:var(--bg-primary);color:var(--text-primary);font-family:inherit;transition:border-color .15s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:#7F77DD;box-shadow:0 0 0 2px var(--purple-bg)}
+.form-group textarea{resize:vertical;min-height:72px}
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center;padding:16px}
+.modal-backdrop.open{display:flex}
+.modal{background:var(--bg-primary);border-radius:var(--radius-lg);border:0.5px solid var(--border);width:100%;max-width:480px;max-height:90vh;overflow-y:auto;padding:24px}
+.modal h2{font-size:16px;font-weight:500;margin-bottom:16px}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:14px;border-top:0.5px solid var(--border)}
+.ministry-card{background:var(--bg-primary);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:16px;transition:all .15s;position:relative}
+.ministry-card.clickable{cursor:pointer}
+.ministry-card.clickable:hover{border-color:var(--border-md)}
+.ministry-card.locked{opacity:.55}
+.ministry-card .icon{width:40px;height:40px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:10px}
+.ministry-card h3{font-size:14px;font-weight:500;margin-bottom:4px}
+.ministry-card p{font-size:12px;color:var(--text-secondary);margin-bottom:10px}
+.ministry-card-actions{display:flex;gap:4px;margin-top:10px;justify-content:flex-end}
+.cal-header-days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px}
+.cal-header-days span{font-size:11px;font-weight:500;color:var(--text-secondary);text-align:center;padding:4px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.cal-day{min-height:64px;border:0.5px solid var(--border);border-radius:var(--radius);padding:4px;font-size:11px;background:var(--bg-primary)}
+.cal-day.today{border-color:#7F77DD;background:var(--purple-bg)}
+.cal-day.other-month{opacity:.4}
+.day-num{font-weight:500;color:var(--text-secondary);margin-bottom:2px}
+.today .day-num{color:var(--purple-text)}
+.cal-event{font-size:10px;padding:1px 4px;border-radius:3px;margin-top:2px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.empty{text-align:center;padding:40px 24px;color:var(--text-secondary);font-size:14px}
+.empty i{font-size:36px;display:block;margin-bottom:10px;opacity:.35}
+hr{border:none;border-top:0.5px solid var(--border);margin:14px 0}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.chip{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:999px;font-size:12px;border:0.5px solid var(--border-md);cursor:pointer;color:var(--text-secondary);transition:all .15s;background:transparent}
+.chip.selected{background:var(--purple-bg);color:var(--purple-text);border-color:#AFA9EC}
+.chip:hover:not(.selected){background:var(--bg-secondary)}
+.progress-bar{height:5px;background:var(--bg-tertiary);border-radius:999px;overflow:hidden;margin-top:5px}
+.progress-bar div{height:100%;background:#7F77DD;border-radius:999px}
+</style>
+</head>
+<body>
+
+<!-- TELA DE LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <i class="ti ti-building-church"></i>
+      <h1>Igreja App</h1>
+      <p>Gestão de voluntários e ministérios</p>
+    </div>
+    <div class="login-error" id="login-error"></div>
+    <div class="first-access-notice" id="first-notice">
+      <i class="ti ti-alert-triangle" style="margin-right:6px"></i>
+      Primeiro acesso — por favor, cadastre uma nova senha antes de continuar.
+    </div>
+    <div id="login-form-area">
+      <div class="form-group"><label>Email</label><input id="login-email" type="email" placeholder="seu@email.com" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="form-group"><label>Senha</label><input id="login-senha" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <button class="btn primary full" onclick="doLogin()"><i class="ti ti-login"></i>Entrar</button>
+    </div>
+    <div id="first-access-form" style="display:none">
+      <div class="form-group"><label>Nova senha *</label><input id="nova-senha" type="password" placeholder="Mínimo 4 caracteres"></div>
+      <div class="form-group"><label>Confirmar nova senha *</label><input id="conf-senha" type="password" placeholder="Repita a senha"></div>
+      <button class="btn primary full" onclick="saveNewPassword()"><i class="ti ti-check"></i>Definir senha e entrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP PRINCIPAL -->
+<div class="app" id="main-app">
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <h2><i class="ti ti-building-church" style="flex-shrink:0"></i><span class="logo-text">Igreja App</span></h2>
+      <button class="sidebar-toggle" onclick="toggleSidebar()" title="Minimizar menu">
+        <i class="ti ti-layout-sidebar-left-collapse" id="toggle-icon" style="font-size:18px"></i>
+      </button>
+    </div>
+    <div class="sidebar-user">
+      <div class="avatar" id="sb-avatar" style="flex-shrink:0"></div>
+      <div class="user-details user-info">
+        <p id="sb-name"></p>
+        <span id="sb-role"></span>
+      </div>
+    </div>
+    <nav class="nav">
+      <div class="nav-section">Geral</div>
+      <div class="nav-item active" onclick="navigate('dashboard');closeSidebarMobile()">
+        <i class="ti ti-dashboard" style="flex-shrink:0"></i><span class="nav-item-text">Dashboard</span>
+        <span class="nav-tooltip">Dashboard</span>
+      </div>
+      <div class="nav-item" onclick="navigate('calendario');closeSidebarMobile()">
+        <i class="ti ti-calendar" style="flex-shrink:0"></i><span class="nav-item-text">Calendário</span>
+        <span class="nav-tooltip">Calendário</span>
+      </div>
+      <div class="nav-item" onclick="navigate('ministerios');closeSidebarMobile()">
+        <i class="ti ti-users-group" style="flex-shrink:0"></i><span class="nav-item-text">Ministérios</span>
+        <span class="nav-tooltip">Ministérios</span>
+      </div>
+      <div class="nav-section" id="admin-section">Administração</div>
+      <div class="nav-item" id="nav-voluntarios" onclick="navigate('voluntarios');closeSidebarMobile()">
+        <i class="ti ti-user-check" style="flex-shrink:0"></i><span class="nav-item-text">Voluntários</span>
+        <span class="nav-tooltip">Voluntários</span>
+      </div>
+      <div class="nav-item" id="nav-eventos" onclick="navigate('eventos');closeSidebarMobile()">
+        <i class="ti ti-calendar-event" style="flex-shrink:0"></i><span class="nav-item-text">Eventos</span>
+        <span class="nav-tooltip">Eventos</span>
+      </div>
+      <div class="nav-section">Conta</div>
+      <div class="nav-item" onclick="navigate('perfil');closeSidebarMobile()">
+        <i class="ti ti-user" style="flex-shrink:0"></i><span class="nav-item-text">Meu perfil</span>
+        <span class="nav-tooltip">Meu perfil</span>
+      </div>
+      <div class="nav-item" onclick="doLogout()">
+        <i class="ti ti-logout" style="flex-shrink:0"></i><span class="nav-item-text">Sair</span>
+        <span class="nav-tooltip">Sair</span>
+      </div>
+    </nav>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="sidebar-toggle" id="mobile-menu-btn" onclick="openSidebarMobile()" style="display:none" title="Menu">
+          <i class="ti ti-menu-2" style="font-size:20px"></i>
+        </button>
+        <h1 id="page-title">Dashboard geral</h1>
+      </div>
+      <div class="topbar-actions" id="topbar-actions"></div>
+    </div>
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="section active" id="section-dashboard">
+        <div class="grid-4" style="margin-bottom:20px">
+          <div class="metric"><p>Total de membros</p><h3>500</h3><span>Igreja ativa</span></div>
+          <div class="metric"><p>Voluntários</p><h3 id="m-vol">0</h3><span>Cadastrados</span></div>
+          <div class="metric"><p>Ministérios</p><h3 id="m-min">0</h3><span>Ativos</span></div>
+          <div class="metric"><p>Eventos este mês</p><h3 id="m-ev">0</h3><span>Programados</span></div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+              <h3 style="font-size:14px;font-weight:500">Ministérios</h3>
+              <span style="font-size:12px;color:var(--text-secondary)" id="dash-min-count"></span>
+            </div>
+            <div id="dash-ministerios-list"></div>
+          </div>
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+              <h3 style="font-size:14px;font-weight:500">Próximos eventos</h3>
+            </div>
+            <div id="dash-eventos-list"></div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+            <i class="ti ti-calendar-check" style="font-size:18px;color:#7F77DD"></i>
+            <h3 style="font-size:14px;font-weight:500">Meus próximos eventos</h3>
+          </div>
+          <div id="dash-meus-eventos"></div>
+        </div>
+      </div>
+
+      <!-- MODAL DETALHE EVENTO DASHBOARD -->
+      <div class="modal-backdrop" id="modal-dash-evento">
+        <div class="modal" style="max-width:500px">
+          <div id="modal-dash-evento-content"></div>
+          <div class="modal-footer">
+            <button class="btn" onclick="closeModal('modal-dash-evento')">Fechar</button>
+            <button class="btn primary" onclick="irParaCalendario()"><i class="ti ti-calendar"></i>Ver no calendário</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CALENDÁRIO -->
+      <div class="section" id="section-calendario">
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <button class="btn sm" onclick="changeMonth(-1)"><i class="ti ti-chevron-left"></i></button>
+              <h3 style="font-size:15px;font-weight:500" id="cal-month-title"></h3>
+              <button class="btn sm" onclick="changeMonth(1)"><i class="ti ti-chevron-right"></i></button>
+            </div>
+            <button class="btn primary sm" id="btn-inscricao" style="display:none" onclick="openInscricao()"><i class="ti ti-plus"></i>Me inscrever</button>
+          </div>
+          <div class="cal-header-days">
+            <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
+          </div>
+          <div class="cal-grid" id="cal-grid"></div>
+        </div>
+        <div class="card" style="margin-top:14px">
+          <div id="cal-event-detail"><p style="color:var(--text-secondary);font-size:13px">Clique em um evento no calendário para ver os detalhes.</p></div>
+        </div>
+      </div>
+
+      <!-- MINISTÉRIOS -->
+      <div class="section" id="section-ministerios">
+        <div class="grid-3" id="ministerios-grid"></div>
+      </div>
+
+      <!-- DETALHE MINISTÉRIO -->
+      <div class="section" id="section-ministerio-detalhe">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:8px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <button class="btn sm" onclick="navigate('ministerios')"><i class="ti ti-arrow-left"></i>Voltar</button>
+            <h2 style="font-size:15px;font-weight:500" id="detalhe-nome"></h2>
+          </div>
+          <div id="detalhe-admin-btns"></div>
+        </div>
+        <div style="background:var(--bg-secondary);border-radius:var(--radius);padding:12px 16px;margin-bottom:16px;display:none" id="detalhe-lider-bar">
+          <span style="font-size:13px"><i class="ti ti-crown" style="color:#BA7517;margin-right:6px"></i>Líder: <strong id="detalhe-lider-nome"></strong></span>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+              <h3 style="font-size:12px;font-weight:500;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.3px">Voluntários do ministério</h3>
+              <span id="detalhe-add-vol-btn"></span>
+            </div>
+            <div id="detalhe-vols"></div>
+          </div>
+          <div class="card">
+            <h3 style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:14px;text-transform:uppercase;letter-spacing:.3px">Eventos</h3>
+            <div id="detalhe-eventos"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VOLUNTÁRIOS -->
+      <div class="section" id="section-voluntarios">
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Nome</th><th>Email</th><th>Telefone</th><th>Ministérios</th><th>Nível</th><th></th></tr></thead>
+              <tbody id="vol-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- EVENTOS -->
+      <div class="section" id="section-eventos">
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Evento</th><th>Data/Hora</th><th>Ministérios</th><th>Inscritos</th><th></th></tr></thead>
+              <tbody id="ev-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PERFIL -->
+      <div class="section" id="section-perfil">
+        <div style="max-width:520px">
+          <div class="card" style="margin-bottom:14px">
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+              <div class="avatar" id="perfil-avatar" style="width:52px;height:52px;font-size:17px"></div>
+              <div>
+                <h2 style="font-size:16px;font-weight:500" id="perfil-nome"></h2>
+                <span class="badge" id="perfil-badge" style="margin-top:4px"></span>
+              </div>
+            </div>
+            <hr>
+            <div class="form-group"><label>Nome completo</label><input id="edit-nome" type="text"></div>
+            <div class="form-group"><label>Email</label><input id="edit-email" type="email"></div>
+            <div class="form-group"><label>Telefone</label><input id="edit-tel" type="text" placeholder="(11) 99999-9999"></div>
+            <button class="btn primary sm" onclick="savePerfil()"><i class="ti ti-check"></i>Salvar alterações</button>
+          </div>
+          <div class="card" style="margin-bottom:14px">
+            <h3 style="font-size:13px;font-weight:500;margin-bottom:14px">Alterar senha</h3>
+            <div class="form-group"><label>Senha atual</label><input id="senha-atual" type="password" placeholder="••••••••"></div>
+            <div class="form-group"><label>Nova senha</label><input id="senha-nova" type="password" placeholder="••••••••"></div>
+            <div class="form-group"><label>Confirmar nova senha</label><input id="senha-conf" type="password" placeholder="••••••••"></div>
+            <div id="senha-msg" style="font-size:12px;margin-bottom:10px;display:none"></div>
+            <button class="btn primary sm" onclick="alterarSenha()"><i class="ti ti-lock"></i>Alterar senha</button>
+          </div>
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <h3 style="font-size:12px;font-weight:500;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.3px">Meus ministérios</h3>
+              <span style="font-size:11px;color:var(--text-tertiary)">Marque os que deseja participar</span>
+            </div>
+            <div id="perfil-ministerios"></div>
+            <div style="margin-top:14px;padding-top:14px;border-top:0.5px solid var(--border)">
+              <button class="btn primary sm" onclick="saveMinisteriosPerfil()"><i class="ti ti-check"></i>Salvar ministérios</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAIS -->
+<div class="modal-backdrop" id="modal-vol">
+  <div class="modal">
+    <h2 id="modal-vol-title">Cadastrar voluntário</h2>
+    <input type="hidden" id="vol-edit-id" value="">
+    <div class="form-group"><label>Nome completo *</label><input id="vol-nome" type="text" placeholder="Nome do voluntário"></div>
+    <div class="form-group"><label>Email *</label><input id="vol-email" type="email" placeholder="email@exemplo.com"></div>
+    <div class="form-group"><label>Telefone</label><input id="vol-tel" type="text" placeholder="(11) 99999-9999"></div>
+    <div class="form-group">
+      <label>Nível de acesso</label>
+      <select id="vol-nivel">
+        <option value="voluntario">Voluntário</option>
+        <option value="lider">Líder de ministério</option>
+        <option value="admin">Administrador</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Ministérios</label>
+      <div class="chips" id="vol-ministerios-chips"></div>
+    </div>
+    <p style="font-size:12px;color:var(--text-secondary);margin-top:10px"><i class="ti ti-info-circle" style="margin-right:4px"></i>A senha padrão do novo voluntário será <strong>1234</strong>. Ele deverá alterá-la no primeiro acesso.</p>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-vol')">Cancelar</button>
+      <button class="btn primary" onclick="saveVoluntario()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-min">
+  <div class="modal">
+    <h2 id="modal-min-title">Criar ministério</h2>
+    <input type="hidden" id="min-edit-id" value="">
+    <div class="form-group"><label>Nome *</label><input id="min-nome" type="text" placeholder="ex: Louvor, Infantil..."></div>
+    <div class="form-group"><label>Descrição</label><textarea id="min-desc" placeholder="Descreva o ministério"></textarea></div>
+    <div class="form-group">
+      <label>Ícone</label>
+      <select id="min-icone">
+        <option value="ti-music">🎵 Louvor/Música</option>
+        <option value="ti-baby-carriage">👶 Infantil</option>
+        <option value="ti-heart-handshake">🤝 Acolhimento</option>
+        <option value="ti-book">📖 Escola Bíblica</option>
+        <option value="ti-device-speaker">📢 Comunicação</option>
+        <option value="ti-camera">📷 Fotografia/Mídia</option>
+        <option value="ti-users">👥 Jovens</option>
+        <option value="ti-leaf">🌿 Social</option>
+        <option value="ti-pray">🙏 Intercessão</option>
+        <option value="ti-tool">🔧 Apoio/Infraestrutura</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Cor</label>
+      <select id="min-cor">
+        <option value="purple">Roxo</option>
+        <option value="teal">Verde-água</option>
+        <option value="blue">Azul</option>
+        <option value="coral">Coral</option>
+        <option value="amber">Âmbar</option>
+        <option value="pink">Rosa</option>
+        <option value="green">Verde</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Líder do ministério</label>
+      <select id="min-lider">
+        <option value="">— Sem líder definido —</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-min')">Cancelar</button>
+      <button class="btn primary" onclick="saveMinisterio()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-ev">
+  <div class="modal">
+    <h2 id="modal-ev-title">Criar evento</h2>
+    <input type="hidden" id="ev-edit-id" value="">
+    <div class="form-group"><label>Nome do evento *</label><input id="ev-nome" type="text" placeholder="Nome do evento"></div>
+    <div class="form-group"><label>Data *</label><input id="ev-data" type="date"></div>
+    <div class="form-group"><label>Horário</label><input id="ev-hora" type="time" value="09:00"></div>
+    <div class="form-group"><label>Descrição</label><textarea id="ev-desc" placeholder="Descreva o evento"></textarea></div>
+    <div class="form-group">
+      <label>Ministérios envolvidos</label>
+      <div class="chips" id="ev-ministerios-chips"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-ev')">Cancelar</button>
+      <button class="btn primary" onclick="saveEvento()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-inscricao">
+  <div class="modal" style="max-width:520px">
+    <h2 id="inscricao-titulo"></h2>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:12px" id="inscricao-info"></p>
+    <div id="inscricao-meu-status" style="margin-bottom:12px;display:none"></div>
+    <div id="inscricao-form-min" style="margin-bottom:14px;display:none">
+      <div class="form-group" style="margin-bottom:0">
+        <label>Em qual ministério você vai servir neste evento?</label>
+        <select id="inscricao-min-select"></select>
+      </div>
+    </div>
+    <hr>
+    <p style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:10px;text-transform:uppercase;letter-spacing:.3px">Voluntários confirmados por ministério</p>
+    <div id="inscricao-lista"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-inscricao')">Fechar</button>
+      <button class="btn primary" id="btn-toggle-inscricao" onclick="toggleInscricao()" style="display:none"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+const ICONES={'ti-music':'🎵','ti-baby-carriage':'👶','ti-heart-handshake':'🤝','ti-book':'📖','ti-device-speaker':'📢','ti-camera':'📷','ti-users':'👥','ti-leaf':'🌿','ti-pray':'🙏','ti-tool':'🔧'};
+const MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+let ministerios=[
+  {id:1,nome:'Louvor',desc:'Ministério de música e adoração',icone:'ti-music',cor:'purple',liderId:2},
+  {id:2,nome:'Infantil',desc:'Atendimento às crianças',icone:'ti-baby-carriage',cor:'teal',liderId:3},
+  {id:3,nome:'Acolhimento',desc:'Recepção e hospitalidade',icone:'ti-heart-handshake',cor:'coral',liderId:4},
+  {id:4,nome:'Comunicação',desc:'Mídias e comunicação digital',icone:'ti-device-speaker',cor:'blue',liderId:null},
+  {id:5,nome:'Jovens',desc:'Ministério para jovens',icone:'ti-users',cor:'amber',liderId:5}
+];
+let voluntarios=[
+  {id:1,nome:'Luis Felipe Roxo',email:'luisfeliperoxo13@gmail.com',tel:'(19) 99999-0001',nivel:'admin',ministerios:[1,2,3,4,5],senha:'1234',primeiroAcesso:false},
+  {id:2,nome:'Maria Lima',email:'maria@igreja.com',tel:'(19) 99999-0002',nivel:'lider',ministerios:[1],senha:'1234',primeiroAcesso:true},
+  {id:3,nome:'João Silva',email:'joao@igreja.com',tel:'(19) 99999-0003',nivel:'voluntario',ministerios:[2],senha:'1234',primeiroAcesso:true},
+  {id:4,nome:'Ana Costa',email:'ana@igreja.com',tel:'(19) 99999-0004',nivel:'lider',ministerios:[3,4],senha:'1234',primeiroAcesso:true},
+  {id:5,nome:'Pedro Souza',email:'pedro@igreja.com',tel:'(19) 99999-0005',nivel:'voluntario',ministerios:[1,5],senha:'1234',primeiroAcesso:true}
+];
+let eventos=[
+  {id:1,nome:'Culto de Louvor',data:'2026-06-21',hora:'19:00',desc:'Culto especial de louvor e adoração',ministerios:[1,3],inscritos:[]},
+  {id:2,nome:'EBD Infantil',data:'2026-06-22',hora:'09:00',desc:'Escola Bíblica Dominical para crianças',ministerios:[2],inscritos:[]},
+  {id:3,nome:'Reunião de Jovens',data:'2026-06-27',hora:'20:00',desc:'Encontro semanal dos jovens',ministerios:[5,1],inscritos:[]},
+  {id:4,nome:'Live de Worship',data:'2026-07-03',hora:'19:30',desc:'Transmissão ao vivo de adoração',ministerios:[1,4],inscritos:[]}
+];
+let minId=6,volId=6,evId=5;
+let currentUser=null;
+let pendingLoginUser=null;
+let calYear=new Date().getFullYear(),calMonth=new Date().getMonth();
+let selectedEvento=null;
+
+function ini(n){return n.split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();}
+function canAccess(mId){return currentUser.nivel==='admin'||currentUser.ministerios.includes(mId);}
+
+// ===== LOGIN =====
+function doLogin(){
+  const email=document.getElementById('login-email').value.trim().toLowerCase();
+  const senha=document.getElementById('login-senha').value;
+  const err=document.getElementById('login-error');
+  err.style.display='none';
+  const user=voluntarios.find(v=>v.email.toLowerCase()===email);
+  if(!user||user.senha!==senha){
+    err.textContent='Email ou senha incorretos.';
+    err.style.display='block';
+    return;
+  }
+  if(user.primeiroAcesso){
+    pendingLoginUser=user;
+    document.getElementById('login-form-area').style.display='none';
+    document.getElementById('first-access-form').style.display='block';
+    document.getElementById('first-notice').style.display='block';
+    return;
+  }
+  enterApp(user);
+}
+
+function saveNewPassword(){
+  const nova=document.getElementById('nova-senha').value;
+  const conf=document.getElementById('conf-senha').value;
+  const err=document.getElementById('login-error');
+  err.style.display='none';
+  if(nova.length<4){err.textContent='A senha deve ter pelo menos 4 caracteres.';err.style.display='block';return;}
+  if(nova!==conf){err.textContent='As senhas não coincidem.';err.style.display='block';return;}
+  pendingLoginUser.senha=nova;
+  pendingLoginUser.primeiroAcesso=false;
+  enterApp(pendingLoginUser);
+  pendingLoginUser=null;
+}
+
+function enterApp(user){
+  currentUser=user;
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('main-app').classList.add('visible');
+  document.getElementById('login-form-area').style.display='block';
+  document.getElementById('first-access-form').style.display='none';
+  document.getElementById('first-notice').style.display='none';
+  document.getElementById('login-error').style.display='none';
+  document.getElementById('login-email').value='';
+  document.getElementById('login-senha').value='';
+  document.getElementById('nova-senha').value='';
+  document.getElementById('conf-senha').value='';
+  updateSidebar();
+  checkMobileLayout();
+  navigate('dashboard');
+}
+
+// ===== SIDEBAR TOGGLE =====
+let sidebarCollapsed=false;
+let isMobile=()=>window.innerWidth<=768;
+
+function toggleSidebar(){
+  if(isMobile()){
+    openSidebarMobile();
+    return;
+  }
+  sidebarCollapsed=!sidebarCollapsed;
+  const sb=document.getElementById('sidebar');
+  const icon=document.getElementById('toggle-icon');
+  if(sidebarCollapsed){
+    sb.classList.add('collapsed');
+    icon.className='ti ti-layout-sidebar-left-expand';
+    icon.parentElement.title='Expandir menu';
+  } else {
+    sb.classList.remove('collapsed');
+    icon.className='ti ti-layout-sidebar-left-collapse';
+    icon.parentElement.title='Minimizar menu';
+  }
+}
+
+function openSidebarMobile(){
+  document.getElementById('sidebar').classList.add('mobile-open');
+  document.getElementById('sidebar-overlay').classList.add('open');
+}
+
+function closeSidebarMobile(){
+  if(isMobile()){
+    document.getElementById('sidebar').classList.remove('mobile-open');
+    document.getElementById('sidebar-overlay').classList.remove('open');
+  }
+}
+
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('mobile-open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+}
+
+function checkMobileLayout(){
+  const mobileBtn=document.getElementById('mobile-menu-btn');
+  if(isMobile()){
+    mobileBtn.style.display='flex';
+    document.getElementById('sidebar').classList.remove('collapsed');
+    sidebarCollapsed=false;
+  } else {
+    mobileBtn.style.display='none';
+    document.getElementById('sidebar').classList.remove('mobile-open');
+    document.getElementById('sidebar-overlay').classList.remove('open');
+  }
+}
+
+window.addEventListener('resize',checkMobileLayout);
+
+function doLogout(){
+  currentUser=null;
+  document.getElementById('main-app').classList.remove('visible');
+  document.getElementById('login-screen').style.display='flex';
+  // Reset sidebar on logout
+  document.getElementById('sidebar').classList.remove('mobile-open','collapsed');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+  sidebarCollapsed=false;
+  const icon=document.getElementById('toggle-icon');
+  if(icon) icon.className='ti ti-layout-sidebar-left-collapse';
+}
+
+// ===== NAVEGAÇÃO =====
+function navigate(sec,extra){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(i=>i.classList.remove('active'));
+  const el=document.getElementById('section-'+sec);
+  if(el)el.classList.add('active');
+  const titles={dashboard:'Dashboard geral',calendario:'Calendário de eventos',ministerios:'Ministérios',voluntarios:'Voluntários',eventos:'Eventos',perfil:'Meu perfil','ministerio-detalhe':'Detalhes do ministério'};
+  document.getElementById('page-title').textContent=titles[sec]||'';
+  const acts=document.getElementById('topbar-actions');
+  acts.innerHTML='';
+  const isAdmin=currentUser.nivel==='admin';
+  const isLiderOuAdmin=currentUser.nivel==='admin'||currentUser.nivel==='lider';
+  if(isAdmin&&sec==='ministerios') acts.innerHTML=`<button class="btn primary" onclick="openModalMin()"><i class="ti ti-plus"></i>Novo ministério</button>`;
+  if(isLiderOuAdmin&&sec==='voluntarios') acts.innerHTML=`<button class="btn primary" onclick="openModal('modal-vol')"><i class="ti ti-user-plus"></i>Novo voluntário</button>`;
+  if(isAdmin&&sec==='eventos') acts.innerHTML=`<button class="btn primary" onclick="openModal('modal-ev')"><i class="ti ti-plus"></i>Novo evento</button>`;
+  const renders={dashboard:renderDashboard,calendario:renderCalendario,ministerios:renderMinisterios,voluntarios:renderVoluntarios,eventos:renderEventos,perfil:renderPerfil};
+  if(renders[sec])renders[sec]();
+  if(sec==='ministerio-detalhe'&&extra)renderDetalhe(extra);
+}
+
+// ===== SIDEBAR =====
+function updateSidebar(){
+  document.getElementById('sb-avatar').textContent=ini(currentUser.nome);
+  document.getElementById('sb-avatar').className='avatar '+currentUser.nivel;
+  document.getElementById('sb-name').textContent=currentUser.nome;
+  document.getElementById('sb-role').textContent=currentUser.nivel==='admin'?'Administrador':currentUser.nivel==='lider'?'Líder':'Voluntário';
+  const isAdmin=currentUser.nivel==='admin';
+  const isLiderOuAdmin=currentUser.nivel==='admin'||currentUser.nivel==='lider';
+  document.getElementById('nav-voluntarios').style.display=isLiderOuAdmin?'flex':'none';
+  document.getElementById('nav-eventos').style.display=isAdmin?'flex':'none';
+  document.getElementById('admin-section').style.display=isLiderOuAdmin?'block':'none';
+}
+
+// ===== DASHBOARD =====
+function renderDashboard(){
+  document.getElementById('m-vol').textContent=voluntarios.length;
+  document.getElementById('m-min').textContent=ministerios.length;
+  const now=new Date();
+  document.getElementById('m-ev').textContent=eventos.filter(e=>{const d=new Date(e.data);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();}).length;
+  document.getElementById('dash-min-count').textContent=ministerios.length+' ativos';
+  const vMin=ministerios.filter(m=>canAccess(m.id));
+  const ml=document.getElementById('dash-ministerios-list');
+  ml.innerHTML=vMin.length?vMin.map(m=>{
+    const vols=voluntarios.filter(v=>v.ministerios.includes(m.id));
+    const pct=Math.min(100,Math.round(vols.length/15*100));
+    return `<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:0.5px solid var(--border)">
+      <div style="width:32px;height:32px;border-radius:var(--radius);background:var(--${m.cor}-bg);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${ICONES[m.icone]||'⭐'}</div>
+      <div style="flex:1;min-width:0"><p style="font-size:13px;font-weight:500">${m.nome}</p><div class="progress-bar"><div style="width:${pct}%"></div></div></div>
+      <span style="font-size:12px;color:var(--text-secondary);white-space:nowrap">${vols.length} vol.</span>
+    </div>`;
+  }).join(''):'<div class="empty"><i class="ti ti-users-group"></i>Nenhum ministério</div>';
+  const evup=eventos.filter(e=>new Date(e.data)>=new Date()).sort((a,b)=>new Date(a.data)-new Date(b.data)).slice(0,4);
+  const el=document.getElementById('dash-eventos-list');
+  el.innerHTML=evup.length?evup.map(e=>{
+    const d=new Date(e.data+'T12:00:00');
+    const ds=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
+    const mins=e.ministerios.map(id=>{const m=ministerios.find(m=>m.id===id);return m?m.nome:''}).filter(Boolean).join(', ');
+    return `<div style="display:flex;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border);align-items:flex-start">
+      <div style="background:var(--purple-bg);color:var(--purple-text);border-radius:var(--radius);padding:3px 8px;font-size:11px;font-weight:500;white-space:nowrap;flex-shrink:0">${ds}</div>
+      <div><p style="font-size:13px;font-weight:500">${e.nome}</p><p style="font-size:11px;color:var(--text-secondary)">${e.hora} · ${mins}</p></div>
+    </div>`;
+  }).join(''):'<div class="empty"><i class="ti ti-calendar"></i>Sem eventos próximos</div>';
+
+  // Meus próximos eventos
+  const meusEvEl=document.getElementById('dash-meus-eventos');
+  const meusEv=eventos
+    .filter(e=>new Date(e.data+'T23:59:59')>=new Date()&&e.inscritos.some(i=>i.volId===currentUser.id))
+    .sort((a,b)=>new Date(a.data)-new Date(b.data));
+  if(!meusEv.length){
+    meusEvEl.innerHTML='<div class="empty" style="padding:24px"><i class="ti ti-calendar-off"></i>Você não está escalado em nenhum evento próximo.<br><span style="font-size:12px;margin-top:6px;display:block">Acesse o Calendário para se inscrever.</span></div>';
+  } else {
+    meusEvEl.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px">'+
+      meusEv.map(e=>{
+        const insc=e.inscritos.find(i=>i.volId===currentUser.id);
+        const min=ministerios.find(m=>m.id===insc.minId);
+        const d=new Date(e.data+'T12:00:00');
+        const ds=d.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'});
+        const hoje=new Date();hoje.setHours(0,0,0,0);
+        const evDate=new Date(e.data+'T00:00:00');
+        const diff=Math.round((evDate-hoje)/(1000*60*60*24));
+        const diffTxt=diff===0?'Hoje':diff===1?'Amanhã':`Em ${diff} dias`;
+        const cor=min?min.cor:'purple';
+        return `<div onclick="abrirDetalheEvDash(${e.id})" style="border:0.5px solid var(--border);border-radius:var(--radius);padding:12px;cursor:pointer;transition:all .15s;background:var(--bg-primary)" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='var(--bg-primary)'">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span style="font-size:10px;font-weight:500;background:var(--${cor}-bg);color:var(--${cor}-text);padding:2px 8px;border-radius:4px">${min?ICONES[min.icone]+' '+min.nome:'—'}</span>
+            <span style="font-size:10px;color:${diff<=1?'var(--coral-text)':'var(--text-tertiary)'};font-weight:500">${diffTxt}</span>
+          </div>
+          <p style="font-size:13px;font-weight:500;margin-bottom:3px">${e.nome}</p>
+          <p style="font-size:11px;color:var(--text-secondary)">${ds} · ${e.hora}</p>
+        </div>`;
+      }).join('')+'</div>';
+  }
+}
+
+function abrirDetalheEvDash(evId){
+  const ev=eventos.find(e=>e.id===evId);
+  if(!ev)return;
+  const insc=ev.inscritos.find(i=>i.volId===currentUser.id);
+  const min=insc?ministerios.find(m=>m.id===insc.minId):null;
+  const d=new Date(ev.data+'T12:00:00');
+  const ds=d.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+  const hoje=new Date();hoje.setHours(0,0,0,0);
+  const evDate=new Date(ev.data+'T00:00:00');
+  const diff=Math.round((evDate-hoje)/(1000*60*60*24));
+  const diffTxt=diff===0?'Hoje':diff===1?'Amanhã':`Em ${diff} dias`;
+
+  // All volunteers per ministry for this event
+  const volsPorMin=ev.ministerios.map(mid=>{
+    const m=ministerios.find(m=>m.id===mid);
+    if(!m)return '';
+    const inscritos=ev.inscritos.filter(i=>i.minId===mid);
+    const rows=inscritos.map(i=>{
+      const v=voluntarios.find(v=>v.id===i.volId);
+      return v?`<div style="display:flex;align-items:center;gap:8px;padding:5px 0">
+        <div class="avatar ${v.nivel}" style="width:24px;height:24px;font-size:9px;flex-shrink:0">${ini(v.nome)}</div>
+        <span style="font-size:12px">${v.nome}${v.id===currentUser.id?' <strong>(você)</strong>':''}</span>
+      </div>`:''}).join('');
+    return `<div style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:6px;background:var(--bg-secondary);border-radius:var(--radius);padding:7px 10px;margin-bottom:4px">
+        <span>${ICONES[m.icone]||'⭐'}</span>
+        <span style="font-size:12px;font-weight:500;color:var(--${m.cor}-text)">${m.nome}</span>
+        <span style="font-size:11px;color:var(--text-tertiary);margin-left:auto">${inscritos.length} pessoa(s)</span>
+      </div>
+      ${rows||'<p style="font-size:11px;color:var(--text-tertiary);padding-left:4px">Nenhum inscrito</p>'}
+    </div>`;
+  }).join('');
+
+  document.getElementById('modal-dash-evento-content').innerHTML=`
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
+      <div>
+        <h2 style="font-size:16px;font-weight:500;margin-bottom:4px">${ev.nome}</h2>
+        <p style="font-size:13px;color:var(--text-secondary)">${ds} · ${ev.hora}</p>
+      </div>
+      <span style="font-size:11px;font-weight:500;padding:4px 10px;border-radius:var(--radius);background:${diff<=1?'var(--coral-bg)':'var(--purple-bg)'};color:${diff<=1?'var(--coral-text)':'var(--purple-text)'};white-space:nowrap;margin-left:10px">${diffTxt}</span>
+    </div>
+    ${ev.desc?`<p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px">${ev.desc}</p>`:''}
+    ${min?`<div style="background:var(--success-bg);color:var(--success-text);border-radius:var(--radius);padding:10px 14px;font-size:13px;margin-bottom:14px"><i class="ti ti-check" style="margin-right:6px"></i>Você servirá no ministério <strong>${min.nome}</strong></div>`:''}
+    <p style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:10px;text-transform:uppercase;letter-spacing:.3px">Equipe confirmada</p>
+    ${volsPorMin}`;
+
+  // Store event id for navigation
+  document.getElementById('modal-dash-evento').dataset.evId=evId;
+  openModal('modal-dash-evento');
+}
+
+function irParaCalendario(){
+  const evId=parseInt(document.getElementById('modal-dash-evento').dataset.evId);
+  const ev=eventos.find(e=>e.id===evId);
+  if(ev){
+    const d=new Date(ev.data+'T12:00:00');
+    calYear=d.getFullYear();
+    calMonth=d.getMonth();
+    selectedEvento=ev;
+  }
+  closeModal('modal-dash-evento');
+  navigate('calendario');
+  setTimeout(()=>showEventDetail(evId),100);
+}
+
+// ===== CALENDÁRIO =====
+function renderCalendario(){
+  document.getElementById('cal-month-title').textContent=MESES[calMonth]+' '+calYear;
+  document.getElementById('btn-inscricao').style.display=selectedEvento?'inline-flex':'none';
+  const grid=document.getElementById('cal-grid');
+  const firstDay=new Date(calYear,calMonth,1).getDay();
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+  const today=new Date();
+  let html='';
+  for(let i=0;i<firstDay;i++){const pd=new Date(calYear,calMonth,0-firstDay+i+1);html+=`<div class="cal-day other-month"><div class="day-num">${pd.getDate()}</div></div>`;}
+  for(let d=1;d<=daysInMonth;d++){
+    const isToday=today.getFullYear()===calYear&&today.getMonth()===calMonth&&today.getDate()===d;
+    const ds=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const devs=eventos.filter(e=>e.data===ds);
+    const evHtml=devs.map(e=>{const m=ministerios.find(m=>e.ministerios.includes(m.id));const c=m?m.cor:'purple';return `<div class="cal-event" style="background:var(--${c}-bg);color:var(--${c}-text)" onclick="showEventDetail(${e.id})">${e.nome}</div>`;}).join('');
+    html+=`<div class="cal-day${isToday?' today':''}"><div class="day-num">${d}</div>${evHtml}</div>`;
+  }
+  grid.innerHTML=html;
+}
+
+function isInscrito(ev){
+  return ev.inscritos.some(i=>i.volId===currentUser.id);
+}
+
+function getMinInscrito(ev){
+  const entry=ev.inscritos.find(i=>i.volId===currentUser.id);
+  return entry?entry.minId:null;
+}
+
+function showEventDetail(evId){
+  const ev=eventos.find(e=>e.id===evId);
+  if(!ev)return;
+  selectedEvento=ev;
+  // Show inscription button only if user serves in at least one ministry of this event (or is admin)
+  const userCanJoin=currentUser.nivel==='admin'||ev.ministerios.some(mid=>currentUser.ministerios.includes(mid));
+  document.getElementById('btn-inscricao').style.display=userCanJoin?'inline-flex':'none';
+  const d=new Date(ev.data+'T12:00:00');
+  const ds=d.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});
+  const inscrito=isInscrito(ev);
+  const minInscrito=getMinInscrito(ev);
+  const minsTag=ev.ministerios.map(id=>{const m=ministerios.find(m=>m.id===id);return m?`<span class="tag ${m.cor}">${ICONES[m.icone]} ${m.nome}</span>`:''}).join('');
+
+  // Build volunteers per ministry section
+  const volsPorMin=ev.ministerios.map(mid=>{
+    const m=ministerios.find(m=>m.id===mid);
+    if(!m)return '';
+    const inscritos=ev.inscritos.filter(i=>i.minId===mid);
+    const volNames=inscritos.map(i=>{const v=voluntarios.find(v=>v.id===i.volId);return v?`<div style="display:flex;align-items:center;gap:6px;padding:3px 0"><div class="avatar ${v.nivel}" style="width:22px;height:22px;font-size:9px;flex-shrink:0">${ini(v.nome)}</div><span style="font-size:12px">${v.nome}</span></div>`:''}).join('');
+    return `<div style="margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+        <span style="font-size:13px">${ICONES[m.icone]||'⭐'}</span>
+        <span style="font-size:12px;font-weight:500;color:var(--${m.cor}-text)">${m.nome}</span>
+        <span style="font-size:11px;color:var(--text-tertiary)">(${inscritos.length})</span>
+      </div>
+      ${volNames||'<p style="font-size:11px;color:var(--text-tertiary);padding-left:4px">Nenhum inscrito ainda</p>'}
+    </div>`;
+  }).join('');
+
+  const minInscritoObj=minInscrito?ministerios.find(m=>m.id===minInscrito):null;
+
+  document.getElementById('cal-event-detail').innerHTML=`
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
+      <div><h3 style="font-size:15px;font-weight:500;margin-bottom:3px">${ev.nome}</h3><p style="font-size:13px;color:var(--text-secondary)">${ds} às ${ev.hora}</p></div>
+      ${inscrito?`<span class="badge voluntario" style="white-space:nowrap">✓ ${minInscritoObj?minInscritoObj.nome:'Inscrito'}</span>`:''}
+    </div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:10px">${ev.desc}</p>
+    <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px">${minsTag}</div>
+    <div style="background:var(--bg-secondary);border-radius:var(--radius);padding:12px">${volsPorMin}</div>`;
+}
+
+function openInscricao(){
+  if(!selectedEvento)return;
+  const ev=selectedEvento;
+  const inscrito=isInscrito(ev);
+  const minInscrito=getMinInscrito(ev);
+
+  document.getElementById('inscricao-titulo').textContent=ev.nome;
+  const d=new Date(ev.data+'T12:00:00');
+  document.getElementById('inscricao-info').textContent=d.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'})+' às '+ev.hora;
+
+  // My status
+  const statusEl=document.getElementById('inscricao-meu-status');
+  if(inscrito){
+    const m=ministerios.find(m=>m.id===minInscrito);
+    statusEl.style.display='block';
+    statusEl.innerHTML=`<div style="background:var(--success-bg);color:var(--success-text);border-radius:var(--radius);padding:10px 14px;font-size:13px"><i class="ti ti-check" style="margin-right:6px"></i>Você está inscrito para servir no ministério <strong>${m?m.nome:'—'}</strong></div>`;
+  } else {
+    statusEl.style.display='none';
+  }
+
+  // Ministry select - only ministries user belongs to AND event has
+  const formEl=document.getElementById('inscricao-form-min');
+  const sel=document.getElementById('inscricao-min-select');
+  const minsDisponiveis=ev.ministerios.filter(mid=>currentUser.ministerios.includes(mid));
+  if(!inscrito && minsDisponiveis.length>0){
+    formEl.style.display='block';
+    sel.innerHTML=minsDisponiveis.map(mid=>{const m=ministerios.find(m=>m.id===mid);return m?`<option value="${mid}">${ICONES[m.icone]} ${m.nome}</option>`:''}).join('');
+  } else {
+    formEl.style.display='none';
+  }
+
+  // Volunteers per ministry list
+  const lista=document.getElementById('inscricao-lista');
+  const volsPorMin=ev.ministerios.map(mid=>{
+    const m=ministerios.find(m=>m.id===mid);
+    if(!m)return '';
+    const inscritos=ev.inscritos.filter(i=>i.minId===mid);
+    const rows=inscritos.map(i=>{
+      const v=voluntarios.find(v=>v.id===i.volId);
+      return v?`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--border)">
+        <div class="avatar ${v.nivel}" style="width:28px;height:28px;font-size:10px;flex-shrink:0">${ini(v.nome)}</div>
+        <span style="font-size:13px">${v.nome}</span>
+        ${v.id===currentUser.id?'<span class="badge voluntario" style="margin-left:auto;font-size:10px">Você</span>':''}
+      </div>`:''}).join('');
+    return `<div style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:6px;padding:6px 0;background:var(--bg-secondary);border-radius:var(--radius);padding:8px 10px;margin-bottom:4px">
+        <span>${ICONES[m.icone]||'⭐'}</span>
+        <span style="font-size:13px;font-weight:500;color:var(--${m.cor}-text)">${m.nome}</span>
+        <span style="font-size:11px;color:var(--text-tertiary);margin-left:auto">${inscritos.length} inscrito(s)</span>
+      </div>
+      ${rows||'<p style="font-size:12px;color:var(--text-tertiary);padding:4px 0 4px 4px">Nenhum voluntário ainda</p>'}
+    </div>`;
+  }).join('');
+  lista.innerHTML=volsPorMin||'<p style="font-size:13px;color:var(--text-secondary)">Nenhum ministério neste evento.</p>';
+
+  // Button
+  const btn=document.getElementById('btn-toggle-inscricao');
+  if(inscrito){
+    btn.style.display='inline-flex';
+    btn.textContent='Cancelar inscrição';
+    btn.className='btn danger';
+  } else if(minsDisponiveis.length>0){
+    btn.style.display='inline-flex';
+    btn.textContent='Confirmar inscrição';
+    btn.className='btn primary';
+  } else {
+    btn.style.display='none';
+  }
+
+  openModal('modal-inscricao');
+}
+
+function toggleInscricao(){
+  if(!selectedEvento)return;
+  const ev=selectedEvento;
+  if(isInscrito(ev)){
+    // Remove inscription
+    ev.inscritos=ev.inscritos.filter(i=>i.volId!==currentUser.id);
+  } else {
+    // Add inscription with chosen ministry
+    const minId=parseInt(document.getElementById('inscricao-min-select').value);
+    if(!minId){alert('Selecione um ministério.');return;}
+    ev.inscritos.push({volId:currentUser.id,minId});
+  }
+  closeModal('modal-inscricao');
+  showEventDetail(selectedEvento.id);
+  renderCalendario();
+}
+
+function changeMonth(d){
+  calMonth+=d;
+  if(calMonth<0){calMonth=11;calYear--;}
+  if(calMonth>11){calMonth=0;calYear++;}
+  selectedEvento=null;
+  renderCalendario();
+  document.getElementById('cal-event-detail').innerHTML='<p style="color:var(--text-secondary);font-size:13px">Clique em um evento no calendário para ver os detalhes.</p>';
+  document.getElementById('btn-inscricao').style.display='none';
+}
+
+// ===== MINISTÉRIOS =====
+function renderMinisterios(){
+  const grid=document.getElementById('ministerios-grid');
+  if(!ministerios.length){grid.innerHTML='<div class="empty" style="grid-column:1/-1"><i class="ti ti-users-group"></i>Nenhum ministério criado</div>';return;}
+  const isAdmin=currentUser.nivel==='admin';
+  const cards=ministerios.map(m=>{
+    const locked=!canAccess(m.id);
+    const vols=voluntarios.filter(v=>v.ministerios.includes(m.id));
+    const lider=voluntarios.find(v=>v.id===m.liderId);
+    const div=document.createElement('div');
+    div.className='ministry-card'+(locked?' locked':'');
+    div.style.cssText='display:flex;flex-direction:column';
+
+    let html='';
+    html+=`<div class="icon" style="background:var(--${m.cor}-bg)">${locked?'<i class="ti ti-lock" style="font-size:18px;color:var(--'+m.cor+'-text)"></i>':ICONES[m.icone]||'⭐'}</div>`;
+    html+=`<h3>${m.nome}</h3>`;
+    html+=`<p style="flex:1;margin-bottom:8px">${m.desc}</p>`;
+    if(lider) html+=`<p style="font-size:11px;color:var(--text-secondary);margin-bottom:8px"><i class="ti ti-crown" style="font-size:11px;margin-right:3px"></i>Líder: ${lider.nome}</p>`;
+    html+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">`;
+    html+=`<span style="font-size:12px;color:var(--text-secondary)">${vols.length} voluntário(s)</span>`;
+    html+=locked?'<span class="tag" style="background:var(--bg-secondary);color:var(--text-tertiary)">Sem acesso</span>':`<span class="tag ${m.cor}">Aberto</span>`;
+    html+=`</div>`;
+    if(!locked){
+      html+=`<button class="btn sm" style="width:100%;justify-content:center;margin-bottom:6px" data-open="${m.id}"><i class="ti ti-eye"></i>Ver ministério</button>`;
+    }
+    if(isAdmin){
+      html+=`<div style="display:flex;gap:4px">`;
+      html+=`<button class="btn sm" style="flex:1;justify-content:center" data-edit="${m.id}"><i class="ti ti-edit"></i>Editar</button>`;
+      html+=`<button class="btn sm danger" style="flex:1;justify-content:center" data-delete="${m.id}"><i class="ti ti-trash"></i>Excluir</button>`;
+      html+=`</div>`;
+    }
+    div.innerHTML=html;
+    return div;
+  });
+  grid.innerHTML='';
+  cards.forEach(card=>{
+    grid.appendChild(card);
+    const openBtn=card.querySelector('[data-open]');
+    if(openBtn) openBtn.addEventListener('click',()=>openDetalhe(parseInt(openBtn.dataset.open)));
+    const editBtn=card.querySelector('[data-edit]');
+    if(editBtn) editBtn.addEventListener('click',()=>editMinisterio(parseInt(editBtn.dataset.edit)));
+    const delBtn=card.querySelector('[data-delete]');
+    if(delBtn) delBtn.addEventListener('click',()=>deleteMinisterio(parseInt(delBtn.dataset.delete)));
+  });
+}
+
+function populateLiderSelect(selectedId){
+  const sel=document.getElementById('min-lider');
+  sel.innerHTML='<option value="">— Sem líder definido —</option>'+
+    voluntarios.map(v=>`<option value="${v.id}" ${v.id===selectedId?'selected':''}>${v.nome} (${v.nivel==='admin'?'Admin':v.nivel==='lider'?'Líder':'Vol.'})</option>`).join('');
+}
+
+function openModalMin(){
+  document.getElementById('modal-min-title').textContent='Criar ministério';
+  document.getElementById('min-edit-id').value='';
+  document.getElementById('min-nome').value='';
+  document.getElementById('min-desc').value='';
+  document.getElementById('min-icone').value='ti-music';
+  document.getElementById('min-cor').value='purple';
+  populateLiderSelect(null);
+  openModal('modal-min');
+}
+
+function editMinisterio(id){
+  const m=ministerios.find(m=>m.id===id);
+  if(!m)return;
+  document.getElementById('modal-min-title').textContent='Editar ministério';
+  document.getElementById('min-edit-id').value=id;
+  document.getElementById('min-nome').value=m.nome;
+  document.getElementById('min-desc').value=m.desc;
+  document.getElementById('min-icone').value=m.icone;
+  document.getElementById('min-cor').value=m.cor;
+  populateLiderSelect(m.liderId||null);
+  openModal('modal-min', true);
+}
+
+function deleteMinisterio(id){
+  const m=ministerios.find(m=>m.id===id);
+  if(!m)return;
+  const hasVols=voluntarios.some(v=>v.ministerios.includes(id));
+  const hasEvs=eventos.some(e=>e.ministerios.includes(id));
+  let msg=`Excluir o ministério "${m.nome}"?`;
+  if(hasVols||hasEvs) msg+='\n\nAtenção: este ministério está vinculado a '+(hasVols?'voluntários ':'')+(hasVols&&hasEvs?'e ':'')+(hasEvs?'eventos':'')+'.\nAs vinculações serão removidas.';
+  if(!confirm(msg))return;
+  ministerios=ministerios.filter(x=>x.id!==id);
+  voluntarios.forEach(v=>{v.ministerios=v.ministerios.filter(x=>x!==id);});
+  eventos.forEach(e=>{e.ministerios=e.ministerios.filter(x=>x!==id);});
+  renderMinisterios();renderDashboard();
+}
+
+function saveMinisterio(){
+  const nome=document.getElementById('min-nome').value.trim();
+  if(!nome){alert('Nome é obrigatório.');return;}
+  const editId=document.getElementById('min-edit-id').value;
+  const liderVal=document.getElementById('min-lider').value;
+  const dados={nome,desc:document.getElementById('min-desc').value.trim(),icone:document.getElementById('min-icone').value,cor:document.getElementById('min-cor').value,liderId:liderVal?parseInt(liderVal):null};
+  if(editId){
+    const m=ministerios.find(m=>m.id===parseInt(editId));
+    if(m)Object.assign(m,dados);
+  } else {
+    ministerios.push({id:minId++,...dados});
+  }
+  closeModal('modal-min');
+  renderMinisterios();renderDashboard();
+}
+
+function openDetalhe(id){navigate('ministerio-detalhe',id);}
+
+let currentDetalheId=null;
+
+function renderDetalhe(id){
+  currentDetalheId=id;
+  const m=ministerios.find(m=>m.id===id);
+  if(!m)return;
+  const isAdmin=currentUser.nivel==='admin';
+  document.getElementById('detalhe-nome').textContent=m.nome;
+
+  // Admin buttons (edit/delete)
+  const isLiderOuAdmin=isAdmin||currentUser.nivel==='lider';
+  document.getElementById('detalhe-admin-btns').innerHTML=isAdmin?`
+    <div style="display:flex;gap:6px">
+      <button class="btn sm" onclick="editMinisterio(${id})"><i class="ti ti-edit"></i>Editar ministério</button>
+      <button class="btn sm danger" onclick="deleteMinisterioAndBack(${id})"><i class="ti ti-trash"></i>Excluir</button>
+    </div>`:'';
+
+  // Leader bar
+  const lider=voluntarios.find(v=>v.id===m.liderId);
+  const liderBar=document.getElementById('detalhe-lider-bar');
+  if(lider){
+    liderBar.style.display='block';
+    document.getElementById('detalhe-lider-nome').textContent=lider.nome;
+  } else {
+    liderBar.style.display='none';
+  }
+
+  // Add volunteer button (admin only)
+  document.getElementById('detalhe-add-vol-btn').innerHTML=isLiderOuAdmin?
+    `<button class="btn sm primary" onclick="openAddVolMin(${id})"><i class="ti ti-user-plus"></i>Adicionar</button>`:'';
+
+  // Volunteers list
+  const vols=voluntarios.filter(v=>v.ministerios.includes(id));
+  const isLider=lider&&lider.id===currentUser.id;
+  document.getElementById('detalhe-vols').innerHTML=vols.length?vols.map(v=>{
+    const isThisLider=m.liderId===v.id;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--border)">
+      <div class="avatar ${v.nivel}" style="width:36px;height:36px;font-size:12px;flex-shrink:0">${ini(v.nome)}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:6px">
+          <p style="font-size:13px;font-weight:500">${v.nome}</p>
+          ${isThisLider?'<span style="font-size:10px;background:var(--amber-bg);color:var(--amber-text);padding:1px 6px;border-radius:4px;font-weight:500"><i class="ti ti-crown" style="font-size:10px"></i> Líder</span>':''}
+        </div>
+        <p style="font-size:11px;color:var(--text-secondary)">${v.email} · ${v.tel||'sem telefone'}</p>
+      </div>
+      ${isLiderOuAdmin?`<button class="btn sm danger" onclick="removeVolFromMin(${v.id},${id})" title="Remover do ministério"><i class="ti ti-x"></i></button>`:''}
+    </div>`;
+  }).join(''):'<p style="font-size:13px;color:var(--text-secondary);padding:8px 0">Nenhum voluntário neste ministério.</p>';
+
+  // Events list
+  const evs=eventos.filter(e=>e.ministerios.includes(id));
+  document.getElementById('detalhe-eventos').innerHTML=evs.length?evs.map(e=>{
+    const d=new Date(e.data+'T12:00:00');
+    const ds=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
+    return `<div style="display:flex;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border);align-items:center">
+      <span style="background:var(--purple-bg);color:var(--purple-text);border-radius:4px;padding:2px 8px;font-size:11px;white-space:nowrap;flex-shrink:0">${ds}</span>
+      <div><p style="font-size:13px;font-weight:500">${e.nome}</p><p style="font-size:11px;color:var(--text-secondary)">${e.hora} · ${e.inscritos.length} inscritos</p></div>
+    </div>`;
+  }).join(''):'<p style="font-size:13px;color:var(--text-secondary)">Nenhum evento.</p>';
+}
+
+function deleteMinisterioAndBack(id){
+  deleteMinisterio(id);
+  if(!ministerios.find(m=>m.id===id)) navigate('ministerios');
+}
+
+function removeVolFromMin(volId,minId){
+  if(!confirm('Remover este voluntário do ministério?'))return;
+  const v=voluntarios.find(v=>v.id===volId);
+  if(v) v.ministerios=v.ministerios.filter(x=>x!==minId);
+  renderDetalhe(minId);
+}
+
+function openAddVolMin(minId){
+  const jaEsta=voluntarios.filter(v=>v.ministerios.includes(minId)).map(v=>v.id);
+  const disponiveis=voluntarios.filter(v=>!jaEsta.includes(v.id));
+  const lista=document.getElementById('add-vol-min-lista');
+  if(!disponiveis.length){
+    lista.innerHTML='<p style="font-size:13px;color:var(--text-secondary)">Todos os voluntários já estão neste ministério.</p>';
+  } else {
+    lista.innerHTML=disponiveis.map(v=>`
+      <label style="display:flex;align-items:center;gap:10px;padding:10px;border-radius:var(--radius);cursor:pointer;border:0.5px solid var(--border);margin-bottom:6px">
+        <input type="checkbox" value="${v.id}" style="width:16px;height:16px;accent-color:#7F77DD">
+        <div class="avatar ${v.nivel}" style="width:30px;height:30px;font-size:10px;flex-shrink:0">${ini(v.nome)}</div>
+        <div><p style="font-size:13px;font-weight:500">${v.nome}</p><p style="font-size:11px;color:var(--text-secondary)">${v.email}</p></div>
+      </label>`).join('');
+  }
+  document.getElementById('add-vol-min-lista').dataset.minId=minId;
+  document.getElementById('modal-add-vol-min').classList.add('open');
+}
+
+function saveAddVolMin(){
+  const minId=parseInt(document.getElementById('add-vol-min-lista').dataset.minId);
+  const checked=[...document.querySelectorAll('#add-vol-min-lista input[type=checkbox]:checked')].map(c=>parseInt(c.value));
+  checked.forEach(vid=>{
+    const v=voluntarios.find(v=>v.id===vid);
+    if(v&&!v.ministerios.includes(minId)) v.ministerios.push(minId);
+  });
+  closeModal('modal-add-vol-min');
+  renderDetalhe(minId);
+}
+
+// ===== VOLUNTÁRIOS =====
+function renderVoluntarios(){
+  document.getElementById('vol-tbody').innerHTML=voluntarios.map(v=>{
+    const mins=v.ministerios.map(id=>{const m=ministerios.find(m=>m.id===id);return m?`<span class="tag ${m.cor}">${m.nome}</span>`:''}).join('');
+    const canManageVol=currentUser.nivel==='admin'||currentUser.nivel==='lider';
+    const adminBtns=canManageVol?`
+      <div style="display:flex;gap:4px">
+        <button class="btn sm" onclick="editVoluntario(${v.id})"><i class="ti ti-edit"></i></button>
+        ${v.id!==currentUser.id?`<button class="btn sm danger" onclick="deleteVol(${v.id})"><i class="ti ti-trash"></i></button>`:''}
+      </div>`:'';
+    return `<tr>
+      <td><div style="display:flex;align-items:center;gap:8px"><div class="avatar ${v.nivel}" style="width:28px;height:28px;font-size:10px">${ini(v.nome)}</div>${v.nome}</div></td>
+      <td style="color:var(--text-secondary)">${v.email}</td>
+      <td style="color:var(--text-secondary)">${v.tel||'—'}</td>
+      <td>${mins||'—'}</td>
+      <td><span class="badge ${v.nivel}">${v.nivel==='admin'?'Admin':v.nivel==='lider'?'Líder':'Voluntário'}</span></td>
+      <td>${adminBtns}</td>
+    </tr>`;
+  }).join('');
+}
+
+function editVoluntario(id){
+  const v=voluntarios.find(v=>v.id===id);
+  if(!v)return;
+  document.getElementById('modal-vol-title').textContent='Editar voluntário';
+  document.getElementById('vol-edit-id').value=id;
+  document.getElementById('vol-nome').value=v.nome;
+  document.getElementById('vol-email').value=v.email;
+  document.getElementById('vol-tel').value=v.tel||'';
+  document.getElementById('vol-nivel').value=v.nivel;
+  populateChips('vol-ministerios-chips');
+  document.querySelectorAll('#vol-ministerios-chips .chip').forEach(c=>{
+    if(v.ministerios.includes(parseInt(c.dataset.id)))c.classList.add('selected');
+  });
+  openModal('modal-vol', true);
+}
+
+function saveVoluntario(){
+  const nome=document.getElementById('vol-nome').value.trim();
+  const email=document.getElementById('vol-email').value.trim();
+  if(!nome||!email){alert('Nome e email são obrigatórios.');return;}
+  const editId=document.getElementById('vol-edit-id').value;
+  const duplicate=voluntarios.find(v=>v.email.toLowerCase()===email.toLowerCase()&&v.id!==parseInt(editId));
+  if(duplicate){alert('Já existe um voluntário com este email.');return;}
+  const mins=getChips('vol-ministerios-chips');
+  const nivel=document.getElementById('vol-nivel').value;
+  if(editId){
+    const v=voluntarios.find(v=>v.id===parseInt(editId));
+    if(v){v.nome=nome;v.email=email;v.tel=document.getElementById('vol-tel').value.trim();v.nivel=nivel;v.ministerios=mins;}
+  } else {
+    voluntarios.push({id:volId++,nome,email,tel:document.getElementById('vol-tel').value.trim(),nivel,ministerios:mins,senha:'1234',primeiroAcesso:true});
+  }
+  closeModal('modal-vol');
+  ['vol-nome','vol-email','vol-tel'].forEach(id=>document.getElementById(id).value='');
+  renderVoluntarios();renderDashboard();
+}
+
+function deleteVol(id){
+  if(id===currentUser.id){alert('Você não pode remover seu próprio cadastro.');return;}
+  if(!confirm('Remover voluntário?'))return;
+  voluntarios=voluntarios.filter(v=>v.id!==id);
+  renderVoluntarios();renderDashboard();
+}
+
+// ===== EVENTOS =====
+function renderEventos(){
+  document.getElementById('ev-tbody').innerHTML=eventos.map(e=>{
+    const d=new Date(e.data+'T12:00:00');
+    const ds=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
+    const mins=e.ministerios.map(id=>{const m=ministerios.find(m=>m.id===id);return m?`<span class="tag ${m.cor}">${m.nome}</span>`:''}).join('');
+    const adminBtns=currentUser.nivel==='admin'?`
+      <div style="display:flex;gap:4px">
+        <button class="btn sm" onclick="editEvento(${e.id})"><i class="ti ti-edit"></i></button>
+        <button class="btn sm danger" onclick="deleteEv(${e.id})"><i class="ti ti-trash"></i></button>
+      </div>`:'';
+    return `<tr>
+      <td style="font-weight:500">${e.nome}</td>
+      <td style="color:var(--text-secondary);white-space:nowrap">${ds} ${e.hora}</td>
+      <td>${mins}</td>
+      <td>${e.inscritos.length}</td>
+      <td>${adminBtns}</td>
+    </tr>`;
+  }).join('');
+}
+
+function editEvento(id){
+  const e=eventos.find(e=>e.id===id);
+  if(!e)return;
+  document.getElementById('modal-ev-title').textContent='Editar evento';
+  document.getElementById('ev-edit-id').value=id;
+  document.getElementById('ev-nome').value=e.nome;
+  document.getElementById('ev-data').value=e.data;
+  document.getElementById('ev-hora').value=e.hora;
+  document.getElementById('ev-desc').value=e.desc||'';
+  populateChips('ev-ministerios-chips');
+  document.querySelectorAll('#ev-ministerios-chips .chip').forEach(c=>{
+    if(e.ministerios.includes(parseInt(c.dataset.id)))c.classList.add('selected');
+  });
+  openModal('modal-ev', true);
+}
+
+function saveEvento(){
+  const nome=document.getElementById('ev-nome').value.trim();
+  const data=document.getElementById('ev-data').value;
+  if(!nome||!data){alert('Nome e data são obrigatórios.');return;}
+  const editId=document.getElementById('ev-edit-id').value;
+  const mins=getChips('ev-ministerios-chips');
+  if(editId){
+    const e=eventos.find(e=>e.id===parseInt(editId));
+    if(e){e.nome=nome;e.data=data;e.hora=document.getElementById('ev-hora').value;e.desc=document.getElementById('ev-desc').value.trim();e.ministerios=mins;}
+  } else {
+    eventos.push({id:evId++,nome,data,hora:document.getElementById('ev-hora').value,desc:document.getElementById('ev-desc').value.trim(),ministerios:mins,inscritos:[]});
+  }
+  closeModal('modal-ev');
+  document.getElementById('ev-nome').value='';document.getElementById('ev-desc').value='';
+  renderEventos();renderDashboard();renderCalendario();
+}
+
+function deleteEv(id){if(!confirm('Remover evento?'))return;eventos=eventos.filter(e=>e.id!==id);renderEventos();renderDashboard();}
+
+// ===== PERFIL =====
+function renderPerfil(){
+  const av=document.getElementById('perfil-avatar');
+  av.textContent=ini(currentUser.nome);
+  av.className=`avatar ${currentUser.nivel}`;
+  av.style.cssText='width:52px;height:52px;font-size:17px';
+  document.getElementById('perfil-nome').textContent=currentUser.nome;
+  const badge=document.getElementById('perfil-badge');
+  badge.className='badge '+currentUser.nivel;
+  badge.textContent=currentUser.nivel==='admin'?'Administrador':currentUser.nivel==='lider'?'Líder de ministério':'Voluntário';
+  document.getElementById('edit-nome').value=currentUser.nome;
+  document.getElementById('edit-email').value=currentUser.email;
+  document.getElementById('edit-tel').value=currentUser.tel||'';
+  document.getElementById('senha-atual').value='';
+  document.getElementById('senha-nova').value='';
+  document.getElementById('senha-conf').value='';
+  document.getElementById('senha-msg').style.display='none';
+  document.getElementById('perfil-ministerios').innerHTML=ministerios.length?ministerios.map(m=>{
+    const checked=currentUser.ministerios.includes(m.id);
+    return `<label style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:0.5px solid var(--border);cursor:pointer">
+      <input type="checkbox" value="${m.id}" ${checked?'checked':''} style="width:16px;height:16px;accent-color:#7F77DD;flex-shrink:0">
+      <div style="width:32px;height:32px;border-radius:var(--radius);background:var(--${m.cor}-bg);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${ICONES[m.icone]||'⭐'}</div>
+      <div style="flex:1;min-width:0">
+        <p style="font-size:13px;font-weight:500">${m.nome}</p>
+        <p style="font-size:11px;color:var(--text-secondary)">${m.desc}</p>
+      </div>
+      ${checked?`<span class="tag ${m.cor}" style="flex-shrink:0">Participando</span>`:''}
+    </label>`;
+  }).join(''):'<p style="font-size:13px;color:var(--text-secondary)">Nenhum ministério cadastrado.</p>';
+}
+
+function savePerfil(){
+  const nome=document.getElementById('edit-nome').value.trim();
+  const email=document.getElementById('edit-email').value.trim();
+  if(!nome||!email){alert('Nome e email são obrigatórios.');return;}
+  const duplicate=voluntarios.find(v=>v.email.toLowerCase()===email.toLowerCase()&&v.id!==currentUser.id);
+  if(duplicate){alert('Este email já está em uso por outro voluntário.');return;}
+  currentUser.nome=nome;
+  currentUser.email=email;
+  currentUser.tel=document.getElementById('edit-tel').value.trim();
+  updateSidebar();
+  renderPerfil();
+  alert('Perfil atualizado com sucesso!');
+}
+
+function saveMinisteriosPerfil(){
+  const checked=[...document.querySelectorAll('#perfil-ministerios input[type=checkbox]:checked')].map(c=>parseInt(c.value));
+  currentUser.ministerios=checked;
+  renderPerfil();
+  // Show confirmation inline
+  const btn=document.querySelector('[onclick="saveMinisteriosPerfil()"]');
+  const original=btn.innerHTML;
+  btn.innerHTML='<i class="ti ti-check"></i>Salvo!';
+  btn.disabled=true;
+  setTimeout(()=>{btn.innerHTML=original;btn.disabled=false;},2000);
+}
+
+function alterarSenha(){
+  const atual=document.getElementById('senha-atual').value;
+  const nova=document.getElementById('senha-nova').value;
+  const conf=document.getElementById('senha-conf').value;
+  const msg=document.getElementById('senha-msg');
+  msg.style.display='block';
+  if(atual!==currentUser.senha){msg.style.color='var(--danger-text)';msg.textContent='Senha atual incorreta.';return;}
+  if(nova.length<4){msg.style.color='var(--danger-text)';msg.textContent='A nova senha deve ter pelo menos 4 caracteres.';return;}
+  if(nova!==conf){msg.style.color='var(--danger-text)';msg.textContent='As senhas não coincidem.';return;}
+  currentUser.senha=nova;
+  document.getElementById('senha-atual').value='';
+  document.getElementById('senha-nova').value='';
+  document.getElementById('senha-conf').value='';
+  msg.style.color='var(--success-text)';
+  msg.textContent='Senha alterada com sucesso!';
+  setTimeout(()=>{msg.style.display='none';},3000);
+}
+
+// ===== MODAIS =====
+function openModal(id,modoEdicao){
+  if(modoEdicao){
+    document.getElementById(id).classList.add('open');
+    return;
+  }
+  if(id==='modal-vol'){
+    document.getElementById('modal-vol-title').textContent='Cadastrar voluntário';
+    document.getElementById('vol-edit-id').value='';
+    ['vol-nome','vol-email','vol-tel'].forEach(f=>document.getElementById(f).value='');
+    document.getElementById('vol-nivel').value='voluntario';
+    populateChips('vol-ministerios-chips');
+  }
+  if(id==='modal-ev'){
+    document.getElementById('modal-ev-title').textContent='Criar evento';
+    document.getElementById('ev-edit-id').value='';
+    document.getElementById('ev-data').value=new Date().toISOString().split('T')[0];
+    populateChips('ev-ministerios-chips');
+  }
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+function populateChips(cId){
+  document.getElementById(cId).innerHTML=ministerios.map(m=>`<div class="chip" data-id="${m.id}" onclick="this.classList.toggle('selected')">${ICONES[m.icone]} ${m.nome}</div>`).join('');
+}
+function getChips(cId){return[...document.querySelectorAll(`#${cId} .chip.selected`)].map(c=>parseInt(c.dataset.id));}
+
+document.querySelectorAll('.modal-backdrop').forEach(m=>{
+  m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');});
+});
+
+// Enter no login
+document.getElementById('login-screen').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+</script>
+
+<!-- MODAL: ADICIONAR VOLUNTÁRIO AO MINISTÉRIO -->
+<div class="modal-backdrop" id="modal-add-vol-min">
+  <div class="modal">
+    <h2>Adicionar voluntário ao ministério</h2>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px">Selecione voluntários para adicionar:</p>
+    <div id="add-vol-min-lista" style="max-height:300px;overflow-y:auto"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-add-vol-min')">Cancelar</button>
+      <button class="btn primary" onclick="saveAddVolMin()">Adicionar selecionados</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
