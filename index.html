@@ -351,7 +351,7 @@ hr{border:none;border-top:0.5px solid var(--border);margin:14px 0}
       <div class="section" id="section-eventos">
         <div class="card">
           <div class="table-wrap">
-            <table><thead><tr><th>Evento</th><th>Data/Hora</th><th>Live</th><th>Ministérios</th><th>Inscritos</th><th></th></tr></thead>
+            <table><thead><tr><th>Evento</th><th>Data</th><th>Recursos</th><th>Local</th><th>Ministérios</th><th>Inscritos</th><th></th></tr></thead>
             <tbody id="ev-tbody"></tbody></table>
           </div>
         </div>
@@ -447,20 +447,40 @@ hr{border:none;border-top:0.5px solid var(--border);margin:14px 0}
   <div class="modal" style="max-width:540px">
     <h2 id="modal-ev-title">Criar evento</h2>
     <input type="hidden" id="ev-edit-id" value="">
+
+    <div class="form-group"><label>Nome do evento *</label><input id="ev-nome" type="text" placeholder="Nome do evento"></div>
+
+    <p style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:8px;text-transform:uppercase;letter-spacing:.3px">Datas e horários</p>
     <div class="grid-2" style="gap:12px">
-      <div class="form-group" style="margin-bottom:0"><label>Nome do evento *</label><input id="ev-nome" type="text" placeholder="Nome do evento"></div>
-      <div class="form-group" style="margin-bottom:0"><label>Data *</label><input id="ev-data" type="date"></div>
+      <div class="form-group" style="margin-bottom:0"><label>Data de início *</label><input id="ev-data-inicio" type="date" onchange="atualizarDiasEvento()"></div>
+      <div class="form-group" style="margin-bottom:0"><label>Data de término</label><input id="ev-data-fim" type="date" onchange="atualizarDiasEvento()"></div>
     </div>
-    <div class="grid-2" style="gap:12px;margin-top:14px">
-      <div class="form-group" style="margin-bottom:0"><label>Horário</label><input id="ev-hora" type="time" value="09:00"></div>
-      <div class="form-group" style="margin-bottom:0"><label>Transmissão ao vivo</label>
-        <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:0.5px solid var(--border-md);border-radius:var(--radius);cursor:pointer">
-          <input type="checkbox" id="ev-live" style="width:16px;height:16px;accent-color:#7F77DD">
-          <span style="font-size:13px">Este evento terá live</span>
-        </label>
-      </div>
+    <div id="ev-dias-container" style="margin-top:10px"></div>
+
+    <hr style="margin:16px 0">
+    <p style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:10px;text-transform:uppercase;letter-spacing:.3px">Estrutura e local</p>
+    <div class="form-group">
+      <label>Local *</label>
+      <select id="ev-local">
+        <option value="">— Selecione o local —</option>
+        <option value="salao_principal">Salão Principal</option>
+        <option value="multiuso">Multiuso</option>
+        <option value="quadra">Quadra</option>
+      </select>
     </div>
-    <div class="form-group" style="margin-top:14px"><label>Descrição</label><textarea id="ev-desc" placeholder="Descreva o evento" style="min-height:56px"></textarea></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+      <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:0.5px solid var(--border-md);border-radius:var(--radius);cursor:pointer;flex:1;min-width:140px">
+        <input type="checkbox" id="ev-live" style="width:16px;height:16px;accent-color:#7F77DD">
+        <div><i class="ti ti-radio" style="font-size:14px;color:var(--coral-text);margin-right:4px"></i><span style="font-size:13px">Transmissão ao vivo</span></div>
+      </label>
+      <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:0.5px solid var(--border-md);border-radius:var(--radius);cursor:pointer;flex:1;min-width:140px">
+        <input type="checkbox" id="ev-som" style="width:16px;height:16px;accent-color:#7F77DD">
+        <div><i class="ti ti-volume" style="font-size:14px;color:var(--blue-text);margin-right:4px"></i><span style="font-size:13px">Uso de som</span></div>
+      </label>
+    </div>
+
+    <hr style="margin:0 0 16px 0">
+    <div class="form-group"><label>Descrição</label><textarea id="ev-desc" placeholder="Descreva o evento" style="min-height:56px"></textarea></div>
     <div class="form-group"><label>Formação da banda *</label><textarea id="ev-banda" placeholder="ex: Voz: Maria, Violão: João, Bateria: Pedro..." style="min-height:64px"></textarea></div>
     <div class="form-group"><label>Ministérios envolvidos</label><div class="chips" id="ev-ministerios-chips"></div></div>
     <div class="form-group">
@@ -931,9 +951,43 @@ function showEventDetail(evId) {
   const inscrito = isInscrito(ev);
   const minInscritoObj = inscrito ? ministerios.find(m=>m.id===getMinInscrito(ev)) : null;
   const minsTag = (ev.ministerios||[]).map(id=>{const m=ministerios.find(m=>m.id===id);return m?`<span class="tag ${m.cor}">${ICONES[m.icone]} ${m.nome}</span>`:''}).join('');
+  // Build date/time display
+  const dataIni = ev.data_inicio||ev.data;
+  const dataFim = ev.data_fim;
+  let dataDisplay = '';
+  if (dataFim && dataFim !== dataIni) {
+    const di = new Date(dataIni+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
+    const df = new Date(dataFim+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
+    dataDisplay = `${di} a ${df}`;
+  } else {
+    dataDisplay = ds;
+  }
+  // Build horários multi-day
+  let horarioDisplay = '';
+  if (ev.dias_horarios && Object.keys(ev.dias_horarios).length > 1) {
+    horarioDisplay = Object.entries(ev.dias_horarios).map(([dt,h]) => {
+      const d2 = new Date(dt+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'});
+      return `<div style="font-size:12px;color:var(--text-secondary)">${d2}: ${h.inicio||''}${h.fim?' até '+h.fim:''}</div>`;
+    }).join('');
+    horarioDisplay = `<div style="margin-top:4px">${horarioDisplay}</div>`;
+  } else if (ev.dias_horarios && ev.data_inicio) {
+    const h = ev.dias_horarios[ev.data_inicio]||{};
+    horarioDisplay = `<p style="font-size:13px;color:var(--text-secondary)">${h.inicio||ev.hora||''}${h.fim?' até '+h.fim:''}</p>`;
+  } else {
+    horarioDisplay = `<p style="font-size:13px;color:var(--text-secondary)">${ev.hora||''}</p>`;
+  }
+  const badges = [
+    ev.live?'<span style="font-size:10px;background:var(--coral-bg);color:var(--coral-text);padding:2px 7px;border-radius:4px"><i class="ti ti-radio" style="font-size:10px"></i> LIVE</span>':'',
+    ev.som?'<span style="font-size:10px;background:var(--blue-bg);color:var(--blue-text);padding:2px 7px;border-radius:4px"><i class="ti ti-volume" style="font-size:10px"></i> SOM</span>':'',
+    ev.local?`<span style="font-size:10px;background:var(--bg-secondary);color:var(--text-secondary);padding:2px 7px;border-radius:4px"><i class="ti ti-map-pin" style="font-size:10px"></i> ${LOCAIS[ev.local]||ev.local}</span>`:'',
+  ].filter(Boolean).join(' ');
   document.getElementById('cal-event-detail').innerHTML = `
     <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
-      <div><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><h3 style="font-size:15px;font-weight:500">${ev.nome}</h3>${ev.live?'<span style="font-size:10px;background:var(--coral-bg);color:var(--coral-text);padding:2px 7px;border-radius:4px">LIVE</span>':''}</div><p style="font-size:13px;color:var(--text-secondary)">${ds} às ${ev.hora||''}</p></div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap"><h3 style="font-size:15px;font-weight:500">${ev.nome}</h3>${badges}</div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:2px">${dataDisplay}</p>
+        ${horarioDisplay}
+      </div>
       ${inscrito?`<span class="badge voluntario" style="white-space:nowrap">✓ ${minInscritoObj?minInscritoObj.nome:'Inscrito'}</span>`:''}
     </div>
     <p style="font-size:13px;color:var(--text-secondary);margin-bottom:10px">${ev.descricao||''}</p>
@@ -1363,7 +1417,10 @@ function renderEventos() {
     const ds = d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
     const mins = (e.ministerios||[]).map(id=>{const m=ministerios.find(m=>m.id===id);return m?`<span class="tag ${m.cor}">${m.nome}</span>`:''}).join('');
     const isAdmin = currentProfile.nivel==='admin';
-    return `<tr><td style="font-weight:500">${e.nome}</td><td style="color:var(--text-secondary);white-space:nowrap">${ds} ${e.hora||''}</td><td>${e.live?'<span style="font-size:11px;background:var(--coral-bg);color:var(--coral-text);padding:2px 7px;border-radius:4px">LIVE</span>':'—'}</td><td>${mins}</td><td>${(e.inscritos||[]).length}</td><td>${isAdmin?`<div style="display:flex;gap:4px"><button class="btn sm" onclick="editEvento('${e.id}')"><i class="ti ti-edit"></i></button><button class="btn sm danger" onclick="deleteEv('${e.id}')"><i class="ti ti-trash"></i></button></div>`:''}</td></tr>`;
+    const dIni = new Date((e.data_inicio||e.data)+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
+    const dFim = e.data_fim && e.data_fim!==(e.data_inicio||e.data) ? ' — '+new Date(e.data_fim+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}) : '';
+    const badges = [e.live?'<span style="font-size:10px;background:var(--coral-bg);color:var(--coral-text);padding:1px 5px;border-radius:3px">LIVE</span>':'', e.som?'<span style="font-size:10px;background:var(--blue-bg);color:var(--blue-text);padding:1px 5px;border-radius:3px">SOM</span>':''].filter(Boolean).join(' ')||'—';
+    return `<tr><td style="font-weight:500">${e.nome}</td><td style="color:var(--text-secondary);white-space:nowrap">${dIni}${dFim}</td><td>${badges}</td><td style="color:var(--text-secondary)">${e.local?LOCAIS[e.local]||e.local:'—'}</td><td>${mins}</td><td>${(e.inscritos||[]).length}</td><td>${isAdmin?`<div style="display:flex;gap:4px"><button class="btn sm" onclick="editEvento('${e.id}')"><i class="ti ti-edit"></i></button><button class="btn sm danger" onclick="deleteEv('${e.id}')"><i class="ti ti-trash"></i></button></div>`:''}</td></tr>`;
   }).join('');
 }
 
@@ -1372,11 +1429,25 @@ function editEvento(id) {
   document.getElementById('modal-ev-title').textContent = 'Editar evento';
   document.getElementById('ev-edit-id').value = id;
   document.getElementById('ev-nome').value = e.nome;
-  document.getElementById('ev-data').value = e.data;
-  document.getElementById('ev-hora').value = e.hora||'09:00';
+  document.getElementById('ev-data-inicio').value = e.data_inicio||e.data||'';
+  document.getElementById('ev-data-fim').value = e.data_fim||'';
   document.getElementById('ev-desc').value = e.descricao||'';
   document.getElementById('ev-banda').value = e.banda||'';
   document.getElementById('ev-live').checked = !!e.live;
+  document.getElementById('ev-som').checked = !!e.som;
+  document.getElementById('ev-local').value = e.local||'';
+  atualizarDiasEvento();
+  // Restore saved day schedules
+  if (e.dias_horarios) {
+    setTimeout(() => {
+      Object.entries(e.dias_horarios).forEach(([data, h]) => {
+        const ini = document.getElementById('hora-ini-'+data);
+        const fim = document.getElementById('hora-fim-'+data);
+        if (ini) ini.value = h.inicio||'';
+        if (fim) fim.value = h.fim||'';
+      });
+    }, 50);
+  }
   populateChips('ev-ministerios-chips');
   document.querySelectorAll('#ev-ministerios-chips .chip').forEach(c=>{if((e.ministerios||[]).includes(c.dataset.id))c.classList.add('selected');});
   renderConvidarLista(e.convites||[]);
@@ -1385,12 +1456,23 @@ function editEvento(id) {
 
 async function saveEvento() {
   const nome = document.getElementById('ev-nome').value.trim();
-  const data = document.getElementById('ev-data').value;
+  const data_inicio = document.getElementById('ev-data-inicio').value;
+  const data_fim = document.getElementById('ev-data-fim').value;
   const banda = document.getElementById('ev-banda').value.trim();
-  if (!nome||!data) { alert('Nome e data são obrigatórios.'); return; }
+  if (!nome||!data_inicio) { alert('Nome e data de início são obrigatórios.'); return; }
   if (!banda) { alert('A formação da banda é obrigatória.'); return; }
+  if (!document.getElementById('ev-local').value) { alert('Selecione o local do evento.'); return; }
+  // Coletar horários por dia
+  const dias_horarios = {};
+  document.querySelectorAll('[data-dia-input]').forEach(el => {
+    const data = el.dataset.diaInput;
+    if (!dias_horarios[data]) dias_horarios[data] = {};
+    if (el.id.startsWith('hora-ini-')) dias_horarios[data].inicio = el.value;
+    if (el.id.startsWith('hora-fim-')) dias_horarios[data].fim = el.value;
+  });
+  // Use first day time as main hora (backward compat)
+  const hora = dias_horarios[data_inicio]?.inicio || '09:00';
   const editId = document.getElementById('ev-edit-id').value;
-  const hora = document.getElementById('ev-hora').value;
   const mins = getChips('ev-ministerios-chips');
   const convidadosNovos = [...document.querySelectorAll('#ev-convidar-lista input:checked')].map(c=>c.value);
   const btn = document.getElementById('btn-save-ev');
@@ -1401,7 +1483,7 @@ async function saveEvento() {
       const convites = [...(e.convites||[])];
       const novosConvites = convidadosNovos.filter(vid=>!convites.find(c=>c.volId===vid)).map(vid=>({volId:vid,status:'pendente'}));
       convites.push(...novosConvites);
-      const dados = {nome,data,hora,descricao:document.getElementById('ev-desc').value.trim(),banda,live:document.getElementById('ev-live').checked,ministerios:mins,convites};
+      const dados = {nome,data:data_inicio,data_inicio,data_fim:data_fim||null,hora,dias_horarios,descricao:document.getElementById('ev-desc').value.trim(),banda,live:document.getElementById('ev-live').checked,som:document.getElementById('ev-som').checked,local:document.getElementById('ev-local').value,ministerios:mins,convites};
       await sb(`eventos?id=eq.${editId}`,{method:'PATCH',body:JSON.stringify(dados)});
       if (e) Object.assign(e,dados);
       // Criar notificações
@@ -1410,7 +1492,7 @@ async function saveEvento() {
       }
     } else {
       const convites = convidadosNovos.map(vid=>({volId:vid,status:'pendente'}));
-      const dados = {nome,data,hora,descricao:document.getElementById('ev-desc').value.trim(),banda,live:document.getElementById('ev-live').checked,ministerios:mins,inscritos:[],convites};
+      const dados = {nome,data:data_inicio,data_inicio,data_fim:data_fim||null,hora,dias_horarios,descricao:document.getElementById('ev-desc').value.trim(),banda,live:document.getElementById('ev-live').checked,som:document.getElementById('ev-som').checked,local:document.getElementById('ev-local').value,ministerios:mins,inscritos:[],convites};
       const rows = await sb('eventos',{method:'POST',body:JSON.stringify(dados)});
       if (rows && rows[0]) {
         const novoEv = {...rows[0],ministerios:mins,inscritos:[],convites};
@@ -1595,10 +1677,15 @@ function openModal(id, modoEdicao) {
     if (id==='modal-ev') {
       document.getElementById('modal-ev-title').textContent='Criar evento';
       document.getElementById('ev-edit-id').value='';
-      document.getElementById('ev-data').value=new Date().toISOString().split('T')[0];
-      document.getElementById('ev-hora').value='09:00';
+      const hoje = new Date().toISOString().split('T')[0];
+      document.getElementById('ev-data-inicio').value=hoje;
+      document.getElementById('ev-data-fim').value='';
       ['ev-nome','ev-desc','ev-banda'].forEach(f=>document.getElementById(f).value='');
       document.getElementById('ev-live').checked=false;
+      document.getElementById('ev-som').checked=false;
+      document.getElementById('ev-local').value='';
+      document.getElementById('ev-dias-container').innerHTML='';
+      atualizarDiasEvento();
       populateChips('ev-ministerios-chips');
       renderConvidarLista([]);
     }
