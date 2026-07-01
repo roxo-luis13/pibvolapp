@@ -222,6 +222,8 @@ hr{border:none;border-top:0.5px solid var(--border);margin:14px 0}
       <div class="nav-section" id="admin-section">Administração</div>
       <div class="nav-item" id="nav-voluntarios" onclick="navigate('voluntarios');closeSidebarMobile()"><i class="ti ti-user-check"></i><span class="nav-item-text">Voluntários</span><span class="nav-tooltip">Voluntários</span></div>
       <div class="nav-item" id="nav-eventos" onclick="navigate('eventos');closeSidebarMobile()"><i class="ti ti-calendar-event"></i><span class="nav-item-text">Eventos</span><span class="nav-tooltip">Eventos</span></div>
+      <div class="nav-item" id="nav-niveis" onclick="navigate('niveis');closeSidebarMobile()"><i class="ti ti-shield-lock"></i><span class="nav-item-text">Níveis de acesso</span><span class="nav-tooltip">Níveis de acesso</span></div>
+      <div class="nav-item" id="nav-niveis" onclick="navigate('niveis');closeSidebarMobile()"><i class="ti ti-shield-lock"></i><span class="nav-item-text">Níveis de acesso</span><span class="nav-tooltip">Níveis de acesso</span></div>
       <div class="nav-section">Conta</div>
       <div class="nav-item" onclick="navigate('perfil');closeSidebarMobile()"><i class="ti ti-user"></i><span class="nav-item-text">Meu perfil</span><span class="nav-tooltip">Meu perfil</span></div>
       <div class="nav-item" onclick="doLogout()"><i class="ti ti-logout"></i><span class="nav-item-text">Sair</span><span class="nav-tooltip">Sair</span></div>
@@ -354,6 +356,10 @@ hr{border:none;border-top:0.5px solid var(--border);margin:14px 0}
             <tbody id="ev-tbody"></tbody></table>
           </div>
         </div>
+      </div>
+
+      <div class="section" id="section-niveis">
+        <div class="grid-3" id="niveis-grid"></div>
       </div>
 
       <div class="section" id="section-perfil">
@@ -499,6 +505,54 @@ hr{border:none;border-top:0.5px solid var(--border);margin:14px 0}
   </div>
 </div>
 
+<div class="modal-backdrop" id="modal-nivel">
+  <div class="modal">
+    <h2 id="modal-nivel-title">Criar nível de acesso</h2>
+    <input type="hidden" id="nivel-edit-id" value="">
+    <div class="form-group"><label>Nome do nível *</label><input id="nivel-nome" type="text" placeholder="ex: Coordenador, Auxiliar..."></div>
+    <div class="form-group"><label>Descrição</label><input id="nivel-desc" type="text" placeholder="Descreva as responsabilidades"></div>
+    <p style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:10px;text-transform:uppercase;letter-spacing:.3px">Permissões</p>
+    <div style="display:grid;gap:8px">
+      <label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);cursor:pointer">
+        <input type="checkbox" id="p-criar-min" style="width:15px;height:15px;accent-color:#7F77DD">
+        <div><p style="font-size:13px;font-weight:500">Criar ministérios</p></div>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);cursor:pointer">
+        <input type="checkbox" id="p-editar-min" style="width:15px;height:15px;accent-color:#7F77DD">
+        <div><p style="font-size:13px;font-weight:500">Editar ministérios</p></div>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);cursor:pointer">
+        <input type="checkbox" id="p-excluir-min" style="width:15px;height:15px;accent-color:#7F77DD">
+        <div><p style="font-size:13px;font-weight:500">Excluir ministérios</p></div>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);cursor:pointer">
+        <input type="checkbox" id="p-cadastrar-vol" style="width:15px;height:15px;accent-color:#7F77DD">
+        <div><p style="font-size:13px;font-weight:500">Cadastrar voluntários</p></div>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);cursor:pointer">
+        <input type="checkbox" id="p-editar-vol" style="width:15px;height:15px;accent-color:#7F77DD">
+        <div><p style="font-size:13px;font-weight:500">Editar/remover voluntários</p></div>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);cursor:pointer">
+        <input type="checkbox" id="p-criar-ev" style="width:15px;height:15px;accent-color:#7F77DD">
+        <div><p style="font-size:13px;font-weight:500">Criar eventos</p></div>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);cursor:pointer">
+        <input type="checkbox" id="p-editar-ev" style="width:15px;height:15px;accent-color:#7F77DD">
+        <div><p style="font-size:13px;font-weight:500">Editar/excluir eventos</p></div>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);cursor:pointer">
+        <input type="checkbox" id="p-ver-min" style="width:15px;height:15px;accent-color:#7F77DD">
+        <div><p style="font-size:13px;font-weight:500">Ver todos os ministérios</p><p style="font-size:11px;color:var(--text-secondary)">Sem esta permissão, vê apenas os ministérios em que participa</p></div>
+      </label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-nivel')">Cancelar</button>
+      <button class="btn primary" onclick="saveNivel()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ===== SUPABASE CONFIG =====
 const SUPA_URL = 'https://knxdadcfphqadskwscya.supabase.co';
@@ -538,13 +592,20 @@ async function sbAuth(path, body) {
 const ICONES = {'ti-music':'🎵','ti-baby-carriage':'👶','ti-heart-handshake':'🤝','ti-book':'📖','ti-device-speaker':'📢','ti-camera':'📷','ti-users':'👥','ti-leaf':'🌿','ti-pray':'🙏','ti-tool':'🔧'};
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 let session = null, currentProfile = null;
+let niveisAcesso = [];
 let ministerios = [], voluntarios = [], eventos = [], notificacoes = [];
 let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
 let selectedEvento = null, currentDetalheId = null;
 let sidebarCollapsed = false;
 const isMobile = () => window.innerWidth <= 768;
 const ini = n => (n||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
-const canAccess = mId => currentProfile?.nivel === 'admin' || (currentProfile?.ministerios||[]).includes(mId);
+const canAccess = mId => {
+  if (!currentProfile) return false;
+  const n = niveisAcesso.find(n=>n.nome===currentProfile.nivel);
+  if (n && n.pode_ver_todos_ministerios) return true;
+  if (currentProfile.nivel === 'admin') return true;
+  return (currentProfile.ministerios||[]).includes(mId);
+};
 
 function showScreen(s) {
   document.getElementById('loading-screen').style.display = s==='loading'?'flex':'none';
@@ -590,17 +651,20 @@ async function loadProfile(userId) {
 }
 
 async function loadAllData() {
-  const [m, v, e, n] = await Promise.all([
+  const [m, v, e, n, niv] = await Promise.all([
     sb('ministerios?select=*&order=nome'),
     sb('voluntarios?select=*&order=nome'),
     sb('eventos?select=*&order=data'),
-    sb(`notificacoes?vol_id=eq.${currentProfile.id}&select=*&order=criado_em.desc`)
+    sb(`notificacoes?vol_id=eq.${currentProfile.id}&select=*&order=criado_em.desc`),
+    sb('niveis_acesso?select=*&order=nome')
   ]);
   ministerios = (m||[]).map(r => ({...r, ministerios: r.ministerios || [], inscritos: [], convites: []}));
   voluntarios = (v||[]).map(r => ({...r, ministerios: r.ministerios || []}));
   eventos = (e||[]).map(r => ({...r, ministerios: r.ministerios||[], inscritos: r.inscritos||[], convites: r.convites||[]}));
   notificacoes = (n||[]);
+  niveisAcesso = (niv||[]);
   atualizarBadgeNotif();
+  atualizarSelectNiveis();
 }
 
 function showFirstAccess() {
@@ -714,6 +778,7 @@ function updateSidebar() {
   const isLiderOuAdmin = isAdmin || currentProfile.nivel === 'lider';
   document.getElementById('nav-voluntarios').style.display = isLiderOuAdmin ? 'flex' : 'none';
   document.getElementById('nav-eventos').style.display = isAdmin ? 'flex' : 'none';
+  document.getElementById('nav-niveis').style.display = isAdmin ? 'flex' : 'none';
   document.getElementById('admin-section').style.display = isLiderOuAdmin ? 'block' : 'none';
   atualizarBadgeNotif();
 }
@@ -724,7 +789,7 @@ function navigate(sec, extra) {
   document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
   const el = document.getElementById('section-' + sec);
   if (el) el.classList.add('active');
-  const titles = {dashboard:'Dashboard',calendario:'Calendário',ministerios:'Ministérios',voluntarios:'Voluntários',eventos:'Eventos',perfil:'Meu perfil','ministerio-detalhe':'Detalhes do ministério'};
+  const titles = {dashboard:'Dashboard',calendario:'Calendário',ministerios:'Ministérios',voluntarios:'Voluntários',eventos:'Eventos',niveis:'Níveis de acesso',perfil:'Meu perfil','ministerio-detalhe':'Detalhes do ministério'};
   document.getElementById('page-title').textContent = titles[sec] || '';
   const acts = document.getElementById('topbar-actions'); acts.innerHTML = '';
   const isAdmin = currentProfile.nivel === 'admin';
@@ -732,7 +797,8 @@ function navigate(sec, extra) {
   if (isAdmin && sec==='ministerios') acts.innerHTML = `<button class="btn primary" onclick="openModalMin()"><i class="ti ti-plus"></i>Novo ministério</button>`;
   if (isLiderOuAdmin && sec==='voluntarios') acts.innerHTML = `<button class="btn primary" onclick="openModal('modal-vol')"><i class="ti ti-user-plus"></i>Novo voluntário</button>`;
   if (isAdmin && sec==='eventos') acts.innerHTML = `<button class="btn primary" onclick="openModal('modal-ev')"><i class="ti ti-plus"></i>Novo evento</button>`;
-  const renders = {dashboard:renderDashboard,calendario:renderCalendario,ministerios:renderMinisterios,voluntarios:renderVoluntarios,eventos:renderEventos,perfil:renderPerfil};
+  if (isAdmin && sec==='niveis') acts.innerHTML = `<button class="btn primary" onclick="openModalNivel()"><i class="ti ti-plus"></i>Novo nível</button>`;
+  const renders = {dashboard:renderDashboard,calendario:renderCalendario,ministerios:renderMinisterios,voluntarios:renderVoluntarios,eventos:renderEventos,niveis:renderNiveis,perfil:renderPerfil};
   if (renders[sec]) renders[sec]();
   if (sec==='ministerio-detalhe' && extra) renderDetalhe(extra);
 }
@@ -1087,6 +1153,143 @@ async function deleteMinisterio(id, goBack) {
   renderDashboard();
 }
 
+// ===== NÍVEIS DE ACESSO =====
+const NIVEL_PADRAO = ['admin','lider','voluntario'];
+const PERMS = [
+  {id:'pode_criar_ministerios', label:'Criar ministérios'},
+  {id:'pode_editar_ministerios', label:'Editar ministérios'},
+  {id:'pode_excluir_ministerios', label:'Excluir ministérios'},
+  {id:'pode_cadastrar_voluntarios', label:'Cadastrar voluntários'},
+  {id:'pode_editar_voluntarios', label:'Editar/remover voluntários'},
+  {id:'pode_criar_eventos', label:'Criar eventos'},
+  {id:'pode_editar_eventos', label:'Editar/excluir eventos'},
+  {id:'pode_ver_todos_ministerios', label:'Ver todos os ministérios'},
+];
+
+function getPerm(nivel, permId) {
+  // Check custom nivel from niveisAcesso table
+  const n = niveisAcesso.find(n=>n.nome===nivel);
+  if (n) return !!n[permId];
+  // Fallback defaults
+  if (nivel==='admin') return true;
+  if (nivel==='lider') return ['pode_cadastrar_voluntarios','pode_editar_voluntarios'].includes(permId);
+  return false;
+}
+
+function renderNiveis() {
+  const grid = document.getElementById('niveis-grid');
+  if (!niveisAcesso.length) { grid.innerHTML='<div class="empty" style="grid-column:1/-1"><i class="ti ti-shield-lock"></i>Nenhum nível cadastrado</div>'; return; }
+  const COLORS = {admin:'amber',lider:'blue',voluntario:'green'};
+  grid.innerHTML = '';
+  niveisAcesso.forEach(n => {
+    const isPadrao = NIVEL_PADRAO.includes(n.nome);
+    const cor = COLORS[n.nome] || 'purple';
+    const permsAtivas = PERMS.filter(p=>n[p.id]);
+    const div = document.createElement('div');
+    div.className = 'card';
+    div.style.cssText = 'display:flex;flex-direction:column;gap:10px';
+    let html = `<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <i class="ti ti-shield-lock" style="font-size:20px;color:var(--${cor}-text)"></i>
+          <h3 style="font-size:15px;font-weight:500">${n.nome.charAt(0).toUpperCase()+n.nome.slice(1)}</h3>
+          ${isPadrao?'<span style="font-size:10px;background:var(--bg-secondary);color:var(--text-tertiary);padding:2px 7px;border-radius:4px">Padrão</span>':''}
+        </div>
+        <p style="font-size:12px;color:var(--text-secondary)">${n.descricao||'Sem descrição'}</p>
+      </div>
+      ${!isPadrao?`<div style="display:flex;gap:4px;flex-shrink:0"><button class="btn sm" onclick="editNivel('${n.id}')"><i class="ti ti-edit"></i></button><button class="btn sm danger" onclick="deleteNivel('${n.id}')"><i class="ti ti-trash"></i></button></div>`:''}
+    </div>`;
+    html += `<div style="border-top:0.5px solid var(--border);padding-top:10px">
+      <p style="font-size:11px;font-weight:500;color:var(--text-secondary);margin-bottom:6px;text-transform:uppercase;letter-spacing:.3px">Permissões (${permsAtivas.length}/${PERMS.length})</p>
+      <div style="display:flex;flex-wrap:wrap;gap:4px">`;
+    PERMS.forEach(p => {
+      const ativo = !!n[p.id];
+      html += `<span style="font-size:11px;padding:3px 8px;border-radius:var(--radius);font-weight:500;background:${ativo?'var(--success-bg)':'var(--bg-secondary)'};color:${ativo?'var(--success-text)':'var(--text-tertiary)'}">
+        ${ativo?'✓':'✗'} ${p.label}</span>`;
+    });
+    html += '</div></div>';
+    div.innerHTML = html;
+    grid.appendChild(div);
+  });
+}
+
+function openModalNivel() {
+  document.getElementById('modal-nivel-title').textContent = 'Criar nível de acesso';
+  document.getElementById('nivel-edit-id').value = '';
+  document.getElementById('nivel-nome').value = '';
+  document.getElementById('nivel-desc').value = '';
+  ['p-criar-min','p-editar-min','p-excluir-min','p-cadastrar-vol','p-editar-vol','p-criar-ev','p-editar-ev','p-ver-min'].forEach(id=>{
+    document.getElementById(id).checked = false;
+  });
+  openModal('modal-nivel');
+}
+
+function editNivel(id) {
+  const n = niveisAcesso.find(n=>n.id===id); if (!n) return;
+  document.getElementById('modal-nivel-title').textContent = 'Editar nível de acesso';
+  document.getElementById('nivel-edit-id').value = id;
+  document.getElementById('nivel-nome').value = n.nome;
+  document.getElementById('nivel-desc').value = n.descricao||'';
+  document.getElementById('p-criar-min').checked = !!n.pode_criar_ministerios;
+  document.getElementById('p-editar-min').checked = !!n.pode_editar_ministerios;
+  document.getElementById('p-excluir-min').checked = !!n.pode_excluir_ministerios;
+  document.getElementById('p-cadastrar-vol').checked = !!n.pode_cadastrar_voluntarios;
+  document.getElementById('p-editar-vol').checked = !!n.pode_editar_voluntarios;
+  document.getElementById('p-criar-ev').checked = !!n.pode_criar_eventos;
+  document.getElementById('p-editar-ev').checked = !!n.pode_editar_eventos;
+  document.getElementById('p-ver-min').checked = !!n.pode_ver_todos_ministerios;
+  openModal('modal-nivel', true);
+}
+
+async function saveNivel() {
+  const nome = document.getElementById('nivel-nome').value.trim().toLowerCase().replace(/\s+/g,'_');
+  if (!nome) { alert('Nome é obrigatório.'); return; }
+  const dados = {
+    nome,
+    descricao: document.getElementById('nivel-desc').value.trim(),
+    pode_criar_ministerios: document.getElementById('p-criar-min').checked,
+    pode_editar_ministerios: document.getElementById('p-editar-min').checked,
+    pode_excluir_ministerios: document.getElementById('p-excluir-min').checked,
+    pode_cadastrar_voluntarios: document.getElementById('p-cadastrar-vol').checked,
+    pode_editar_voluntarios: document.getElementById('p-editar-vol').checked,
+    pode_criar_eventos: document.getElementById('p-criar-ev').checked,
+    pode_editar_eventos: document.getElementById('p-editar-ev').checked,
+    pode_ver_todos_ministerios: document.getElementById('p-ver-min').checked,
+  };
+  const editId = document.getElementById('nivel-edit-id').value;
+  try {
+    if (editId) {
+      await sb(`niveis_acesso?id=eq.${editId}`, {method:'PATCH', body:JSON.stringify(dados)});
+      const n = niveisAcesso.find(n=>n.id===editId); if (n) Object.assign(n,dados);
+    } else {
+      const rows = await sb('niveis_acesso', {method:'POST', body:JSON.stringify(dados)});
+      if (rows && rows[0]) niveisAcesso.push(rows[0]);
+    }
+    closeModal('modal-nivel');
+    renderNiveis();
+    // Update vol-nivel select
+    atualizarSelectNiveis();
+  } catch(e) { alert('Erro: '+e.message); }
+}
+
+async function deleteNivel(id) {
+  const n = niveisAcesso.find(n=>n.id===id); if (!n) return;
+  if (NIVEL_PADRAO.includes(n.nome)) { alert('Não é possível excluir os níveis padrão do sistema.'); return; }
+  if (!confirm(`Excluir o nível "${n.nome}"?`)) return;
+  await sb(`niveis_acesso?id=eq.${id}`, {method:'DELETE'});
+  niveisAcesso = niveisAcesso.filter(x=>x.id!==id);
+  renderNiveis();
+  atualizarSelectNiveis();
+}
+
+function atualizarSelectNiveis() {
+  const sel = document.getElementById('vol-nivel');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = niveisAcesso.map(n=>`<option value="${n.nome}">${n.nome.charAt(0).toUpperCase()+n.nome.slice(1).replace(/_/g,' ')}</option>`).join('');
+  if (current) sel.value = current;
+}
+
 // ===== VOLUNTÁRIOS =====
 function renderVoluntarios() {
   document.getElementById('vol-tbody').innerHTML = voluntarios.map(v => {
@@ -1379,6 +1582,7 @@ function openModal(id, modoEdicao) {
       document.getElementById('modal-vol-title').textContent='Cadastrar voluntário';
       document.getElementById('vol-edit-id').value='';
       ['vol-nome','vol-email','vol-tel'].forEach(f=>document.getElementById(f).value='');
+      atualizarSelectNiveis();
       document.getElementById('vol-nivel').value='voluntario';
       populateChips('vol-ministerios-chips');
     }
