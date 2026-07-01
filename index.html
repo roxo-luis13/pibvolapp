@@ -253,11 +253,10 @@ hr{border:none;border-top:0.5px solid var(--border);margin:14px 0}
 
     <div class="content">
       <div class="section active" id="section-dashboard">
-        <div class="grid-4" style="margin-bottom:20px">
-          <div class="metric"><p>Total de membros</p><h3>500</h3><span>Igreja ativa</span></div>
-          <div class="metric"><p>Voluntários</p><h3 id="m-vol">0</h3><span>Cadastrados</span></div>
-          <div class="metric"><p>Ministérios</p><h3 id="m-min">0</h3><span>Ativos</span></div>
-          <div class="metric"><p>Eventos este mês</p><h3 id="m-ev">0</h3><span>Programados</span></div>
+        <div class="grid-3" style="margin-bottom:20px">
+          <div class="metric"><p>Voluntários</p><h3 id="m-vol">0</h3><span id="m-vol-sub">nos meus ministérios</span></div>
+          <div class="metric"><p>Meus ministérios</p><h3 id="m-min">0</h3><span id="m-min-sub">de <span id="m-min-total">0</span> na igreja</span></div>
+          <div class="metric"><p>Meus eventos</p><h3 id="m-ev">0</h3><span id="m-ev-sub">de <span id="m-ev-total">0</span> na igreja</span></div>
         </div>
         <div class="grid-2">
           <div class="card">
@@ -886,10 +885,23 @@ function navigate(sec, extra) {
 
 // ===== DASHBOARD =====
 function renderDashboard() {
-  document.getElementById('m-vol').textContent = voluntarios.length;
-  document.getElementById('m-min').textContent = ministerios.length;
-  const now = new Date();
-  document.getElementById('m-ev').textContent = eventos.filter(e=>{const d=new Date(e.data);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();}).length;
+  // Voluntários nos ministérios em que o usuário atual participa
+  const meusMin = (currentProfile.ministerios||[]);
+  const volsNosMeusMin = new Set();
+  voluntarios.forEach(v => {
+    if ((v.ministerios||[]).some(m => meusMin.includes(m))) volsNosMeusMin.add(v.id);
+  });
+  document.getElementById('m-vol').textContent = volsNosMeusMin.size;
+
+  // Ministérios do usuário vs total da igreja
+  const qtdMeusMin = meusMin.filter(id => ministerios.find(m=>m.id===id)).length;
+  document.getElementById('m-min').textContent = qtdMeusMin;
+  document.getElementById('m-min-total').textContent = ministerios.length;
+
+  // Eventos: quantidade em que o usuário está inscrito vs total da igreja
+  const meusEventos = eventos.filter(e=>(e.inscritos||[]).some(i=>i.volId===currentProfile.id));
+  document.getElementById('m-ev').textContent = meusEventos.length;
+  document.getElementById('m-ev-total').textContent = eventos.length;
   document.getElementById('dash-min-count').textContent = ministerios.length + ' ativos';
   const ml = document.getElementById('dash-ministerios-list');
   const vMin = ministerios.filter(m => canAccess(m.id));
