@@ -612,6 +612,32 @@ const ICONES = {'ti-music':'🎵','ti-baby-carriage':'👶','ti-heart-handshake'
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 let session = null, currentProfile = null;
 let niveisAcesso = [];
+
+// Helpers de permissão baseados em niveisAcesso
+function nivelIsAdmin(nivel) {
+  if (nivel === 'admin') return true;
+  const n = niveisAcesso.find(n=>n.nome===nivel);
+  // Admin = tem todas as permissões principais
+  return n && n.pode_criar_ministerios && n.pode_excluir_ministerios && n.pode_criar_eventos;
+}
+function nivelIsLiderOuAdmin(nivel) {
+  if (nivel === 'admin' || nivel === 'lider') return true;
+  const n = niveisAcesso.find(n=>n.nome===nivel);
+  return n && (n.pode_cadastrar_voluntarios || n.pode_editar_voluntarios || nivelIsAdmin(nivel));
+}
+function getNivelLabel(nivel) {
+  if (nivel === 'admin') return 'Administrador';
+  if (nivel === 'lider') return 'Líder';
+  if (nivel === 'voluntario') return 'Voluntário';
+  const n = niveisAcesso.find(n=>n.nome===nivel);
+  if (n) return n.nome.charAt(0).toUpperCase() + n.nome.slice(1).replace(/_/g,' ');
+  return nivel;
+}
+function getNivelClass(nivel) {
+  if (nivel === 'admin') return 'admin';
+  if (nivel === 'lider') return 'lider';
+  return 'voluntario'; // fallback para avatar/badge CSS
+}
 let ministerios = [], voluntarios = [], eventos = [], notificacoes = [];
 let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
 let selectedEvento = null, currentDetalheId = null;
@@ -622,7 +648,7 @@ const canAccess = mId => {
   if (!currentProfile) return false;
   const n = niveisAcesso.find(n=>n.nome===currentProfile.nivel);
   if (n && n.pode_ver_todos_ministerios) return true;
-  if (currentProfile.nivel === 'admin') return true;
+  if (nivelIsAdmin(currentProfile.nivel)) return true;
   return (currentProfile.ministerios||[]).includes(mId);
 };
 
@@ -691,6 +717,12 @@ function showFirstAccess() {
   document.getElementById('login-form-area').style.display = 'none';
   document.getElementById('first-access-form').style.display = 'block';
   document.getElementById('first-notice').style.display = 'block';
+  document.getElementById('nova-senha').value = '';
+  document.getElementById('conf-senha').value = '';
+  const errEl = document.getElementById('first-access-error');
+  if (errEl) errEl.style.display = 'none';
+  const btn = document.getElementById('btn-first-access');
+  if (btn) { btn.innerHTML = '<i class="ti ti-check"></i>Definir senha e entrar'; btn.disabled = false; }
 }
 
 // ===== LOGIN =====
@@ -729,22 +761,50 @@ async function doLogin() {
 async function saveNewPassword() {
   const nova = document.getElementById('nova-senha').value;
   const conf = document.getElementById('conf-senha').value;
-  const err = document.getElementById('login-error');
-  err.style.display = 'none';
-  if (nova.length < 6) { err.textContent = 'Mínimo 6 caracteres.'; err.style.display = 'block'; return; }
-  if (nova !== conf) { err.textContent = 'As senhas não coincidem.'; err.style.display = 'block'; return; }
-  const hash = await sha256(nova);
-  await sb(`voluntarios?id=eq.${currentProfile.id}`, { method: 'PATCH', body: JSON.stringify({ senha_hash: hash, primeiro_acesso: false }) });
-  currentProfile.primeiro_acesso = false;
-  session = { access_token: SUPA_KEY, user: { id: currentProfile.id } };
-  localStorage.setItem('igreja_session', JSON.stringify(session));
-  await loadAllData();
+  const errEl = document.getElementById('first-access-error');
+  if (errEl) errEl.style.display = 'none';
+  if (nova.length < 6) {
+    if (errEl) { errEl.textContent = 'A senha deve ter pelo menos 6 caracteres.'; errEl.style.display = 'block'; }
+    return;
+  }
+  if (nova !== conf) {
+    if (errEl) { errEl.textContent = 'As senhas não coincidem. Tente novamente.'; errEl.style.display = 'block'; }
+    return;
+  }
+  const btn = document.getElementById('btn-first-access');
+  if (btn) { btn.innerHTML = '<span class="spin"></span> Salvando...'; btn.disabled = true; }
+  try {
+    const hash = await sha256(nova);
+    await sb(`voluntarios?id=eq.${currentProfile.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ senha_hash: hash, primeiro_acesso: false })
+    });
+    currentProfile.primeiro_acesso = false;
+    session = { access_token: SUPA_KEY, user: { id: currentProfile.id } };
+    localStorage.setItem('igreja_session', JSON.stringify(session));
+    await loadAllData();
+    document.getElementById('first-access-form').style.display = 'none';
+    document.getElementById('first-notice').style.display = 'none';
+    document.getElementById('login-form-area').style.display = 'block';
+    showScreen('app');
+    updateSidebar();
+    checkMobileLayout();
+    navigate('dashboard');
+  } catch(e) {
+    if (errEl) { errEl.textContent = 'Erro ao salvar senha: ' + e.message; errEl.style.display = 'block'; }
+    if (btn) { btn.innerHTML = '<i class="ti ti-check"></i>Definir senha e entrar'; btn.disabled = false; }
+  }
+}
+
+function voltarParaLogin() {
+  currentProfile = null;
   document.getElementById('first-access-form').style.display = 'none';
   document.getElementById('first-notice').style.display = 'none';
-  showScreen('app');
-  updateSidebar();
-  checkMobileLayout();
-  navigate('dashboard');
+  document.getElementById('login-form-area').style.display = 'block';
+  document.getElementById('login-error').style.display = 'none';
+  document.getElementById('login-senha').value = '';
+  const btn = document.getElementById('btn-login');
+  btn.innerHTML = '<i class="ti ti-login"></i>Entrar'; btn.disabled = false;
 }
 
 function doLogout() {
@@ -758,6 +818,8 @@ function doLogout() {
   document.getElementById('first-access-form').style.display = 'none';
   document.getElementById('first-notice').style.display = 'none';
   document.getElementById('login-error').style.display = 'none';
+  const faErr = document.getElementById('first-access-error');
+  if (faErr) faErr.style.display = 'none';
   document.getElementById('login-email').value = '';
   document.getElementById('login-senha').value = '';
   const btn = document.getElementById('btn-login');
@@ -790,11 +852,11 @@ window.addEventListener('resize', checkMobileLayout);
 
 function updateSidebar() {
   document.getElementById('sb-avatar').textContent = ini(currentProfile.nome);
-  document.getElementById('sb-avatar').className = 'avatar ' + (currentProfile.nivel||'voluntario');
+  document.getElementById('sb-avatar').className = 'avatar ' + getNivelClass(currentProfile.nivel);
   document.getElementById('sb-name').textContent = currentProfile.nome;
-  document.getElementById('sb-role').textContent = currentProfile.nivel==='admin'?'Administrador':currentProfile.nivel==='lider'?'Líder':'Voluntário';
-  const isAdmin = currentProfile.nivel === 'admin';
-  const isLiderOuAdmin = isAdmin || currentProfile.nivel === 'lider';
+  document.getElementById('sb-role').textContent = getNivelLabel(currentProfile.nivel);
+  const isAdmin = nivelIsAdmin(currentProfile.nivel);
+  const isLiderOuAdmin = nivelIsLiderOuAdmin(currentProfile.nivel);
   document.getElementById('nav-voluntarios').style.display = isLiderOuAdmin ? 'flex' : 'none';
   document.getElementById('nav-eventos').style.display = isAdmin ? 'flex' : 'none';
   document.getElementById('nav-niveis').style.display = isAdmin ? 'flex' : 'none';
@@ -811,8 +873,8 @@ function navigate(sec, extra) {
   const titles = {dashboard:'Dashboard',calendario:'Calendário',ministerios:'Ministérios',voluntarios:'Voluntários',eventos:'Eventos',niveis:'Níveis de acesso',perfil:'Meu perfil','ministerio-detalhe':'Detalhes do ministério'};
   document.getElementById('page-title').textContent = titles[sec] || '';
   const acts = document.getElementById('topbar-actions'); acts.innerHTML = '';
-  const isAdmin = currentProfile.nivel === 'admin';
-  const isLiderOuAdmin = isAdmin || currentProfile.nivel === 'lider';
+  const isAdmin = nivelIsAdmin(currentProfile.nivel);
+  const isLiderOuAdmin = nivelIsLiderOuAdmin(currentProfile.nivel);
   if (isAdmin && sec==='ministerios') acts.innerHTML = `<button class="btn primary" onclick="openModalMin()"><i class="ti ti-plus"></i>Novo ministério</button>`;
   if (isLiderOuAdmin && sec==='voluntarios') acts.innerHTML = `<button class="btn primary" onclick="openModal('modal-vol')"><i class="ti ti-user-plus"></i>Novo voluntário</button>`;
   if (isAdmin && sec==='eventos') acts.innerHTML = `<button class="btn primary" onclick="openModal('modal-ev')"><i class="ti ti-plus"></i>Novo evento</button>`;
@@ -931,8 +993,26 @@ function renderCalendario() {
   for (let d=1;d<=daysInMonth;d++) {
     const isToday = today.getFullYear()===calYear&&today.getMonth()===calMonth&&today.getDate()===d;
     const ds = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const devs = eventos.filter(e=>e.data===ds);
-    const evHtml = devs.map(e=>{ const m=ministerios.find(m=>(e.ministerios||[]).includes(m.id)); const c=m?m.cor:'purple'; return `<div class="cal-event" style="background:var(--${c}-bg);color:var(--${c}-text)" onclick="showEventDetail('${e.id}')">${e.live?'📡 ':''}${e.nome}</div>`; }).join('');
+    // Mostrar evento se ds está dentro do período data_inicio até data_fim
+    const devs = eventos.filter(e=>{
+      const ini = e.data_inicio || e.data;
+      const fim = e.data_fim || ini;
+      return ds >= ini && ds <= fim;
+    });
+    const evHtml = devs.map(e=>{
+      const ini = e.data_inicio || e.data;
+      const fim = e.data_fim || ini;
+      const isFirst = ds === ini;
+      const isLast = ds === fim;
+      const isMulti = ini !== fim;
+      const m = ministerios.find(m=>(e.ministerios||[]).includes(m.id));
+      const c = m ? m.cor : 'purple';
+      // Indicador visual: primeiro dia, dia intermediário ou último dia
+      const label = isMulti
+        ? (isFirst ? '▶ ' : isLast ? '⏹ ' : '▬ ') + e.nome
+        : (e.live ? '📡 ' : '') + e.nome;
+      return `<div class="cal-event" style="background:var(--${c}-bg);color:var(--${c}-text);${isMulti&&!isFirst?'border-left:none;border-radius:0 3px 3px 0;':''}" onclick="showEventDetail('${e.id}')">${label}</div>`;
+    }).join('');
     html += `<div class="cal-day${isToday?' today':''}"><div class="day-num">${d}</div>${evHtml}</div>`;
   }
   grid.innerHTML = html;
@@ -944,7 +1024,7 @@ const getMinInscrito = ev => (ev.inscritos||[]).find(i=>i.volId===currentProfile
 function showEventDetail(evId) {
   const ev = eventos.find(e=>e.id===evId); if (!ev) return;
   selectedEvento = ev;
-  const userCanJoin = currentProfile.nivel==='admin' || (ev.ministerios||[]).some(mid=>(currentProfile.ministerios||[]).includes(mid));
+  const userCanJoin = nivelIsAdmin(currentProfile.nivel) || (ev.ministerios||[]).some(mid=>(currentProfile.ministerios||[]).includes(mid));
   document.getElementById('btn-inscricao').style.display = userCanJoin ? 'inline-flex' : 'none';
   const d = new Date(ev.data+'T12:00:00');
   const ds = d.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});
@@ -1056,7 +1136,7 @@ async function toggleInscricao() {
 function renderMinisterios() {
   const grid = document.getElementById('ministerios-grid');
   if (!ministerios.length) { grid.innerHTML='<div class="empty" style="grid-column:1/-1"><i class="ti ti-users-group"></i>Nenhum ministério criado</div>'; return; }
-  const isAdmin = currentProfile.nivel === 'admin';
+  const isAdmin = nivelIsAdmin(currentProfile.nivel);
   grid.innerHTML = '';
   ministerios.forEach(m => {
     const locked = !canAccess(m.id);
@@ -1084,8 +1164,8 @@ function openDetalhe(id) { navigate('ministerio-detalhe', id); }
 function renderDetalhe(id) {
   currentDetalheId = id;
   const m = ministerios.find(m=>m.id===id); if (!m) return;
-  const isAdmin = currentProfile.nivel === 'admin';
-  const isLiderOuAdmin = isAdmin || currentProfile.nivel === 'lider';
+  const isAdmin = nivelIsAdmin(currentProfile.nivel);
+  const isLiderOuAdmin = nivelIsLiderOuAdmin(currentProfile.nivel);
   document.getElementById('detalhe-nome').textContent = m.nome;
   document.getElementById('detalhe-admin-btns').innerHTML = isAdmin ? `<div style="display:flex;gap:6px"><button class="btn sm" onclick="editMinisterio('${id}')"><i class="ti ti-edit"></i>Editar</button><button class="btn sm danger" onclick="deleteMinisterio('${id}',true)"><i class="ti ti-trash"></i>Excluir</button></div>` : '';
   const lider = voluntarios.find(v=>v.id===m.lider_id);
@@ -1096,7 +1176,7 @@ function renderDetalhe(id) {
   const vols = voluntarios.filter(v=>(v.ministerios||[]).includes(id));
   document.getElementById('detalhe-vols').innerHTML = vols.length ? vols.map(v=>`
     <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--border)">
-      <div class="avatar ${v.nivel}" style="width:36px;height:36px;font-size:12px;flex-shrink:0">${ini(v.nome)}</div>
+      <div class="avatar ${getNivelClass(v.nivel)}" style="width:36px;height:36px;font-size:12px;flex-shrink:0">${ini(v.nome)}</div>
       <div style="flex:1;min-width:0">
         <div style="display:flex;align-items:center;gap:6px"><p style="font-size:13px;font-weight:500">${v.nome}</p>${m.lider_id===v.id?'<span style="font-size:10px;background:var(--amber-bg);color:var(--amber-text);padding:1px 6px;border-radius:4px">Líder</span>':''}</div>
         <p style="font-size:11px;color:var(--text-secondary)">${v.email} · ${v.tel||'sem telefone'}</p>
@@ -1220,10 +1300,9 @@ const PERMS = [
 ];
 
 function getPerm(nivel, permId) {
-  // Check custom nivel from niveisAcesso table
   const n = niveisAcesso.find(n=>n.nome===nivel);
   if (n) return !!n[permId];
-  // Fallback defaults
+  // Fallback se niveisAcesso ainda não carregou
   if (nivel==='admin') return true;
   if (nivel==='lider') return ['pode_cadastrar_voluntarios','pode_editar_voluntarios'].includes(permId);
   return false;
@@ -1354,9 +1433,9 @@ function atualizarSelectNiveis() {
 function renderVoluntarios() {
   document.getElementById('vol-tbody').innerHTML = voluntarios.map(v => {
     const mins = (v.ministerios||[]).map(id=>{const m=ministerios.find(m=>m.id===id);return m?`<span class="tag ${m.cor}">${m.nome}</span>`:''}).join('');
-    const canManage = currentProfile.nivel==='admin'||currentProfile.nivel==='lider';
+    const canManage = nivelIsLiderOuAdmin(currentProfile.nivel);
     const btns = canManage ? `<div style="display:flex;gap:4px"><button class="btn sm" onclick="editVoluntario('${v.id}')"><i class="ti ti-edit"></i></button>${v.id!==currentProfile.id?`<button class="btn sm danger" onclick="deleteVol('${v.id}')"><i class="ti ti-trash"></i></button>`:''}</div>` : '';
-    return `<tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar ${v.nivel}" style="width:28px;height:28px;font-size:10px">${ini(v.nome)}</div>${v.nome}</div></td><td style="color:var(--text-secondary)">${v.email}</td><td style="color:var(--text-secondary)">${v.tel||'—'}</td><td>${mins||'—'}</td><td><span class="badge ${v.nivel}">${v.nivel==='admin'?'Admin':v.nivel==='lider'?'Líder':'Voluntário'}</span></td><td>${btns}</td></tr>`;
+    return `<tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar ${v.nivel}" style="width:28px;height:28px;font-size:10px">${ini(v.nome)}</div>${v.nome}</div></td><td style="color:var(--text-secondary)">${v.email}</td><td style="color:var(--text-secondary)">${v.tel||'—'}</td><td>${mins||'—'}</td><td><span class="badge ${v.nivel}">${getNivelLabel(v.nivel)}</span></td><td>${btns}</td></tr>`;
   }).join('');
 }
 
@@ -1416,7 +1495,7 @@ function renderEventos() {
     const d = new Date(e.data+'T12:00:00');
     const ds = d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
     const mins = (e.ministerios||[]).map(id=>{const m=ministerios.find(m=>m.id===id);return m?`<span class="tag ${m.cor}">${m.nome}</span>`:''}).join('');
-    const isAdmin = currentProfile.nivel==='admin';
+    const isAdmin = nivelIsAdmin(currentProfile.nivel);
     const dIni = new Date((e.data_inicio||e.data)+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
     const dFim = e.data_fim && e.data_fim!==(e.data_inicio||e.data) ? ' — '+new Date(e.data_fim+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}) : '';
     const badges = [e.live?'<span style="font-size:10px;background:var(--coral-bg);color:var(--coral-text);padding:1px 5px;border-radius:3px">LIVE</span>':'', e.som?'<span style="font-size:10px;background:var(--blue-bg);color:var(--blue-text);padding:1px 5px;border-radius:3px">SOM</span>':''].filter(Boolean).join(' ')||'—';
@@ -1524,12 +1603,12 @@ async function deleteEv(id) {
 function renderPerfil() {
   const av = document.getElementById('perfil-avatar');
   av.textContent = ini(currentProfile.nome);
-  av.className = `avatar ${currentProfile.nivel}`;
+  av.className = `avatar ${getNivelClass(currentProfile.nivel)}`;
   av.style.cssText = 'width:52px;height:52px;font-size:17px';
   document.getElementById('perfil-nome').textContent = currentProfile.nome;
   const badge = document.getElementById('perfil-badge');
-  badge.className = 'badge ' + currentProfile.nivel;
-  badge.textContent = currentProfile.nivel==='admin'?'Administrador':currentProfile.nivel==='lider'?'Líder de ministério':'Voluntário';
+  badge.className = 'badge ' + getNivelClass(currentProfile.nivel);
+  badge.textContent = getNivelLabel(currentProfile.nivel);
   document.getElementById('edit-nome').value = currentProfile.nome;
   document.getElementById('edit-tel').value = currentProfile.tel||'';
   document.getElementById('senha-nova').value = '';
