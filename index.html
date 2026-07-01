@@ -1462,13 +1462,15 @@ async function saveEvento() {
   if (!nome||!data_inicio) { alert('Nome e data de início são obrigatórios.'); return; }
   if (!banda) { alert('A formação da banda é obrigatória.'); return; }
   if (!document.getElementById('ev-local').value) { alert('Selecione o local do evento.'); return; }
+  // Garantir que os campos de horário existam
+  atualizarDiasEvento();
   // Coletar horários por dia
   const dias_horarios = {};
   document.querySelectorAll('[data-dia-input]').forEach(el => {
-    const data = el.dataset.diaInput;
-    if (!dias_horarios[data]) dias_horarios[data] = {};
-    if (el.id.startsWith('hora-ini-')) dias_horarios[data].inicio = el.value;
-    if (el.id.startsWith('hora-fim-')) dias_horarios[data].fim = el.value;
+    const dt = el.dataset.diaInput;
+    if (!dias_horarios[dt]) dias_horarios[dt] = {};
+    if (el.id.startsWith('hora-ini-')) dias_horarios[dt].inicio = el.value;
+    if (el.id.startsWith('hora-fim-')) dias_horarios[dt].fim = el.value;
   });
   // Use first day time as main hora (backward compat)
   const hora = dias_horarios[data_inicio]?.inicio || '09:00';
@@ -1488,7 +1490,7 @@ async function saveEvento() {
       if (e) Object.assign(e,dados);
       // Criar notificações
       for (const c of novosConvites) {
-        await sb('notificacoes',{method:'POST',prefer:'return=minimal',body:JSON.stringify({vol_id:c.volId,ev_id:editId,ev_nome:nome,ev_data:data,ev_hora:hora})});
+        await sb('notificacoes',{method:'POST',prefer:'return=minimal',body:JSON.stringify({vol_id:c.volId,ev_id:editId,ev_nome:nome,ev_data:data_inicio,ev_hora:hora})});
       }
     } else {
       const convites = convidadosNovos.map(vid=>({volId:vid,status:'pendente'}));
@@ -1498,7 +1500,7 @@ async function saveEvento() {
         const novoEv = {...rows[0],ministerios:mins,inscritos:[],convites};
         eventos.push(novoEv);
         for (const c of convites) {
-          await sb('notificacoes',{method:'POST',prefer:'return=minimal',body:JSON.stringify({vol_id:c.volId,ev_id:rows[0].id,ev_nome:nome,ev_data:data,ev_hora:hora})});
+          await sb('notificacoes',{method:'POST',prefer:'return=minimal',body:JSON.stringify({vol_id:c.volId,ev_id:rows[0].id,ev_nome:nome,ev_data:data_inicio,ev_hora:hora})});
         }
       }
     }
@@ -1685,7 +1687,7 @@ function openModal(id, modoEdicao) {
       document.getElementById('ev-som').checked=false;
       document.getElementById('ev-local').value='';
       document.getElementById('ev-dias-container').innerHTML='';
-      atualizarDiasEvento();
+      setTimeout(()=>atualizarDiasEvento(), 10);
       populateChips('ev-ministerios-chips');
       renderConvidarLista([]);
     }
