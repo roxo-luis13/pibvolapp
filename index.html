@@ -251,6 +251,13 @@ hr{border:none;border-top:0.5px solid var(--border);margin:14px 0}
       </div>
     </div>
 
+    <div id="preview-banner" style="display:none;background:var(--purple-bg);color:var(--purple-text);padding:10px 24px;font-size:13px;border-bottom:0.5px solid var(--purple-text);display:none;align-items:center;justify-content:space-between;gap:12px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <i class="ti ti-eye" style="font-size:16px"></i>
+        <span>Você está visualizando como: <strong id="preview-label"></strong></span>
+      </div>
+      <button class="btn sm" onclick="sairPreVisualizacao()" style="background:var(--purple-text);color:#fff;border-color:var(--purple-text)"><i class="ti ti-x"></i>Sair da pré-visualização</button>
+    </div>
     <div class="content">
       <div class="section active" id="section-dashboard">
         <div class="grid-3" style="margin-bottom:20px">
@@ -718,13 +725,14 @@ let ministerios = [], voluntarios = [], eventos = [], notificacoes = [];
 let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
 let selectedEvento = null, currentDetalheId = null;
 let sidebarCollapsed = false;
+let previewNivel = null; // null = normal mode, string = previewing as this nivel
 const isMobile = () => window.innerWidth <= 768;
 const ini = n => (n||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
 const canAccess = mId => {
   if (!currentProfile) return false;
-  const n = niveisAcesso.find(n=>n.nome===currentProfile.nivel);
+  const n = niveisAcesso.find(n=>n.nome===getNivelAtivo());
   if (n && n.pode_ver_todos_ministerios) return true;
-  if (nivelIsAdmin(currentProfile.nivel)) return true;
+  if (nivelIsAdmin(getNivelAtivo())) return true;
   return (currentProfile.ministerios||[]).includes(mId);
 };
 
@@ -978,8 +986,8 @@ function navigate(sec, extra) {
   const titles = {dashboard:'Dashboard',calendario:'Calendário',ministerios:'Ministérios',voluntarios:'Voluntários',eventos:'Eventos',niveis:'Níveis de acesso',perfil:'Meu perfil','ministerio-detalhe':'Detalhes do ministério'};
   document.getElementById('page-title').textContent = titles[sec] || '';
   const acts = document.getElementById('topbar-actions'); acts.innerHTML = '';
-  const isAdmin = nivelIsAdmin(currentProfile.nivel);
-  const isLiderOuAdmin = nivelIsLiderOuAdmin(currentProfile.nivel);
+  const isAdmin = nivelIsAdmin(getNivelAtivo());
+  const isLiderOuAdmin = nivelIsLiderOuAdmin(getNivelAtivo());
   if (isAdmin && sec==='ministerios') acts.innerHTML = `<button class="btn primary" onclick="openModalMin()"><i class="ti ti-plus"></i>Novo ministério</button>`;
   if (isLiderOuAdmin && sec==='voluntarios') acts.innerHTML = `<button class="btn primary" onclick="openModal('modal-vol')"><i class="ti ti-user-plus"></i>Novo voluntário</button>`;
   if (isAdmin && sec==='eventos') acts.innerHTML = `<button class="btn primary" onclick="openModal('modal-ev')"><i class="ti ti-plus"></i>Novo evento</button>`;
@@ -1222,7 +1230,7 @@ const getMinInscrito = ev => (ev.inscritos||[]).find(i=>i.volId===currentProfile
 function showEventDetail(evId) {
   const ev = eventos.find(e=>e.id===evId); if (!ev) return;
   selectedEvento = ev;
-  const userCanJoin = nivelIsAdmin(currentProfile.nivel) || (ev.ministerios||[]).some(mid=>(currentProfile.ministerios||[]).includes(mid));
+  const userCanJoin = nivelIsAdmin(getNivelAtivo()) || (ev.ministerios||[]).some(mid=>(currentProfile.ministerios||[]).includes(mid));
   document.getElementById('btn-inscricao').style.display = userCanJoin ? 'inline-flex' : 'none';
   const d = new Date(ev.data+'T12:00:00');
   const ds = d.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});
@@ -1387,8 +1395,8 @@ function openDetalhe(id) { navigate('ministerio-detalhe', id); }
 function renderDetalhe(id) {
   currentDetalheId = id;
   const m = ministerios.find(m=>m.id===id); if (!m) return;
-  const isAdmin = nivelIsAdmin(currentProfile.nivel);
-  const isLiderOuAdmin = nivelIsLiderOuAdmin(currentProfile.nivel);
+  const isAdmin = nivelIsAdmin(getNivelAtivo());
+  const isLiderOuAdmin = nivelIsLiderOuAdmin(getNivelAtivo());
   document.getElementById('detalhe-nome').textContent = m.nome;
   document.getElementById('detalhe-admin-btns').innerHTML = isAdmin ? `<div style="display:flex;gap:6px"><button class="btn sm" onclick="editMinisterio('${id}')"><i class="ti ti-edit"></i>Editar</button><button class="btn sm danger" onclick="deleteMinisterio('${id}',true)"><i class="ti ti-trash"></i>Excluir</button></div>` : '';
   const lider = voluntarios.find(v=>v.id===m.lider_id);
@@ -1510,6 +1518,57 @@ async function deleteMinisterio(id, goBack) {
 }
 
 // ===== NÍVEIS DE ACESSO =====
+// ===== PRÉ-VISUALIZAÇÃO DE NÍVEL =====
+function preVisualizarNivel(nomeNivel) {
+  previewNivel = nomeNivel;
+  const n = niveisAcesso.find(n=>n.nome===nomeNivel);
+  const label = n ? (n.nome.charAt(0).toUpperCase()+n.nome.slice(1)) : nomeNivel;
+  // Show banner
+  const banner = document.getElementById('preview-banner');
+  banner.style.display = 'flex';
+  document.getElementById('preview-label').textContent = label;
+  // Update sidebar to reflect preview nivel
+  updateSidebarPreview();
+  // Navigate to dashboard in preview mode
+  navigate('dashboard');
+}
+
+function sairPreVisualizacao() {
+  previewNivel = null;
+  document.getElementById('preview-banner').style.display = 'none';
+  updateSidebar();
+  navigate('niveis');
+}
+
+// Returns the nivel to use for permission checks (preview or real)
+function getNivelAtivo() {
+  return previewNivel || currentProfile.nivel;
+}
+
+function updateSidebarPreview() {
+  const nivel = previewNivel;
+  const isAdmin = nivelIsAdmin(nivel);
+  const isLiderOuAdmin = nivelIsLiderOuAdmin(nivel);
+  const n = niveisAcesso.find(n=>n.nome===nivel);
+  const label = n ? (n.nome.charAt(0).toUpperCase()+n.nome.slice(1)) : nivel;
+  // Update sidebar user display to show preview mode
+  document.getElementById('sb-name').textContent = currentProfile.nome + ' (como ' + label + ')';
+  document.getElementById('sb-role').textContent = '👁 Pré-visualização';
+  document.getElementById('sb-avatar').style.background = 'var(--purple-bg)';
+  document.getElementById('sb-avatar').style.color = 'var(--purple-text)';
+  // Show/hide nav items based on preview nivel
+  const navMin = document.getElementById('nav-ministerios');
+  const navVol = document.getElementById('nav-voluntarios');
+  const navEv = document.getElementById('nav-eventos');
+  const navNiv = document.getElementById('nav-niveis');
+  const adminSec = document.getElementById('admin-section');
+  if (navMin) navMin.style.display = isLiderOuAdmin ? 'flex' : 'none';
+  if (navVol) navVol.style.display = isLiderOuAdmin ? 'flex' : 'none';
+  if (navEv) navEv.style.display = isAdmin ? 'flex' : 'none';
+  if (navNiv) navNiv.style.display = 'none'; // never show in preview
+  if (adminSec) adminSec.style.display = isLiderOuAdmin ? 'block' : 'none';
+}
+
 const NIVEL_PADRAO = ['admin','lider','voluntario'];
 const PERMS = [
   {id:'pode_criar_ministerios', label:'Criar ministérios'},
@@ -1552,7 +1611,8 @@ function renderNiveis() {
         </div>
         <p style="font-size:12px;color:var(--text-secondary)">${n.descricao||'Sem descrição'}</p>
       </div>
-      <div style="display:flex;gap:4px;flex-shrink:0">
+      <div style="display:flex;gap:4px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">
+        <button class="btn sm" onclick="preVisualizarNivel('${n.nome}')" style="background:var(--purple-bg);color:var(--purple-text);border-color:var(--purple-text)"><i class="ti ti-eye"></i>Pré-visualizar</button>
         <button class="btn sm" onclick="editNivel('${n.id}')"><i class="ti ti-edit"></i>Editar</button>
         ${!isPadrao?`<button class="btn sm danger" onclick="deleteNivel('${n.id}')"><i class="ti ti-trash"></i>Excluir</button>`:''}
       </div>
@@ -1689,7 +1749,7 @@ function renderVoluntarios() {
     return a.nome.localeCompare(b.nome,'pt');
   });
 
-  const canManage = nivelIsLiderOuAdmin(currentProfile.nivel);
+  const canManage = nivelIsLiderOuAdmin(getNivelAtivo());
   const tbody = document.getElementById('vol-tbody');
 
   if (!lista.length) {
@@ -2108,7 +2168,7 @@ function openModal(id, modoEdicao) {
 }
 // ===== BANDA VISIBILITY =====
 function podVerBanda() {
-  if (nivelIsAdmin(currentProfile.nivel)) return true;
+  if (nivelIsAdmin(getNivelAtivo())) return true;
   // Verificar se o usuário pertence a um ministério de som/transmissão/multimídia/banda
   const palavrasChave = ['som', 'transmiss', 'multim', 'banda', 'music', 'louvor', 'worship', 'audio', 'áudio', 'mídia', 'media'];
   const meusMinisterios = ministerios.filter(m => (currentProfile.ministerios||[]).includes(m.id));
