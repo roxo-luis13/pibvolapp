@@ -309,6 +309,19 @@ hr{border:none;border-top:0.5px solid var(--border);margin:14px 0}
       </div>
 
       <div class="section" id="section-ministerios">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+          <input id="min-busca" type="text" placeholder="Buscar ministério..." oninput="renderMinisterios()" style="flex:1;min-width:180px;padding:7px 12px;border:0.5px solid var(--border-md);border-radius:var(--radius);font-size:13px;background:var(--bg-primary);color:var(--text-primary);font-family:inherit">
+          <select id="min-filtro-acesso" onchange="renderMinisterios()" style="padding:7px 12px;border:0.5px solid var(--border-md);border-radius:var(--radius);font-size:13px;background:var(--bg-primary);color:var(--text-primary);font-family:inherit">
+            <option value="">Todos</option>
+            <option value="meus">Apenas os meus</option>
+            <option value="outros">Sem acesso</option>
+          </select>
+          <select id="min-ordem" onchange="renderMinisterios()" style="padding:7px 12px;border:0.5px solid var(--border-md);border-radius:var(--radius);font-size:13px;background:var(--bg-primary);color:var(--text-primary);font-family:inherit">
+            <option value="nome">Ordenar: Nome A→Z</option>
+            <option value="nome-desc">Ordenar: Nome Z→A</option>
+            <option value="vols">Ordenar: Mais voluntários</option>
+          </select>
+        </div>
         <div class="grid-3" id="ministerios-grid"></div>
       </div>
 
@@ -340,18 +353,72 @@ hr{border:none;border-top:0.5px solid var(--border);margin:14px 0}
 
       <div class="section" id="section-voluntarios">
         <div class="card">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+            <input id="vol-busca" type="text" placeholder="Buscar por nome, email ou telefone..." oninput="renderVoluntarios()" style="flex:1;min-width:180px;padding:7px 12px;border:0.5px solid var(--border-md);border-radius:var(--radius);font-size:13px;background:var(--bg-primary);color:var(--text-primary);font-family:inherit">
+            <select id="vol-filtro-min" onchange="renderVoluntarios()" style="padding:7px 12px;border:0.5px solid var(--border-md);border-radius:var(--radius);font-size:13px;background:var(--bg-primary);color:var(--text-primary);font-family:inherit">
+              <option value="">Todos os ministérios</option>
+            </select>
+            <select id="vol-filtro-nivel" onchange="renderVoluntarios()" style="padding:7px 12px;border:0.5px solid var(--border-md);border-radius:var(--radius);font-size:13px;background:var(--bg-primary);color:var(--text-primary);font-family:inherit">
+              <option value="">Todos os níveis</option>
+            </select>
+            <select id="vol-ordem" onchange="renderVoluntarios()" style="padding:7px 12px;border:0.5px solid var(--border-md);border-radius:var(--radius);font-size:13px;background:var(--bg-primary);color:var(--text-primary);font-family:inherit">
+              <option value="nome">Ordenar: Nome A→Z</option>
+              <option value="nome-desc">Ordenar: Nome Z→A</option>
+              <option value="nivel">Ordenar: Nível</option>
+              <option value="ministerios">Ordenar: Mais ministérios</option>
+            </select>
+          </div>
           <div class="table-wrap">
             <table><thead><tr><th>Nome</th><th>Email</th><th>Telefone</th><th>Ministérios</th><th>Nível</th><th></th></tr></thead>
             <tbody id="vol-tbody"></tbody></table>
           </div>
+          <div id="vol-count" style="font-size:12px;color:var(--text-tertiary);margin-top:10px;text-align:right"></div>
         </div>
       </div>
 
       <div class="section" id="section-eventos">
-        <div class="card">
+        <!-- Eventos deste mês -->
+        <div class="card" style="margin-bottom:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <h3 style="font-size:14px;font-weight:500" id="ev-mes-titulo">Eventos do mês</h3>
+            <span id="ev-mes-count" style="font-size:12px;color:var(--text-secondary)"></span>
+          </div>
           <div class="table-wrap">
             <table><thead><tr><th>Evento</th><th>Data</th><th>Recursos</th><th>Local</th><th>Ministérios</th><th>Inscritos</th><th></th></tr></thead>
-            <tbody id="ev-tbody"></tbody></table>
+            <tbody id="ev-tbody-mes"></tbody></table>
+          </div>
+          <div id="ev-mes-empty" style="display:none" class="empty" style="padding:20px"><i class="ti ti-calendar-off"></i>Nenhum evento neste mês</div>
+        </div>
+        <!-- Eventos passados (colapsável) -->
+        <div class="card" style="margin-bottom:12px" id="ev-passados-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleSecaoEv('passados')">
+            <h3 style="font-size:14px;font-weight:500;color:var(--text-secondary)"><i class="ti ti-clock" style="margin-right:6px"></i>Eventos passados</h3>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span id="ev-passados-count" style="font-size:12px;color:var(--text-tertiary)"></span>
+              <i class="ti ti-chevron-down" id="ev-passados-icon" style="color:var(--text-tertiary);transition:transform .2s"></i>
+            </div>
+          </div>
+          <div id="ev-passados-body" style="display:none;margin-top:12px">
+            <div class="table-wrap">
+              <table><thead><tr><th>Evento</th><th>Data</th><th>Recursos</th><th>Local</th><th>Ministérios</th><th>Inscritos</th><th></th></tr></thead>
+              <tbody id="ev-tbody-passados"></tbody></table>
+            </div>
+          </div>
+        </div>
+        <!-- Próximos meses (colapsável) -->
+        <div class="card" id="ev-futuros-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleSecaoEv('futuros')">
+            <h3 style="font-size:14px;font-weight:500;color:var(--text-secondary)"><i class="ti ti-calendar-forward" style="margin-right:6px"></i>Próximos meses</h3>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span id="ev-futuros-count" style="font-size:12px;color:var(--text-tertiary)"></span>
+              <i class="ti ti-chevron-down" id="ev-futuros-icon" style="color:var(--text-tertiary);transition:transform .2s"></i>
+            </div>
+          </div>
+          <div id="ev-futuros-body" style="display:none;margin-top:12px">
+            <div class="table-wrap">
+              <table><thead><tr><th>Evento</th><th>Data</th><th>Recursos</th><th>Local</th><th>Ministérios</th><th>Inscritos</th><th></th></tr></thead>
+              <tbody id="ev-tbody-futuros"></tbody></table>
+            </div>
           </div>
         </div>
       </div>
@@ -1200,11 +1267,36 @@ async function toggleInscricao() {
 
 // ===== MINISTÉRIOS =====
 function renderMinisterios() {
+  const busca = (document.getElementById('min-busca')?.value||'').toLowerCase();
+  const filtroAcesso = document.getElementById('min-filtro-acesso')?.value||'';
+  const ordem = document.getElementById('min-ordem')?.value||'nome';
+
+  let lista = ministerios.filter(m => {
+    if (busca && !m.nome.toLowerCase().includes(busca) && !(m.descricao||'').toLowerCase().includes(busca)) return false;
+    if (filtroAcesso === 'meus' && !canAccess(m.id)) return false;
+    if (filtroAcesso === 'outros' && canAccess(m.id)) return false;
+    return true;
+  });
+
+  lista = lista.sort((a,b) => {
+    if (ordem === 'nome') return a.nome.localeCompare(b.nome,'pt-BR');
+    if (ordem === 'nome-desc') return b.nome.localeCompare(a.nome,'pt-BR');
+    if (ordem === 'vols') {
+      const va = voluntarios.filter(v=>(v.ministerios||[]).includes(a.id)).length;
+      const vb = voluntarios.filter(v=>(v.ministerios||[]).includes(b.id)).length;
+      return vb - va;
+    }
+    return 0;
+  });
+
   const grid = document.getElementById('ministerios-grid');
-  if (!ministerios.length) { grid.innerHTML='<div class="empty" style="grid-column:1/-1"><i class="ti ti-users-group"></i>Nenhum ministério criado</div>'; return; }
+  if (!lista.length) {
+    grid.innerHTML = '<div class="empty" style="grid-column:1/-1"><i class="ti ti-search"></i>Nenhum ministério encontrado</div>';
+    return;
+  }
   const isAdmin = nivelIsAdmin(currentProfile.nivel);
   grid.innerHTML = '';
-  ministerios.forEach(m => {
+  lista.forEach(m => {
     const locked = !canAccess(m.id);
     const vols = voluntarios.filter(v=>(v.ministerios||[]).includes(m.id));
     const lider = voluntarios.find(v=>v.id===m.lider_id);
@@ -1497,11 +1589,53 @@ function atualizarSelectNiveis() {
 
 // ===== VOLUNTÁRIOS =====
 function renderVoluntarios() {
-  document.getElementById('vol-tbody').innerHTML = voluntarios.map(v => {
+  // Atualizar selects de filtro
+  const selMin = document.getElementById('vol-filtro-min');
+  const selNivel = document.getElementById('vol-filtro-nivel');
+  if (selMin) {
+    const curMin = selMin.value;
+    selMin.innerHTML = '<option value="">Todos os ministérios</option>' +
+      ministerios.map(m=>`<option value="${m.id}">${m.nome}</option>`).join('');
+    selMin.value = curMin;
+  }
+  if (selNivel) {
+    const curNivel = selNivel.value;
+    selNivel.innerHTML = '<option value="">Todos os níveis</option>' +
+      [...new Set(voluntarios.map(v=>v.nivel))].map(n=>`<option value="${n}">${getNivelLabel(n)}</option>`).join('');
+    selNivel.value = curNivel;
+  }
+
+  const busca = (document.getElementById('vol-busca')?.value||'').toLowerCase();
+  const filtroMin = document.getElementById('vol-filtro-min')?.value||'';
+  const filtroNivel = document.getElementById('vol-filtro-nivel')?.value||'';
+  const ordem = document.getElementById('vol-ordem')?.value||'nome';
+
+  let lista = voluntarios.filter(v => {
+    const textoOk = !busca || v.nome.toLowerCase().includes(busca) || (v.email||'').toLowerCase().includes(busca) || (v.tel||'').includes(busca);
+    const minOk = !filtroMin || (v.ministerios||[]).includes(filtroMin);
+    const nivelOk = !filtroNivel || v.nivel === filtroNivel;
+    return textoOk && minOk && nivelOk;
+  });
+
+  lista.sort((a,b) => {
+    if (ordem==='nome-desc') return b.nome.localeCompare(a.nome,'pt');
+    if (ordem==='nivel') return (a.nivel||'').localeCompare(b.nivel||'','pt');
+    if (ordem==='ministerios') return ((b.ministerios||[]).length) - ((a.ministerios||[]).length);
+    return a.nome.localeCompare(b.nome,'pt');
+  });
+
+  const canManage = nivelIsLiderOuAdmin(currentProfile.nivel);
+  const tbody = document.getElementById('vol-tbody');
+
+  if (!lista.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-tertiary)"><i class="ti ti-search" style="font-size:20px;display:block;margin-bottom:8px"></i>Nenhum voluntário encontrado</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = lista.map(v => {
     const mins = (v.ministerios||[]).map(id=>{const m=ministerios.find(m=>m.id===id);return m?`<span class="tag ${m.cor}">${m.nome}</span>`:''}).join('');
-    const canManage = nivelIsLiderOuAdmin(currentProfile.nivel);
     const btns = canManage ? `<div style="display:flex;gap:4px"><button class="btn sm" onclick="editVoluntario('${v.id}')"><i class="ti ti-edit"></i></button>${v.id!==currentProfile.id?`<button class="btn sm danger" onclick="deleteVol('${v.id}')"><i class="ti ti-trash"></i></button>`:''}</div>` : '';
-    return `<tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar ${v.nivel}" style="width:28px;height:28px;font-size:10px">${ini(v.nome)}</div>${v.nome}</div></td><td style="color:var(--text-secondary)">${v.email}</td><td style="color:var(--text-secondary)">${v.tel||'—'}</td><td>${mins||'—'}</td><td><span class="badge ${v.nivel}">${getNivelLabel(v.nivel)}</span></td><td>${btns}</td></tr>`;
+    return `<tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar ${getNivelClass(v.nivel)}" style="width:28px;height:28px;font-size:10px">${ini(v.nome)}</div>${v.nome}</div></td><td style="color:var(--text-secondary)">${v.email}</td><td style="color:var(--text-secondary)">${v.tel||'—'}</td><td>${mins||'—'}</td><td><span class="badge ${getNivelClass(v.nivel)}">${getNivelLabel(v.nivel)}</span></td><td>${btns}</td></tr>`;
   }).join('');
 }
 
@@ -1556,17 +1690,63 @@ async function deleteVol(id) {
 }
 
 // ===== EVENTOS =====
+
+function buildEvRow(e, isAdmin) {
+  const dIni = new Date((e.data_inicio||e.data)+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
+  const dFim = e.data_fim && e.data_fim!==(e.data_inicio||e.data) ? ' — '+new Date(e.data_fim+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}) : '';
+  const badges = [e.live?'<span style="font-size:10px;background:var(--coral-bg);color:var(--coral-text);padding:1px 5px;border-radius:3px">LIVE</span>':'', e.som?'<span style="font-size:10px;background:var(--blue-bg);color:var(--blue-text);padding:1px 5px;border-radius:3px">SOM</span>':''].filter(Boolean).join(' ')||'—';
+  const mins = (e.ministerios||[]).map(id=>{const m=ministerios.find(m=>m.id===id);return m?`<span class="tag ${m.cor}">${m.nome}</span>`:''}).join('');
+  return `<tr><td style="font-weight:500">${e.nome}</td><td style="color:var(--text-secondary);white-space:nowrap">${dIni}${dFim}</td><td>${badges}</td><td style="color:var(--text-secondary)">${e.local?LOCAIS[e.local]||e.local:'—'}</td><td>${mins}</td><td>${(e.inscritos||[]).length}</td><td>${isAdmin?`<div style="display:flex;gap:4px"><button class="btn sm" onclick="editEvento('${e.id}')"><i class="ti ti-edit"></i></button><button class="btn sm danger" onclick="deleteEv('${e.id}')"><i class="ti ti-trash"></i></button></div>`:''}</td></tr>`;
+}
+
+function toggleSecaoEv(tipo) {
+  const body = document.getElementById('ev-'+tipo+'-body');
+  const icon = document.getElementById('ev-'+tipo+'-icon');
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : 'block';
+  icon.style.transform = isOpen ? '' : 'rotate(180deg)';
+}
+
 function renderEventos() {
-  document.getElementById('ev-tbody').innerHTML = eventos.map(e => {
-    const d = new Date(e.data+'T12:00:00');
-    const ds = d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
-    const mins = (e.ministerios||[]).map(id=>{const m=ministerios.find(m=>m.id===id);return m?`<span class="tag ${m.cor}">${m.nome}</span>`:''}).join('');
-    const isAdmin = nivelIsAdmin(currentProfile.nivel);
-    const dIni = new Date((e.data_inicio||e.data)+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
-    const dFim = e.data_fim && e.data_fim!==(e.data_inicio||e.data) ? ' — '+new Date(e.data_fim+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}) : '';
-    const badges = [e.live?'<span style="font-size:10px;background:var(--coral-bg);color:var(--coral-text);padding:1px 5px;border-radius:3px">LIVE</span>':'', e.som?'<span style="font-size:10px;background:var(--blue-bg);color:var(--blue-text);padding:1px 5px;border-radius:3px">SOM</span>':''].filter(Boolean).join(' ')||'—';
-    return `<tr><td style="font-weight:500">${e.nome}</td><td style="color:var(--text-secondary);white-space:nowrap">${dIni}${dFim}</td><td>${badges}</td><td style="color:var(--text-secondary)">${e.local?LOCAIS[e.local]||e.local:'—'}</td><td>${mins}</td><td>${(e.inscritos||[]).length}</td><td>${isAdmin?`<div style="display:flex;gap:4px"><button class="btn sm" onclick="editEvento('${e.id}')"><i class="ti ti-edit"></i></button><button class="btn sm danger" onclick="deleteEv('${e.id}')"><i class="ti ti-trash"></i></button></div>`:''}</td></tr>`;
-  }).join('');
+  const now = new Date();
+  const mesAtual = now.getMonth();
+  const anoAtual = now.getFullYear();
+  const isAdmin = nivelIsAdmin(currentProfile.nivel);
+
+  const passados = [], doMes = [], futuros = [];
+  eventos.sort((a,b)=>new Date(a.data_inicio||a.data)-new Date(b.data_inicio||b.data)).forEach(e => {
+    const dataRef = new Date((e.data_inicio||e.data)+'T12:00:00');
+    const mes = dataRef.getMonth(), ano = dataRef.getFullYear();
+    if (ano < anoAtual || (ano === anoAtual && mes < mesAtual)) passados.push(e);
+    else if (ano === anoAtual && mes === mesAtual) doMes.push(e);
+    else futuros.push(e);
+  });
+
+  // Mês atual
+  const mesTitulo = 'Eventos de ' + new Date(anoAtual, mesAtual, 1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  document.getElementById('ev-mes-titulo').textContent = mesTitulo.charAt(0).toUpperCase()+mesTitulo.slice(1);
+  document.getElementById('ev-mes-count').textContent = doMes.length + ' evento(s)';
+  const tbMes = document.getElementById('ev-tbody-mes');
+  const emptyMes = document.getElementById('ev-mes-empty');
+  if (doMes.length) {
+    tbMes.innerHTML = doMes.map(e=>buildEvRow(e,isAdmin)).join('');
+    tbMes.closest('.table-wrap').style.display='';
+    emptyMes.style.display='none';
+  } else {
+    tbMes.innerHTML='';
+    tbMes.closest('.table-wrap').style.display='none';
+    emptyMes.style.display='block';
+  }
+
+  // Passados (revertidos - mais recente primeiro)
+  document.getElementById('ev-passados-count').textContent = passados.length + ' evento(s)';
+  document.getElementById('ev-passados-card').style.display = passados.length ? '' : 'none';
+  document.getElementById('ev-tbody-passados').innerHTML = [...passados].reverse().map(e=>buildEvRow(e,isAdmin)).join('');
+
+  // Futuros
+  document.getElementById('ev-futuros-count').textContent = futuros.length + ' evento(s)';
+  document.getElementById('ev-futuros-card').style.display = futuros.length ? '' : 'none';
+  document.getElementById('ev-tbody-futuros').innerHTML = futuros.map(e=>buildEvRow(e,isAdmin)).join('');
 }
 
 function editEvento(id) {
