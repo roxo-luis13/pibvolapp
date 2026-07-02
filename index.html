@@ -762,26 +762,47 @@ async function saveNewPassword() {
   const conf = document.getElementById('conf-senha').value;
   const errEl = document.getElementById('first-access-error');
   if (errEl) errEl.style.display = 'none';
+
   if (nova.length < 6) {
-    if (errEl) { errEl.textContent = 'A senha deve ter pelo menos 6 caracteres.'; errEl.style.display = 'block'; }
+    mostraErroPrimeiroAcesso('A senha deve ter pelo menos 6 caracteres.');
     return;
   }
   if (nova !== conf) {
-    if (errEl) { errEl.textContent = 'As senhas não coincidem. Tente novamente.'; errEl.style.display = 'block'; }
+    mostraErroPrimeiroAcesso('As senhas não coincidem. Tente novamente.');
     return;
   }
+
   const btn = document.getElementById('btn-first-access');
   if (btn) { btn.innerHTML = '<span class="spin"></span> Salvando...'; btn.disabled = true; }
+
   try {
     const hash = await sha256(nova);
-    await sb(`voluntarios?id=eq.${currentProfile.id}`, {
+
+    // Tentar PATCH direto via fetch com a anon key
+    const res = await fetch(`${SUPA_URL}/rest/v1/voluntarios?id=eq.${currentProfile.id}`, {
       method: 'PATCH',
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': 'Bearer ' + SUPA_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
       body: JSON.stringify({ senha_hash: hash, primeiro_acesso: false })
     });
+
+    if (!res.ok) {
+      const errData = await res.json().catch(()=>({}));
+      throw new Error(errData.message || errData.hint || `Erro HTTP ${res.status}`);
+    }
+
+    // Sucesso - atualizar estado local
+    currentProfile.senha_hash = hash;
     currentProfile.primeiro_acesso = false;
     session = { access_token: SUPA_KEY, user: { id: currentProfile.id } };
     localStorage.setItem('igreja_session', JSON.stringify(session));
+
     await loadAllData();
+
     document.getElementById('first-access-form').style.display = 'none';
     document.getElementById('first-notice').style.display = 'none';
     document.getElementById('login-form-area').style.display = 'block';
@@ -789,10 +810,17 @@ async function saveNewPassword() {
     updateSidebar();
     checkMobileLayout();
     navigate('dashboard');
+
   } catch(e) {
-    if (errEl) { errEl.textContent = 'Erro ao salvar senha: ' + e.message; errEl.style.display = 'block'; }
+    mostraErroPrimeiroAcesso('Erro ao salvar senha: ' + e.message);
     if (btn) { btn.innerHTML = '<i class="ti ti-check"></i>Definir senha e entrar'; btn.disabled = false; }
   }
+}
+
+function mostraErroPrimeiroAcesso(msg) {
+  const errEl = document.getElementById('first-access-error');
+  if (errEl) { errEl.textContent = msg; errEl.style.display = 'block'; }
+  else { alert(msg); }
 }
 
 function voltarParaLogin() {
@@ -1083,7 +1111,7 @@ function showEventDetail(evId) {
       ${inscrito?`<span class="badge voluntario" style="white-space:nowrap">✓ ${minInscritoObj?minInscritoObj.nome:'Inscrito'}</span>`:''}
     </div>
     <p style="font-size:13px;color:var(--text-secondary);margin-bottom:10px">${ev.descricao||''}</p>
-    ${ev.banda?`<div style="background:var(--amber-bg);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px"><p style="font-size:11px;font-weight:500;color:var(--amber-text);margin-bottom:3px"><i class="ti ti-music"></i> FORMAÇÃO DA BANDA</p><p style="font-size:13px">${ev.banda}</p></div>`:''}
+    ${ev.banda&&podVerBanda()?`<div style="background:var(--amber-bg);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px"><p style="font-size:11px;font-weight:500;color:var(--amber-text);margin-bottom:3px"><i class="ti ti-music"></i> FORMAÇÃO DA BANDA</p><p style="font-size:13px">${ev.banda}</p></div>`:''}
     <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px">${minsTag}</div>
     <div style="background:var(--bg-secondary);border-radius:var(--radius);padding:12px">${buildVolsPorMin(ev)}</div>`;
 }
@@ -1658,11 +1686,29 @@ async function alterarSenha() {
   msg.className = 'alert danger'; msg.style.display='block';
   if (nova.length<6) { msg.textContent='Mínimo 6 caracteres.'; return; }
   if (nova!==conf) { msg.textContent='As senhas não coincidem.'; return; }
-  const hash = await sha256(nova);
-  await sb(`voluntarios?id=eq.${currentProfile.id}`,{method:'PATCH',body:JSON.stringify({senha_hash:hash})});
-  msg.className = 'alert'; msg.style.background='var(--success-bg)'; msg.style.color='var(--success-text)'; msg.textContent='Senha alterada com sucesso!';
-  document.getElementById('senha-nova').value = ''; document.getElementById('senha-conf').value = '';
-  setTimeout(()=>msg.style.display='none',3000);
+  try {
+    const hash = await sha256(nova);
+    const res = await fetch(`${SUPA_URL}/rest/v1/voluntarios?id=eq.${currentProfile.id}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': 'Bearer ' + SUPA_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ senha_hash: hash })
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(()=>({}));
+      throw new Error(errData.message || `Erro ${res.status}`);
+    }
+    currentProfile.senha_hash = hash;
+    msg.className = 'alert'; msg.style.background='var(--success-bg)'; msg.style.color='var(--success-text)'; msg.textContent='Senha alterada com sucesso!';
+    document.getElementById('senha-nova').value = ''; document.getElementById('senha-conf').value = '';
+    setTimeout(()=>msg.style.display='none',3000);
+  } catch(e) {
+    msg.textContent = 'Erro ao alterar senha: ' + e.message;
+  }
 }
 
 async function saveMinisteriosPerfil() {
@@ -1789,6 +1835,19 @@ function openModal(id, modoEdicao) {
   }
   document.getElementById(id).classList.add('open');
 }
+// ===== BANDA VISIBILITY =====
+function podVerBanda() {
+  if (nivelIsAdmin(currentProfile.nivel)) return true;
+  // Verificar se o usuário pertence a um ministério de som/transmissão/multimídia/banda
+  const palavrasChave = ['som', 'transmiss', 'multim', 'banda', 'music', 'louvor', 'worship', 'audio', 'áudio', 'mídia', 'media'];
+  const meusMinisterios = ministerios.filter(m => (currentProfile.ministerios||[]).includes(m.id));
+  return meusMinisterios.some(m => {
+    const nome = (m.nome||'').toLowerCase();
+    const desc = (m.descricao||'').toLowerCase();
+    return palavrasChave.some(p => nome.includes(p) || desc.includes(p));
+  });
+}
+
 // ===== DIAS DO EVENTO =====
 const LOCAIS = {salao_principal:'Salão Principal', multiuso:'Multiuso', quadra:'Quadra'};
 
