@@ -1893,7 +1893,7 @@ async function deleteVol(id) {
 
 // ===== EVENTOS =====
 
-function buildEvRow(e, isAdmin) {
+function buildEvRow(e, isAdmin, podeCriarEv, podeEditarEv) {
   const dIni = new Date((e.data_inicio||e.data)+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
   const dFim = e.data_fim && e.data_fim!==(e.data_inicio||e.data) ? ' — '+new Date(e.data_fim+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}) : '';
   const badges = [e.live?'<span style="font-size:10px;background:var(--coral-bg);color:var(--coral-text);padding:1px 5px;border-radius:3px">LIVE</span>':'', e.som?'<span style="font-size:10px;background:var(--blue-bg);color:var(--blue-text);padding:1px 5px;border-radius:3px">SOM</span>':''].filter(Boolean).join(' ')||'—';
@@ -1933,7 +1933,7 @@ function renderEventos() {
   const tbMes = document.getElementById('ev-tbody-mes');
   const emptyMes = document.getElementById('ev-mes-empty');
   if (doMes.length) {
-    tbMes.innerHTML = doMes.map(e=>buildEvRow(e,isAdmin)).join('');
+    tbMes.innerHTML = doMes.map(e=>buildEvRow(e,isAdmin,podeCriarEv2,podeEditarEv2)).join('');
     tbMes.closest('.table-wrap').style.display='';
     emptyMes.style.display='none';
   } else {
@@ -1945,12 +1945,12 @@ function renderEventos() {
   // Passados (revertidos - mais recente primeiro)
   document.getElementById('ev-passados-count').textContent = passados.length + ' evento(s)';
   document.getElementById('ev-passados-card').style.display = passados.length ? '' : 'none';
-  document.getElementById('ev-tbody-passados').innerHTML = [...passados].reverse().map(e=>buildEvRow(e,isAdmin)).join('');
+  document.getElementById('ev-tbody-passados').innerHTML = [...passados].reverse().map(e=>buildEvRow(e,isAdmin,podeCriarEv2,podeEditarEv2)).join('');
 
   // Futuros
   document.getElementById('ev-futuros-count').textContent = futuros.length + ' evento(s)';
   document.getElementById('ev-futuros-card').style.display = futuros.length ? '' : 'none';
-  document.getElementById('ev-tbody-futuros').innerHTML = futuros.map(e=>buildEvRow(e,isAdmin)).join('');
+  document.getElementById('ev-tbody-futuros').innerHTML = futuros.map(e=>buildEvRow(e,isAdmin,podeCriarEv2,podeEditarEv2)).join('');
 }
 
 function editEvento(id) {
