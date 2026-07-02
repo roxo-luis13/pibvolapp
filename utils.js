@@ -42,3 +42,6 @@ function podVerBanda() {
     return palavrasChave.some(p => nome.includes(p) || desc.includes(p));
   });
 }
+
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
