@@ -1896,13 +1896,32 @@ async function deleteVol(id) {
 
 // ===== EVENTOS =====
 
-function buildEvRow(e, isAdmin) {
+function buildEvRow(e) {
+  const nav = getNivelAtivo();
+  const podeCriar = perm(nav,'pode_criar_eventos');
+  const podeEditar = perm(nav,'pode_editar_eventos');
   const dIni = new Date((e.data_inicio||e.data)+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
   const dFim = e.data_fim && e.data_fim!==(e.data_inicio||e.data) ? ' — '+new Date(e.data_fim+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}) : '';
-  const badges = [e.live?'<span style="font-size:10px;background:var(--coral-bg);color:var(--coral-text);padding:1px 5px;border-radius:3px">LIVE</span>':'', e.som?'<span style="font-size:10px;background:var(--blue-bg);color:var(--blue-text);padding:1px 5px;border-radius:3px">SOM</span>':''].filter(Boolean).join(' ')||'—';
+  const badges = [
+    e.live?'<span style="font-size:10px;background:var(--coral-bg);color:var(--coral-text);padding:1px 5px;border-radius:3px">LIVE</span>':'',
+    e.som?'<span style="font-size:10px;background:var(--blue-bg);color:var(--blue-text);padding:1px 5px;border-radius:3px">SOM</span>':''
+  ].filter(Boolean).join(' ')||'—';
   const mins = (e.ministerios||[]).map(id=>{const m=ministerios.find(m=>m.id===id);return m?`<span class="tag ${m.cor}">${m.nome}</span>`:''}).join('');
-  return `<tr><td style="font-weight:500">${e.nome}</td><td style="color:var(--text-secondary);white-space:nowrap">${dIni}${dFim}</td><td>${badges}</td><td style="color:var(--text-secondary)">${e.local?LOCAIS[e.local]||e.local:'—'}</td><td>${mins}</td><td>${(e.inscritos||[]).length}</td><td>${(podeCriarEv||podeEditarEv)?`<div style="display:flex;gap:4px">${podeEditarEv?`<button class="btn sm" onclick="editEvento('${e.id}')"><i class="ti ti-edit"></i></button>`:''}</div>`:''}</td></tr>`;
+  const btns = (podeCriar||podeEditar) ? `<div style="display:flex;gap:4px">
+    ${podeEditar?`<button class="btn sm" onclick="editEvento('${e.id}')"><i class="ti ti-edit"></i></button>`:''}
+    ${podeCriar?`<button class="btn sm danger" onclick="deleteEv('${e.id}')"><i class="ti ti-trash"></i></button>`:''}
+  </div>` : '';
+  return `<tr>
+    <td style="font-weight:500">${e.nome}</td>
+    <td style="color:var(--text-secondary);white-space:nowrap">${dIni}${dFim}</td>
+    <td>${badges}</td>
+    <td style="color:var(--text-secondary)">${e.local?LOCAIS[e.local]||e.local:'—'}</td>
+    <td>${mins}</td>
+    <td>${(e.inscritos||[]).length}</td>
+    <td>${btns}</td>
+  </tr>`;
 }
+
 
 function toggleSecaoEv(tipo) {
   const body = document.getElementById('ev-'+tipo+'-body');
@@ -1916,10 +1935,6 @@ function renderEventos() {
   const now = new Date();
   const mesAtual = now.getMonth();
   const anoAtual = now.getFullYear();
-  const isAdmin = nivelIsAdmin(getNivelAtivo());
-  const podeCriarEv2 = perm(getNivelAtivo(),'pode_criar_eventos');
-  const podeEditarEv2 = perm(getNivelAtivo(),'pode_editar_eventos');
-
   const passados = [], doMes = [], futuros = [];
   eventos.sort((a,b)=>new Date(a.data_inicio||a.data)-new Date(b.data_inicio||b.data)).forEach(e => {
     const dataRef = new Date((e.data_inicio||e.data)+'T12:00:00');
@@ -1936,7 +1951,7 @@ function renderEventos() {
   const tbMes = document.getElementById('ev-tbody-mes');
   const emptyMes = document.getElementById('ev-mes-empty');
   if (doMes.length) {
-    tbMes.innerHTML = doMes.map(e=>buildEvRow(e,isAdmin)).join('');
+    tbMes.innerHTML = doMes.map(e=>buildEvRow(e)).join('');
     tbMes.closest('.table-wrap').style.display='';
     emptyMes.style.display='none';
   } else {
@@ -1948,12 +1963,12 @@ function renderEventos() {
   // Passados (revertidos - mais recente primeiro)
   document.getElementById('ev-passados-count').textContent = passados.length + ' evento(s)';
   document.getElementById('ev-passados-card').style.display = passados.length ? '' : 'none';
-  document.getElementById('ev-tbody-passados').innerHTML = [...passados].reverse().map(e=>buildEvRow(e,isAdmin)).join('');
+  document.getElementById('ev-tbody-passados').innerHTML = [...passados].reverse().map(e=>buildEvRow(e)).join('');
 
   // Futuros
   document.getElementById('ev-futuros-count').textContent = futuros.length + ' evento(s)';
   document.getElementById('ev-futuros-card').style.display = futuros.length ? '' : 'none';
-  document.getElementById('ev-tbody-futuros').innerHTML = futuros.map(e=>buildEvRow(e,isAdmin)).join('');
+  document.getElementById('ev-tbody-futuros').innerHTML = futuros.map(e=>buildEvRow(e)).join('');
 }
 
 function editEvento(id) {
