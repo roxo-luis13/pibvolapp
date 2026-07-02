@@ -700,13 +700,26 @@ let niveisAcesso = [];
 function nivelIsAdmin(nivel) {
   if (nivel === 'admin') return true;
   const n = niveisAcesso.find(n=>n.nome===nivel);
-  // Admin = tem todas as permissões principais
-  return n && n.pode_criar_ministerios && n.pode_excluir_ministerios && n.pode_criar_eventos;
+  if (!n) return false;
+  // Admin = tem a maioria das permissões (pelo menos 6 das 8)
+  const totalPerms = PERMS.filter(p=>n[p.id]).length;
+  return totalPerms >= 6;
 }
 function nivelIsLiderOuAdmin(nivel) {
   if (nivel === 'admin' || nivel === 'lider') return true;
   const n = niveisAcesso.find(n=>n.nome===nivel);
-  return n && (n.pode_cadastrar_voluntarios || n.pode_editar_voluntarios || nivelIsAdmin(nivel));
+  if (!n) return false;
+  return n.pode_cadastrar_voluntarios || n.pode_editar_voluntarios ||
+         n.pode_criar_eventos || n.pode_editar_eventos ||
+         n.pode_criar_ministerios || n.pode_editar_ministerios ||
+         nivelIsAdmin(nivel);
+}
+
+// Verifica se o nível pode editar/criar eventos especificamente
+function nivelPodeGerenciarEventos(nivel) {
+  if (nivel === 'admin' || nivel === 'lider') return true;
+  const n = niveisAcesso.find(n=>n.nome===nivel);
+  return n && (n.pode_criar_eventos || n.pode_editar_eventos);
 }
 function getNivelLabel(nivel) {
   if (nivel === 'admin') return 'Administrador';
@@ -971,7 +984,7 @@ function updateSidebar() {
   const isLiderOuAdmin = nivelIsLiderOuAdmin(currentProfile.nivel);
   document.getElementById('nav-ministerios').style.display = isLiderOuAdmin ? 'flex' : 'none';
   document.getElementById('nav-voluntarios').style.display = isLiderOuAdmin ? 'flex' : 'none';
-  document.getElementById('nav-eventos').style.display = isAdmin ? 'flex' : 'none';
+  document.getElementById('nav-eventos').style.display = (isAdmin || nivelPodeGerenciarEventos(getNivelAtivo())) ? 'flex' : 'none';
   document.getElementById('nav-niveis').style.display = isAdmin ? 'flex' : 'none';
   document.getElementById('admin-section').style.display = isLiderOuAdmin ? 'block' : 'none';
   atualizarBadgeNotif();
@@ -990,7 +1003,7 @@ function navigate(sec, extra) {
   const isLiderOuAdmin = nivelIsLiderOuAdmin(getNivelAtivo());
   if (isAdmin && sec==='ministerios') acts.innerHTML = `<button class="btn primary" onclick="openModalMin()"><i class="ti ti-plus"></i>Novo ministério</button>`;
   if (isLiderOuAdmin && sec==='voluntarios') acts.innerHTML = `<button class="btn primary" onclick="openModal('modal-vol')"><i class="ti ti-user-plus"></i>Novo voluntário</button>`;
-  if (isAdmin && sec==='eventos') acts.innerHTML = `<button class="btn primary" onclick="openModal('modal-ev')"><i class="ti ti-plus"></i>Novo evento</button>`;
+  if ((isAdmin || nivelPodeGerenciarEventos(getNivelAtivo())) && sec==='eventos') acts.innerHTML = `<button class="btn primary" onclick="openModal('modal-ev')"><i class="ti ti-plus"></i>Novo evento</button>`;
   if (isAdmin && sec==='niveis') acts.innerHTML = `<button class="btn primary" onclick="openModalNivel()"><i class="ti ti-plus"></i>Novo nível</button>`;
   const renders = {dashboard:renderDashboard,calendario:renderCalendario,ministerios:renderMinisterios,voluntarios:renderVoluntarios,eventos:renderEventos,niveis:renderNiveis,perfil:renderPerfil};
   if (renders[sec]) renders[sec]();
@@ -1564,7 +1577,7 @@ function updateSidebarPreview() {
   const adminSec = document.getElementById('admin-section');
   if (navMin) navMin.style.display = isLiderOuAdmin ? 'flex' : 'none';
   if (navVol) navVol.style.display = isLiderOuAdmin ? 'flex' : 'none';
-  if (navEv) navEv.style.display = isAdmin ? 'flex' : 'none';
+  if (navEv) navEv.style.display = (isAdmin || nivelPodeGerenciarEventos(nivel)) ? 'flex' : 'none';
   if (navNiv) navNiv.style.display = 'none'; // never show in preview
   if (adminSec) adminSec.style.display = isLiderOuAdmin ? 'block' : 'none';
 }
@@ -1695,13 +1708,37 @@ async function saveNivel() {
 }
 
 async function deleteNivel(id) {
-  const n = niveisAcesso.find(n=>n.id===id); if (!n) return;
-  if (NIVEL_PADRAO.includes(n.nome)) { alert('Não é possível excluir os níveis padrão do sistema.'); return; }
-  if (!confirm(`Excluir o nível "${n.nome}"?`)) return;
-  await sb(`niveis_acesso?id=eq.${id}`, {method:'DELETE'});
-  niveisAcesso = niveisAcesso.filter(x=>x.id!==id);
-  renderNiveis();
-  atualizarSelectNiveis();
+  const n = niveisAcesso.find(n=>n.id===id);
+  if (!n) { alert('Nível não encontrado. Recarregue a página.'); return; }
+  if (NIVEL_PADRAO.includes(n.nome)) {
+    alert(`O nível "${n.nome}" é um nível padrão do sistema e não pode ser excluído.
+
+Você pode editar as permissões dele, mas não excluí-lo.`);
+    return;
+  }
+  // Verificar se há voluntários usando este nível
+  const emUso = voluntarios.filter(v=>v.nivel===n.nome);
+  let msg = `Excluir o nível "${n.nome}"?`;
+  if (emUso.length > 0) {
+    msg += `
+
+Atenção: ${emUso.length} voluntário(s) usam este nível. Eles serão alterados para "voluntario".`;
+  }
+  if (!confirm(msg)) return;
+  try {
+    await sb(`niveis_acesso?id=eq.${id}`, {method:'DELETE', prefer:'return=minimal'});
+    // Se havia voluntários com este nível, atualizar para voluntario
+    for (const v of emUso) {
+      await sb(`voluntarios?id=eq.${v.id}`, {method:'PATCH', body:JSON.stringify({nivel:'voluntario'})});
+      v.nivel = 'voluntario';
+    }
+    niveisAcesso = niveisAcesso.filter(x=>x.id!==id);
+    renderNiveis();
+    atualizarSelectNiveis();
+    if (emUso.length > 0) renderVoluntarios();
+  } catch(e) {
+    alert('Erro ao excluir: ' + e.message);
+  }
 }
 
 function atualizarSelectNiveis() {
@@ -1821,7 +1858,7 @@ function buildEvRow(e, isAdmin) {
   const dFim = e.data_fim && e.data_fim!==(e.data_inicio||e.data) ? ' — '+new Date(e.data_fim+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}) : '';
   const badges = [e.live?'<span style="font-size:10px;background:var(--coral-bg);color:var(--coral-text);padding:1px 5px;border-radius:3px">LIVE</span>':'', e.som?'<span style="font-size:10px;background:var(--blue-bg);color:var(--blue-text);padding:1px 5px;border-radius:3px">SOM</span>':''].filter(Boolean).join(' ')||'—';
   const mins = (e.ministerios||[]).map(id=>{const m=ministerios.find(m=>m.id===id);return m?`<span class="tag ${m.cor}">${m.nome}</span>`:''}).join('');
-  return `<tr><td style="font-weight:500">${e.nome}</td><td style="color:var(--text-secondary);white-space:nowrap">${dIni}${dFim}</td><td>${badges}</td><td style="color:var(--text-secondary)">${e.local?LOCAIS[e.local]||e.local:'—'}</td><td>${mins}</td><td>${(e.inscritos||[]).length}</td><td>${isAdmin?`<div style="display:flex;gap:4px"><button class="btn sm" onclick="editEvento('${e.id}')"><i class="ti ti-edit"></i></button><button class="btn sm danger" onclick="deleteEv('${e.id}')"><i class="ti ti-trash"></i></button></div>`:''}</td></tr>`;
+  return `<tr><td style="font-weight:500">${e.nome}</td><td style="color:var(--text-secondary);white-space:nowrap">${dIni}${dFim}</td><td>${badges}</td><td style="color:var(--text-secondary)">${e.local?LOCAIS[e.local]||e.local:'—'}</td><td>${mins}</td><td>${(e.inscritos||[]).length}</td><td>${podeGerenciarEv?`<div style="display:flex;gap:4px"><button class="btn sm" onclick="editEvento('${e.id}')"><i class="ti ti-edit"></i></button><button class="btn sm danger" onclick="deleteEv('${e.id}')"><i class="ti ti-trash"></i></button></div>`:''}</td></tr>`;
 }
 
 function toggleSecaoEv(tipo) {
