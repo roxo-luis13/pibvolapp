@@ -24,10 +24,11 @@ function renderDashboard() {
   ml.innerHTML = vMin.length ? vMin.map(m => {
     const vols = voluntarios.filter(v => (v.ministerios||[]).includes(m.id));
     const pct = Math.min(100, Math.round(vols.length/15*100));
-    return `<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:0.5px solid var(--border)">
+    return `<div onclick="navigate('ministerio-detalhe','${m.id}')" style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:0.5px solid var(--border);cursor:pointer;border-radius:var(--radius);margin:0 -4px;padding-left:4px;padding-right:4px;transition:background .15s" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='transparent'">
       <div style="width:32px;height:32px;border-radius:var(--radius);background:var(--${m.cor}-bg);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">${ICONES[m.icone]||'⭐'}</div>
       <div style="flex:1;min-width:0"><p style="font-size:13px;font-weight:500">${m.nome}</p><div class="progress-bar"><div style="width:${pct}%"></div></div></div>
       <span style="font-size:12px;color:var(--text-secondary);white-space:nowrap">${vols.length} vol.</span>
+      <i class="ti ti-chevron-right" style="font-size:13px;color:var(--text-tertiary);flex-shrink:0"></i>
     </div>`;
   }).join('') : '<div class="empty"><i class="ti ti-users-group"></i>Nenhum ministério</div>';
   // Próximos eventos - deduplica por id (evento multi-dia aparece uma vez)
