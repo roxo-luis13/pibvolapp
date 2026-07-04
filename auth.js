@@ -1,16 +1,11 @@
 // ===== AUTENTICAÇÃO =====
 // ===== INIT =====
 async function init() {
-  // Verificar sessão salva
   const saved = localStorage.getItem('igreja_session');
   if (saved) {
     try {
       const s = JSON.parse(saved);
-      // Verificar se token ainda é válido
-      const res = await fetch(SUPA_URL + '/auth/v1/user', {
-        headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + s.access_token }
-      });
-      if (res.ok) {
+      if (s?.user?.id) {
         session = s;
         await loadProfile(s.user.id);
         return;
