@@ -28,6 +28,42 @@ function buildEvRow(e) {
 }
 
 
+function buildEvCard(e) {
+  const nav = getNivelAtivo();
+  const podeEditar = perm(nav,'pode_editar_eventos');
+  const podeCriar = perm(nav,'pode_criar_eventos');
+  const ini = e.data_inicio||e.data;
+  const fim = e.data_fim||ini;
+  const dIni = new Date(ini+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'});
+  const dFim = fim!==ini ? ' – '+new Date(fim+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}) : '';
+  const hora = e.dias_horarios?.[ini]?.inicio || e.hora || '';
+  const mins = (e.ministerios||[]).map(id=>{const m=ministerios.find(m=>m.id===id);return m?`<span class="tag ${m.cor}">${m.nome}</span>`:''}).join('');
+  const inscrito = (e.inscritos||[]).some(i=>i.volId===currentProfile.id);
+  const badges = [
+    e.live?`<span style="font-size:10px;background:var(--coral-bg);color:var(--coral-text);padding:1px 6px;border-radius:3px">LIVE</span>`:'',
+    e.som?`<span style="font-size:10px;background:var(--blue-bg);color:var(--blue-text);padding:1px 6px;border-radius:3px">SOM</span>`:'',
+    e.local?`<span style="font-size:10px;background:var(--bg-secondary);color:var(--text-secondary);padding:1px 6px;border-radius:3px">${LOCAIS[e.local]||e.local}</span>`:'',
+    inscrito?`<span style="font-size:10px;background:var(--success-bg);color:var(--success-text);padding:1px 6px;border-radius:3px">✓ Inscrito</span>`:'',
+  ].filter(Boolean).join('');
+  const btns = (podeEditar||podeCriar) ? `<div style="display:flex;gap:6px">
+    ${podeEditar?`<button class="btn sm" onclick="editEvento('${e.id}')"><i class="ti ti-edit"></i>Editar</button>`:''}
+    ${podeCriar?`<button class="btn sm danger" onclick="deleteEv('${e.id}')"><i class="ti ti-trash"></i></button>`:''}
+  </div>` : '';
+  return `<div class="ev-card">
+    <div class="ev-card-nome">${e.nome}</div>
+    <div class="ev-card-meta">
+      <span><i class="ti ti-calendar" style="font-size:12px;margin-right:3px"></i>${dIni}${dFim}</span>
+      ${hora?`<span><i class="ti ti-clock" style="font-size:12px;margin-right:3px"></i>${hora}</span>`:''}
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">${badges}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:10px">${mins}</div>
+    <div class="ev-card-footer">
+      <span style="font-size:12px;color:var(--text-secondary)"><i class="ti ti-users" style="font-size:12px"></i> ${(e.inscritos||[]).length} inscritos</span>
+      ${btns}
+    </div>
+  </div>`;
+}
+
 function toggleSecaoEv(tipo) {
   const body = document.getElementById('ev-'+tipo+'-body');
   const icon = document.getElementById('ev-'+tipo+'-icon');
@@ -64,16 +100,31 @@ function renderEventos() {
     tbMes.closest('.table-wrap').style.display='none';
     emptyMes.style.display='block';
   }
+  const cardsMes = document.getElementById('ev-cards-mes');
+  if (cardsMes) cardsMes.innerHTML = doMes.map(e=>buildEvCard(e)).join('');
+  const cardsMes = document.getElementById('ev-cards-mes');
+  if (cardsMes) cardsMes.innerHTML = doMes.map(e=>buildEvCard(e)).join('');
+  const cardsMes = document.getElementById('ev-cards-mes');
+  if (cardsMes) cardsMes.innerHTML = doMes.map(e=>buildEvCard(e)).join('');
+  const cardsMes = document.getElementById('ev-cards-mes');
+  if (cardsMes) cardsMes.innerHTML = doMes.length ? doMes.map(e=>buildEvCard(e)).join('') : '';
 
   // Passados (revertidos - mais recente primeiro)
   document.getElementById('ev-passados-count').textContent = passados.length + ' evento(s)';
   document.getElementById('ev-passados-card').style.display = passados.length ? '' : 'none';
-  document.getElementById('ev-tbody-passados').innerHTML = [...passados].reverse().map(e=>buildEvRow(e)).join('');
+  const passRev = [...passados].reverse();
+  document.getElementById('ev-tbody-passados').innerHTML = passRev.map(e=>buildEvRow(e)).join('');
+  const cardsPass = document.getElementById('ev-cards-passados');
+  if (cardsPass) cardsPass.innerHTML = passRev.map(e=>buildEvCard(e)).join('');
 
   // Futuros
   document.getElementById('ev-futuros-count').textContent = futuros.length + ' evento(s)';
   document.getElementById('ev-futuros-card').style.display = futuros.length ? '' : 'none';
   document.getElementById('ev-tbody-futuros').innerHTML = futuros.map(e=>buildEvRow(e)).join('');
+  const cardsFut = document.getElementById('ev-cards-futuros');
+  if (cardsFut) cardsFut.innerHTML = futuros.map(e=>buildEvCard(e)).join('');
+  const cardsFut = document.getElementById('ev-cards-futuros');
+  if (cardsFut) cardsFut.innerHTML = futuros.map(e=>buildEvCard(e)).join('');
 }
 
 function editEvento(id) {
