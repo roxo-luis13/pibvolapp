@@ -7,57 +7,107 @@ function renderCalendario() {
   const firstDay = new Date(calYear,calMonth,1).getDay();
   const daysInMonth = new Date(calYear,calMonth+1,0).getDate();
   const today = new Date();
+  const isMobile = window.innerWidth <= 768;
   let html = '';
-  for (let i=0;i<firstDay;i++) { const pd=new Date(calYear,calMonth,0-firstDay+i+1); html+=`<div class="cal-day other-month"><div class="day-num">${pd.getDate()}</div></div>`; }
+
+  for (let i=0;i<firstDay;i++) {
+    html += `<div class="cal-day other-month"><div class="day-num">${new Date(calYear,calMonth,0-firstDay+i+1).getDate()}</div></div>`;
+  }
+
   for (let d=1;d<=daysInMonth;d++) {
     const isToday = today.getFullYear()===calYear&&today.getMonth()===calMonth&&today.getDate()===d;
     const ds = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    // Mostrar evento se ds está dentro do período data_inicio até data_fim
     const devs = eventos.filter(e=>{
-      const ini = e.data_inicio || e.data;
-      const fim = e.data_fim || ini;
+      const ini = e.data_inicio||e.data;
+      const fim = e.data_fim||ini;
       return ds >= ini && ds <= fim;
     });
-    const evHtml = devs.map(e=>{
-      const ini = e.data_inicio || e.data;
-      const fim = e.data_fim || ini;
-      const isFirst = ds === ini;
-      const isLast = ds === fim;
-      const isMulti = ini !== fim;
-      const m = ministerios.find(m=>(e.ministerios||[]).includes(m.id));
-      const c = m ? m.cor : 'purple';
-      // Indicador visual: primeiro dia, dia intermediário ou último dia
-      const label = isMulti
-        ? (isFirst ? '▶ ' : isLast ? '⏹ ' : '▬ ') + e.nome
-        : (e.live ? '📡 ' : '') + e.nome;
-      return `<div class="cal-event" style="background:var(--${c}-bg);color:var(--${c}-text);${isMulti&&!isFirst?'border-left:none;border-radius:0 3px 3px 0;':''}" onclick="showEventDetail('${e.id}')">${label}</div>`;
-    }).join('');
-    html += `<div class="cal-day${isToday?' today':''}" onclick="clicouDia('${ds}')" style="cursor:pointer"><div class="day-num">${d}</div>${evHtml}</div>`;
+
+    let evHtml = '';
+    if (isMobile) {
+      // Mobile: mostrar pontos coloridos por ministério (max 3)
+      if (devs.length > 0) {
+        const dots = devs.slice(0,3).map(e=>{
+          const m = ministerios.find(m=>(e.ministerios||[]).includes(m.id));
+          const c = m ? m.cor : 'purple';
+          return `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--${c}-text);flex-shrink:0"></span>`;
+        }).join('');
+        const extra = devs.length > 3 ? `<span style="font-size:8px;color:var(--text-tertiary)">+${devs.length-3}</span>` : '';
+        evHtml = `<div style="display:flex;flex-wrap:wrap;gap:2px;align-items:center;margin-top:2px">${dots}${extra}</div>`;
+      }
+    } else {
+      // Desktop: mostrar nome do evento
+      evHtml = devs.map(e=>{
+        const ini = e.data_inicio||e.data;
+        const fim = e.data_fim||ini;
+        const isFirst = ds===ini, isLast = ds===fim, isMulti = ini!==fim;
+        const m = ministerios.find(m=>(e.ministerios||[]).includes(m.id));
+        const c = m ? m.cor : 'purple';
+        const label = isMulti ? (isFirst?'▶ ':isLast?'⏹ ':'▬ ')+e.nome : (e.live?'📡 ':'')+e.nome;
+        return `<div class="cal-event" style="background:var(--${c}-bg);color:var(--${c}-text)" onclick="event.stopPropagation();showEventDetail('${e.id}')">${label}</div>`;
+      }).join('');
+    }
+
+    // Selected day highlight
+    const isSelected = selectedEvento && (selectedEvento.data_inicio||selectedEvento.data) <= ds && (selectedEvento.data_fim||selectedEvento.data_inicio||selectedEvento.data) >= ds;
+    html += `<div class="cal-day${isToday?' today':''}${isSelected?' selected-day':''}" onclick="clicouDia('${ds}')" style="cursor:pointer"><div class="day-num">${d}</div>${evHtml}</div>`;
   }
   grid.innerHTML = html;
 }
 
 function clicouDia(ds) {
-  // Se clicou num dia com eventos, não faz nada (o clique no evento já trata)
-  // Se clicou num dia sem eventos, mostra mensagem
   const devs = eventos.filter(e => {
-    const ini = e.data_inicio || e.data;
-    const fim = e.data_fim || ini;
+    const ini = e.data_inicio||e.data;
+    const fim = e.data_fim||ini;
     return ds >= ini && ds <= fim;
   });
-  if (devs.length > 0) return; // tem eventos, ignora clique no dia
-  const d = new Date(ds + 'T12:00:00');
-  const label = d.toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long'});
-  document.getElementById('btn-inscricao').style.display = 'none';
-  selectedEvento = null;
-  document.getElementById('cal-event-detail').innerHTML = `
-    <div style="display:flex;align-items:center;gap:10px;color:var(--text-tertiary)">
-      <i class="ti ti-calendar-off" style="font-size:24px;flex-shrink:0"></i>
-      <div>
-        <p style="font-size:13px;font-weight:500;color:var(--text-secondary)">Nenhum evento programado</p>
-        <p style="font-size:12px;color:var(--text-tertiary)">${label.charAt(0).toUpperCase()+label.slice(1)}</p>
-      </div>
-    </div>`;
+  const d = new Date(ds+'T12:00:00');
+  const label = d.toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});
+  const labelCap = label.charAt(0).toUpperCase()+label.slice(1);
+  const detalhe = document.getElementById('cal-event-detail');
+
+  if (devs.length === 0) {
+    selectedEvento = null;
+    document.getElementById('btn-inscricao').style.display = 'none';
+    detalhe.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;color:var(--text-tertiary)">
+        <i class="ti ti-calendar-off" style="font-size:24px;flex-shrink:0"></i>
+        <div>
+          <p style="font-size:13px;font-weight:500;color:var(--text-secondary)">Nenhum evento programado</p>
+          <p style="font-size:12px;color:var(--text-tertiary)">${labelCap}</p>
+        </div>
+      </div>`;
+    renderCalendario();
+    return;
+  }
+
+  // Mobile: mostrar lista de eventos do dia para escolher
+  if (window.innerWidth <= 768 && devs.length > 1) {
+    selectedEvento = null;
+    document.getElementById('btn-inscricao').style.display = 'none';
+    detalhe.innerHTML = `
+      <p style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:10px;text-transform:uppercase;letter-spacing:.3px">${labelCap} · ${devs.length} eventos</p>
+      ${devs.map(e=>{
+        const m = ministerios.find(m=>(e.ministerios||[]).includes(m.id));
+        const c = m ? m.cor : 'purple';
+        const inscrito = (e.inscritos||[]).some(i=>i.volId===currentProfile.id);
+        const hora = e.dias_horarios?.[ds]?.inicio || e.hora || '';
+        return `<div onclick="showEventDetail('${e.id}')" style="display:flex;align-items:center;gap:10px;padding:12px;border-radius:var(--radius);border:0.5px solid var(--border);margin-bottom:8px;cursor:pointer;background:var(--bg-secondary)">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--${c}-text);flex-shrink:0"></div>
+          <div style="flex:1;min-width:0">
+            <p style="font-size:14px;font-weight:500">${e.nome}</p>
+            <p style="font-size:12px;color:var(--text-secondary)">${hora}${inscrito?' · <span style="color:var(--success-text)">✓ Inscrito</span>':''}</p>
+          </div>
+          <i class="ti ti-chevron-right" style="color:var(--text-tertiary);font-size:14px"></i>
+        </div>`;
+      }).join('')}`;
+    renderCalendario();
+    return;
+  }
+
+  // 1 evento ou desktop: mostrar direto
+  showEventDetail(devs[0].id);
+  renderCalendario();
 }
 
 const isInscrito = ev => (ev.inscritos||[]).some(i=>i.volId===currentProfile.id);
