@@ -1,6 +1,20 @@
 // ===== DASHBOARD =====
 // ===== DASHBOARD =====
 function renderDashboard() {
+  // Mostrar card de total de voluntários apenas para quem tem permissão
+  const totalVolCard = document.getElementById('m-total-vol-card');
+  const grid = document.getElementById('dash-metrics-grid');
+  if (totalVolCard) {
+    const podeVer = nivelPodeVerTotalVoluntarios(getNivelAtivo());
+    totalVolCard.style.display = podeVer ? '' : 'none';
+    if (podeVer) {
+      document.getElementById('m-total-vol').textContent = voluntarios.length;
+      grid.style.gridTemplateColumns = 'repeat(4,1fr)';
+    } else {
+      grid.style.gridTemplateColumns = '';
+    }
+  }
+
   // Voluntários nos ministérios em que o usuário atual participa
   const meusMin = (currentProfile.ministerios||[]);
   const volsNosMeusMin = new Set();
