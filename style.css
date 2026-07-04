@@ -217,3 +217,37 @@ hr{border:none;border-top:0.5px solid var(--border);margin:14px 0}
 .vol-card-nome{font-size:14px;font-weight:500;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .vol-card-email{font-size:12px;color:var(--text-secondary);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .vol-card-tags{display:flex;flex-wrap:wrap;gap:3px}
+
+/* ===== DASHBOARD MOBILE ===== */
+@media(max-width:768px){
+  /* Métricas em 2 colunas */
+  #dash-metrics-grid{grid-template-columns:1fr 1fr !important}
+
+  /* Cards do dashboard sem padding excessivo */
+  #section-dashboard .card{padding:14px}
+
+  /* Grid 2 colunas vira 1 */
+  #section-dashboard .grid-2{grid-template-columns:1fr !important}
+
+  /* Meus próximos eventos - scroll horizontal em vez de wrap */
+  #dash-meus-eventos > div{
+    display:flex !important;
+    flex-direction:column !important;
+    grid-template-columns:unset !important;
+    gap:10px
+  }
+
+  /* Card de evento individual */
+  #dash-meus-eventos > div > div{
+    width:100% !important
+  }
+
+  /* Lista de ministérios no dash - mais compacta */
+  #dash-ministerios-list > div{padding:10px 4px}
+
+  /* Lista próximos eventos */
+  #dash-eventos-list > div{padding:8px 4px}
+
+  /* Card precisam de voluntários */
+  #dash-precisam-vols > div{padding:10px 4px}
+}
