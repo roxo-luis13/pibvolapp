@@ -124,6 +124,7 @@ function changeMonth(d) {
   selectedEvento = null; renderCalendario();
   document.getElementById('cal-event-detail').innerHTML='<p style="color:var(--text-secondary);font-size:13px">Clique em um evento para ver os detalhes.</p>';
   document.getElementById('btn-inscricao').style.display='none';
+  if (calView === 'agenda') renderAgenda();
 }
 
 function openInscricao() {
@@ -172,4 +173,93 @@ async function toggleInscricao() {
   closeModal('modal-inscricao');
   showEventDetail(ev.id);
   renderCalendario();
+}
+
+
+// ===== VISTA AGENDA MOBILE =====
+let calView = 'grade'; // 'grade' | 'agenda'
+
+function setCalView(view) {
+  calView = view;
+  const grade = document.getElementById('cal-grid');
+  const header = document.querySelector('.cal-header-days');
+  const agendaView = document.getElementById('cal-agenda-view');
+  const btnGrade = document.getElementById('btn-view-grade');
+  const btnAgenda = document.getElementById('btn-view-agenda');
+
+  if (view === 'agenda') {
+    if (grade) grade.style.display = 'none';
+    if (header) header.style.display = 'none';
+    if (agendaView) agendaView.style.display = 'block';
+    if (btnGrade) btnGrade.classList.remove('active');
+    if (btnAgenda) btnAgenda.classList.add('active');
+    renderAgenda();
+  } else {
+    if (grade) grade.style.display = '';
+    if (header) header.style.display = '';
+    if (agendaView) agendaView.style.display = 'none';
+    if (btnGrade) btnGrade.classList.add('active');
+    if (btnAgenda) btnAgenda.classList.remove('active');
+  }
+}
+
+function renderAgenda() {
+  const lista = document.getElementById('cal-agenda-list');
+  if (!lista) return;
+
+  // Pegar eventos do mês atual + próximos 2 meses
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const limite = new Date(calYear, calMonth + 2, 0); // fim do mês seguinte
+
+  const mesInicio = `${calYear}-${String(calMonth+1).padStart(2,'0')}-01`;
+  const mesFim = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${new Date(calYear,calMonth+1,0).getDate()}`;
+
+  // Eventos que tocam este mês
+  const evsMes = eventos.filter(e => {
+    const ini = e.data_inicio || e.data;
+    const fim = e.data_fim || ini;
+    return ini <= mesFim && fim >= mesInicio;
+  }).sort((a,b) => (a.data_inicio||a.data).localeCompare(b.data_inicio||b.data));
+
+  if (!evsMes.length) {
+    lista.innerHTML = `<div class="empty" style="padding:32px"><i class="ti ti-calendar-off"></i>Nenhum evento neste mês</div>`;
+    return;
+  }
+
+  lista.innerHTML = evsMes.map(e => {
+    const ini = e.data_inicio || e.data;
+    const fim = e.data_fim || ini;
+    const d = new Date(ini+'T12:00:00');
+    const isHoje = ini === hoje.toISOString().split('T')[0];
+    const isMulti = ini !== fim;
+    const dFimLabel = isMulti ? ` – ${new Date(fim+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'})}` : '';
+    const hora = e.dias_horarios?.[ini]?.inicio || e.hora || '';
+    const mins = (e.ministerios||[]).map(id => {
+      const m = ministerios.find(m=>m.id===id);
+      return m ? `<span class="agenda-min-pill" style="background:var(--${m.cor}-bg);color:var(--${m.cor}-text)">${m.nome}</span>` : '';
+    }).join('');
+    const inscrito = (e.inscritos||[]).some(i=>i.volId===currentProfile.id);
+    const badges = [
+      e.live ? `<span style="font-size:10px;background:var(--coral-bg);color:var(--coral-text);padding:1px 6px;border-radius:3px">LIVE</span>` : '',
+      e.som ? `<span style="font-size:10px;background:var(--blue-bg);color:var(--blue-text);padding:1px 6px;border-radius:3px">SOM</span>` : '',
+      inscrito ? `<span style="font-size:10px;background:var(--success-bg);color:var(--success-text);padding:1px 6px;border-radius:3px">✓ Inscrito</span>` : '',
+    ].filter(Boolean).join('');
+
+    return `<div class="agenda-item" onclick="showEventDetail('${e.id}');document.getElementById('cal-event-detail').scrollIntoView({behavior:'smooth'})">
+      <div class="agenda-date-badge ${isHoje?'today-badge':''}">
+        <span class="ag-day">${d.getDate()}</span>
+        <span class="ag-weekday">${d.toLocaleDateString('pt-BR',{weekday:'short'}).replace('.','')}</span>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div class="agenda-nome">${e.nome}</div>
+        <div class="agenda-meta">
+          <span>${d.toLocaleDateString('pt-BR',{month:'short'})}${dFimLabel}</span>
+          ${hora ? `<span>· ${hora}</span>` : ''}
+          ${e.local ? `<span>· ${LOCAIS[e.local]||e.local}</span>` : ''}
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px">${mins}${badges}</div>
+      </div>
+      <i class="ti ti-chevron-right" style="color:var(--text-tertiary);flex-shrink:0;margin-top:4px;font-size:14px"></i>
+    </div>`;
+  }).join('');
 }
