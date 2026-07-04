@@ -44,11 +44,43 @@ function renderVoluntarios() {
     return;
   }
 
+  // Desktop table
   tbody.innerHTML = lista.map(v => {
     const mins = (v.ministerios||[]).map(id=>{const m=ministerios.find(m=>m.id===id);return m?`<span class="tag ${m.cor}">${m.nome}</span>`:''}).join('');
     const btns = canManage ? `<div style="display:flex;gap:4px"><button class="btn sm" onclick="editVoluntario('${v.id}')"><i class="ti ti-edit"></i></button>${v.id!==currentProfile.id?`<button class="btn sm danger" onclick="deleteVol('${v.id}')"><i class="ti ti-trash"></i></button>`:''}</div>` : '';
     return `<tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar ${getNivelClass(v.nivel)}" style="width:28px;height:28px;font-size:10px">${ini(v.nome)}</div>${v.nome}</div></td><td style="color:var(--text-secondary)">${v.email}</td><td style="color:var(--text-secondary)">${v.tel||'—'}</td><td>${mins||'—'}</td><td><span class="badge ${getNivelClass(v.nivel)}">${getNivelLabel(v.nivel)}</span></td><td>${btns}</td></tr>`;
   }).join('');
+
+  // Mobile cards
+  const mobileCards = document.getElementById('vol-cards-mobile');
+  if (mobileCards) {
+    mobileCards.innerHTML = lista.map(v => {
+      const mins = (v.ministerios||[]).map(id=>{const m=ministerios.find(m=>m.id===id);return m?`<span class="tag ${m.cor}">${m.nome}</span>`:''}).join('');
+      const nivelLabel = getNivelLabel(v.nivel);
+      const nivelClass = getNivelClass(v.nivel);
+      const btns = canManage ? `<div style="display:flex;gap:6px;margin-top:8px">
+        <button class="btn sm" onclick="editVoluntario('${v.id}')"><i class="ti ti-edit"></i>Editar</button>
+        ${v.id!==currentProfile.id?`<button class="btn sm danger" onclick="deleteVol('${v.id}')"><i class="ti ti-trash"></i>Remover</button>`:''}
+      </div>` : '';
+      return `<div class="vol-card">
+        <div class="avatar ${nivelClass}" style="width:42px;height:42px;font-size:14px;flex-shrink:0">${ini(v.nome)}</div>
+        <div class="vol-card-info">
+          <div class="vol-card-nome">${v.nome}${v.id===currentProfile.id?' <span style="font-size:10px;color:var(--purple-text)">(você)</span>':''}</div>
+          <div class="vol-card-email">${v.email}</div>
+          <div class="vol-card-tags">
+            <span class="badge ${nivelClass}" style="margin-right:4px">${nivelLabel}</span>
+            ${mins}
+          </div>
+          ${v.tel?`<div style="font-size:12px;color:var(--text-secondary);margin-top:3px"><i class="ti ti-phone" style="font-size:11px"></i> ${v.tel}</div>`:''}
+          ${btns}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Contador
+  const countEl = document.getElementById('vol-count');
+  if (countEl) countEl.textContent = lista.length === voluntarios.length ? `${lista.length} voluntário(s)` : `${lista.length} de ${voluntarios.length} voluntário(s)`;
 }
 
 function editVoluntario(id) {
