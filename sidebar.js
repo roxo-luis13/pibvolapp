@@ -16,6 +16,29 @@ function checkMobileLayout() {
 }
 window.addEventListener('resize', checkMobileLayout);
 
+// Swipe para fechar sidebar no mobile
+(function() {
+  let startX = 0, startY = 0;
+  document.addEventListener('touchstart', e => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, {passive: true});
+  document.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = Math.abs(e.changedTouches[0].clientY - startY);
+    const sb = document.getElementById('sidebar');
+    if (!sb) return;
+    // Swipe para esquerda fecha sidebar
+    if (dx < -60 && dy < 80 && sb.classList.contains('mobile-open')) {
+      closeSidebar();
+    }
+    // Swipe para direita abre sidebar (apenas da borda esquerda)
+    if (dx > 60 && dy < 80 && startX < 30 && !sb.classList.contains('mobile-open')) {
+      if (window.innerWidth <= 768) openSidebarMobile();
+    }
+  }, {passive: true});
+})();
+
 function updateSidebar() {
   document.getElementById('sb-avatar').textContent = ini(currentProfile.nome);
   document.getElementById('sb-avatar').className = 'avatar ' + getNivelClass(currentProfile.nivel);
