@@ -100,31 +100,25 @@ function renderEventos() {
     tbMes.closest('.table-wrap').style.display='none';
     emptyMes.style.display='block';
   }
-  const cardsMes = document.getElementById('ev-cards-mes');
-  if (cardsMes) cardsMes.innerHTML = doMes.map(e=>buildEvCard(e)).join('');
-  const cardsMes = document.getElementById('ev-cards-mes');
-  if (cardsMes) cardsMes.innerHTML = doMes.map(e=>buildEvCard(e)).join('');
-  const cardsMes = document.getElementById('ev-cards-mes');
-  if (cardsMes) cardsMes.innerHTML = doMes.map(e=>buildEvCard(e)).join('');
-  const cardsMes = document.getElementById('ev-cards-mes');
-  if (cardsMes) cardsMes.innerHTML = doMes.length ? doMes.map(e=>buildEvCard(e)).join('') : '';
+  const _cardsMes = document.getElementById('ev-cards-mes');
+  if (_cardsMes) _cardsMes.innerHTML = doMes.map(e=>buildEvCard(e)).join('');
+  const _cardsMes1 = document.getElementById('ev-cards-mes');
+  if (_cardsMes) _cardsMes.innerHTML = doMes.length ? doMes.map(e=>buildEvCard(e)).join('') : '';
 
   // Passados (revertidos - mais recente primeiro)
   document.getElementById('ev-passados-count').textContent = passados.length + ' evento(s)';
   document.getElementById('ev-passados-card').style.display = passados.length ? '' : 'none';
   const passRev = [...passados].reverse();
   document.getElementById('ev-tbody-passados').innerHTML = passRev.map(e=>buildEvRow(e)).join('');
-  const cardsPass = document.getElementById('ev-cards-passados');
-  if (cardsPass) cardsPass.innerHTML = passRev.map(e=>buildEvCard(e)).join('');
+  const _cardsPass = document.getElementById('ev-cards-passados');
+  if (_cardsPass) _cardsPass.innerHTML = passRev.map(e=>buildEvCard(e)).join('');
 
   // Futuros
   document.getElementById('ev-futuros-count').textContent = futuros.length + ' evento(s)';
   document.getElementById('ev-futuros-card').style.display = futuros.length ? '' : 'none';
   document.getElementById('ev-tbody-futuros').innerHTML = futuros.map(e=>buildEvRow(e)).join('');
-  const cardsFut = document.getElementById('ev-cards-futuros');
-  if (cardsFut) cardsFut.innerHTML = futuros.map(e=>buildEvCard(e)).join('');
-  const cardsFut = document.getElementById('ev-cards-futuros');
-  if (cardsFut) cardsFut.innerHTML = futuros.map(e=>buildEvCard(e)).join('');
+  const _cardsFut = document.getElementById('ev-cards-futuros');
+  if (_cardsFut) _cardsFut.innerHTML = futuros.map(e=>buildEvCard(e)).join('');
 }
 
 function editEvento(id) {
