@@ -9,18 +9,20 @@ function getNivelObj(nivel) {
   if (nivel === 'admin') return {
     pode_criar_ministerios:true, pode_editar_ministerios:true, pode_excluir_ministerios:true,
     pode_cadastrar_voluntarios:true, pode_editar_voluntarios:true,
-    pode_criar_eventos:true, pode_editar_eventos:true, pode_ver_todos_ministerios:true
+    pode_criar_eventos:true, pode_editar_eventos:true, pode_ver_todos_ministerios:true,
+    pode_ver_total_voluntarios:true
   };
   if (nivel === 'lider') return {
     pode_criar_ministerios:false, pode_editar_ministerios:false, pode_excluir_ministerios:false,
     pode_cadastrar_voluntarios:true, pode_editar_voluntarios:true,
-    pode_criar_eventos:true, pode_editar_eventos:true, pode_ver_todos_ministerios:false
+    pode_criar_eventos:true, pode_editar_eventos:true, pode_ver_todos_ministerios:false,
+    pode_ver_total_voluntarios:true
   };
-  // voluntario e qualquer outro: sem permissões extras
   return {
     pode_criar_ministerios:false, pode_editar_ministerios:false, pode_excluir_ministerios:false,
     pode_cadastrar_voluntarios:false, pode_editar_voluntarios:false,
-    pode_criar_eventos:false, pode_editar_eventos:false, pode_ver_todos_ministerios:false
+    pode_criar_eventos:false, pode_editar_eventos:false, pode_ver_todos_ministerios:false,
+    pode_ver_total_voluntarios:false
   };
 }
 
@@ -55,6 +57,16 @@ function nivelPodeGerenciarMinisterios(nivel) {
 function nivelPodeGerenciarVoluntarios(nivel) {
   const n = getNivelObj(nivel);
   return n.pode_cadastrar_voluntarios || n.pode_editar_voluntarios;
+}
+
+function nivelPodeVerTotalVoluntarios(nivel) {
+  // Admin sempre vê
+  if (nivelIsAdmin(nivel)) return true;
+  // Qualquer nível com permissão de gerenciar voluntários também vê
+  if (nivelPodeGerenciarVoluntarios(nivel)) return true;
+  // Verifica campo específico se existir no nivel
+  const n = getNivelObj(nivel);
+  return !!n.pode_ver_total_voluntarios;
 }
 function getNivelLabel(nivel) {
   if (nivel === 'admin') return 'Administrador';
