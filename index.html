@@ -98,10 +98,11 @@
     </div>
     <div class="content">
       <div class="section active" id="section-dashboard">
-        <div class="grid-3" style="margin-bottom:20px">
+        <div class="grid-3" style="margin-bottom:20px" id="dash-metrics-grid">
           <div class="metric"><p>Voluntários</p><h3 id="m-vol">0</h3><span id="m-vol-sub">nos meus ministérios</span></div>
           <div class="metric"><p>Meus ministérios</p><h3 id="m-min">0</h3><span id="m-min-sub">de <span id="m-min-total">0</span> na igreja</span></div>
           <div class="metric"><p>Meus eventos</p><h3 id="m-ev">0</h3><span id="m-ev-sub">de <span id="m-ev-total">0</span> na igreja</span></div>
+          <div class="metric" id="m-total-vol-card" style="display:none"><p>Total de voluntários</p><h3 id="m-total-vol">0</h3><span>cadastrados na igreja</span></div>
         </div>
         <div class="grid-2">
           <div class="card">
@@ -495,6 +496,10 @@ Bateria: Pedro..." style="min-height:80px"></textarea></div>
       <label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);cursor:pointer">
         <input type="checkbox" id="p-ver-min" style="width:15px;height:15px;accent-color:#7F77DD">
         <div><p style="font-size:13px;font-weight:500">Ver todos os ministérios</p><p style="font-size:11px;color:var(--text-secondary)">Sem esta permissão, vê apenas os ministérios em que participa</p></div>
+      </label>
+      <label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:0.5px solid var(--border);border-radius:var(--radius);cursor:pointer">
+        <input type="checkbox" id="p-ver-total-vol" style="width:15px;height:15px;accent-color:#7F77DD">
+        <div><p style="font-size:13px;font-weight:500">Ver total de voluntários da igreja</p><p style="font-size:11px;color:var(--text-secondary)">Exibe o card com o número total de voluntários no dashboard</p></div>
       </label>
     </div>
     <div class="modal-footer">
