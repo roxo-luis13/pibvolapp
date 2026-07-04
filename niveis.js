@@ -58,6 +58,7 @@ const PERMS = [
   {id:'pode_criar_eventos', label:'Criar eventos'},
   {id:'pode_editar_eventos', label:'Editar/excluir eventos'},
   {id:'pode_ver_todos_ministerios', label:'Ver todos os ministérios'},
+  {id:'pode_ver_total_voluntarios', label:'Ver total de voluntários da igreja'},
 ];
 
 function getPerm(nivel, permId) {
@@ -116,8 +117,8 @@ function openModalNivel() {
   document.getElementById('nivel-nome').value = '';
   document.getElementById('nivel-nome').disabled = false;
   document.getElementById('nivel-desc').value = '';
-  ['p-criar-min','p-editar-min','p-excluir-min','p-cadastrar-vol','p-editar-vol','p-criar-ev','p-editar-ev','p-ver-min'].forEach(id=>{
-    document.getElementById(id).checked = false;
+  ['p-criar-min','p-editar-min','p-excluir-min','p-cadastrar-vol','p-editar-vol','p-criar-ev','p-editar-ev','p-ver-min','p-ver-total-vol'].forEach(id=>{
+    const el = document.getElementById(id); if (el) el.checked = false;
   });
   openModal('modal-nivel');
 }
@@ -139,6 +140,8 @@ function editNivel(id) {
   document.getElementById('p-criar-ev').checked = !!n.pode_criar_eventos;
   document.getElementById('p-editar-ev').checked = !!n.pode_editar_eventos;
   document.getElementById('p-ver-min').checked = !!n.pode_ver_todos_ministerios;
+  const pVtv = document.getElementById('p-ver-total-vol');
+  if (pVtv) pVtv.checked = !!n.pode_ver_total_voluntarios;
   openModal('modal-nivel', true);
 }
 
@@ -156,6 +159,7 @@ async function saveNivel() {
     pode_criar_eventos: document.getElementById('p-criar-ev').checked,
     pode_editar_eventos: document.getElementById('p-editar-ev').checked,
     pode_ver_todos_ministerios: document.getElementById('p-ver-min').checked,
+    pode_ver_total_voluntarios: document.getElementById('p-ver-total-vol')?.checked || false,
   };
   const editId = document.getElementById('nivel-edit-id').value;
   try {
