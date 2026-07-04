@@ -166,9 +166,15 @@ function abrirDetalheEvDash(evId) {
 function irParaCalendario() {
   const evId = document.getElementById('modal-dash-evento').dataset.evId;
   const ev = eventos.find(e=>e.id===evId);
-  if (ev) { const d = new Date(ev.data+'T12:00:00'); calYear = d.getFullYear(); calMonth = d.getMonth(); selectedEvento = ev; }
-  closeModal('modal-dash-evento'); navigate('calendario');
-  setTimeout(() => showEventDetail(evId), 100);
+  if (ev) {
+    const d = new Date((ev.data_inicio||ev.data)+'T12:00:00');
+    calYear = d.getFullYear();
+    calMonth = d.getMonth();
+    selectedEvento = ev;
+  }
+  closeModal('modal-dash-evento');
+  navigate('calendario');
+  setTimeout(() => showEventDetail(evId), 80);
 }
 
 function buildVolsPorMin(ev) {
