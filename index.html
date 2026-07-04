@@ -2,12 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Igreja App">
-<meta name="theme-color" content="#7F77DD">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Igreja App — PIBC</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <link rel="stylesheet" href="style.css">
@@ -155,10 +150,19 @@
               <h3 style="font-size:15px;font-weight:500" id="cal-month-title"></h3>
               <button class="btn sm" onclick="changeMonth(1)"><i class="ti ti-chevron-right"></i></button>
             </div>
-            <button class="btn primary sm" id="btn-inscricao" style="display:none" onclick="openInscricao()"><i class="ti ti-plus"></i>Me inscrever</button>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div class="cal-view-toggle">
+                <button class="cal-view-btn active" id="btn-view-grade" onclick="setCalView('grade')"><i class="ti ti-calendar-month"></i></button>
+                <button class="cal-view-btn" id="btn-view-agenda" onclick="setCalView('agenda')"><i class="ti ti-list"></i></button>
+              </div>
+              <button class="btn primary sm" id="btn-inscricao" style="display:none" onclick="openInscricao()"><i class="ti ti-plus"></i>Inscrever</button>
+            </div>
           </div>
           <div class="cal-header-days"><span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span></div>
           <div class="cal-grid" id="cal-grid"></div>
+        </div>
+        <div id="cal-agenda-view" style="display:none;margin-top:8px">
+          <div id="cal-agenda-list"></div>
         </div>
         <div class="card" style="margin-top:14px">
           <div id="cal-event-detail"><p style="color:var(--text-secondary);font-size:13px">Clique em um evento para ver os detalhes.</p></div>
@@ -244,6 +248,7 @@
             <table><thead><tr><th>Evento</th><th>Data</th><th>Recursos</th><th>Local</th><th>Ministérios</th><th>Inscritos</th><th></th></tr></thead>
             <tbody id="ev-tbody-mes"></tbody></table>
           </div>
+          <div class="ev-cards-mobile" id="ev-cards-mes"></div>
           <div id="ev-mes-empty" style="display:none" class="empty" style="padding:20px"><i class="ti ti-calendar-off"></i>Nenhum evento neste mês</div>
         </div>
         <!-- Eventos passados (colapsável) -->
