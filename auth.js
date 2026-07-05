@@ -196,3 +196,65 @@ async function sha256(msg) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
+
+// ===== ESQUECI MINHA SENHA =====
+function abrirEsqueciSenha() {
+  document.getElementById('esqueci-email').value = document.getElementById('login-email').value || '';
+  document.getElementById('esqueci-step-email').style.display = 'block';
+  document.getElementById('esqueci-step-ok').style.display = 'none';
+  document.getElementById('esqueci-error').style.display = 'none';
+  const btn = document.getElementById('btn-esqueci-enviar');
+  btn.innerHTML = '<i class="ti ti-key"></i>Gerar nova senha'; btn.disabled = false;
+  openModal('modal-esqueci-senha');
+}
+
+function gerarSenhaChars() {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  let senha = '';
+  const arr = new Uint8Array(8);
+  crypto.getRandomValues(arr);
+  arr.forEach(b => senha += chars[b % chars.length]);
+  return senha;
+}
+
+async function gerarSenhaTemp() {
+  const email = document.getElementById('esqueci-email').value.trim().toLowerCase();
+  const errEl = document.getElementById('esqueci-error');
+  errEl.style.display = 'none';
+  if (!email) { errEl.textContent = 'Digite seu email.'; errEl.style.display = 'block'; return; }
+  const btn = document.getElementById('btn-esqueci-enviar');
+  btn.innerHTML = '<span class="spin"></span> Verificando...'; btn.disabled = true;
+  try {
+    const rows = await sb(`voluntarios?email=eq.${encodeURIComponent(email)}&select=id,nome`);
+    if (!rows || !rows.length) {
+      errEl.textContent = 'Email não encontrado. Verifique se está correto.';
+      errEl.style.display = 'block';
+      btn.innerHTML = '<i class="ti ti-key"></i>Gerar nova senha'; btn.disabled = false;
+      return;
+    }
+    const senhaTemp = gerarSenhaChars();
+    const hash = await sha256(senhaTemp);
+    await sb(`voluntarios?id=eq.${rows[0].id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ senha_hash: hash, primeiro_acesso: true })
+    });
+    document.getElementById('esqueci-senha-temp').textContent = senhaTemp;
+    document.getElementById('esqueci-step-email').style.display = 'none';
+    document.getElementById('esqueci-step-ok').style.display = 'block';
+  } catch(e) {
+    errEl.textContent = 'Erro: ' + e.message;
+    errEl.style.display = 'block';
+    btn.innerHTML = '<i class="ti ti-key"></i>Gerar nova senha'; btn.disabled = false;
+  }
+}
+
+async function copiarSenhaTemp() {
+  const senha = document.getElementById('esqueci-senha-temp').textContent;
+  try {
+    await navigator.clipboard.writeText(senha);
+    const btn = event.target.closest('button');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="ti ti-check"></i>Copiado!';
+    setTimeout(() => btn.innerHTML = orig, 2000);
+  } catch(e) { alert('Senha: ' + senha); }
+}
