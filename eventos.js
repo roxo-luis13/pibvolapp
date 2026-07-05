@@ -5,6 +5,7 @@ function buildEvRow(e) {
   const nav = getNivelAtivo();
   const podeCriar = perm(nav,'pode_criar_eventos');
   const podeEditar = perm(nav,'pode_editar_eventos');
+  const podeExcluir = perm(nav,'pode_excluir_eventos');
   const dIni = new Date((e.data_inicio||e.data)+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
   const dFim = e.data_fim && e.data_fim!==(e.data_inicio||e.data) ? ' — '+new Date(e.data_fim+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}) : '';
   const badges = [
@@ -12,9 +13,9 @@ function buildEvRow(e) {
     e.som?'<span style="font-size:10px;background:var(--blue-bg);color:var(--blue-text);padding:1px 5px;border-radius:3px">SOM</span>':''
   ].filter(Boolean).join(' ')||'—';
   const mins = (e.ministerios||[]).map(id=>{const m=ministerios.find(m=>m.id===id);return m?`<span class="tag ${m.cor}">${m.nome}</span>`:''}).join('');
-  const btns = (podeCriar||podeEditar) ? `<div style="display:flex;gap:4px">
+  const btns = (podeEditar||podeExcluir) ? `<div style="display:flex;gap:4px">
     ${podeEditar?`<button class="btn sm" onclick="editEvento('${e.id}')"><i class="ti ti-edit"></i></button>`:''}
-    ${podeCriar?`<button class="btn sm danger" onclick="deleteEv('${e.id}')"><i class="ti ti-trash"></i></button>`:''}
+    ${podeExcluir?`<button class="btn sm danger" onclick="deleteEv('${e.id}')"><i class="ti ti-trash"></i></button>`:''}
   </div>` : '';
   return `<tr>
     <td style="font-weight:500">${e.nome}</td>
