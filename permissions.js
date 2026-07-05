@@ -6,18 +6,32 @@ function getNivelObj(nivel) {
   const n = niveisAcesso.find(n=>n.nome===nivel);
   if (n) return n;
   // Defaults para níveis padrão caso não estejam na tabela
+  // Hierarquia: admin > pastor > lider > lider_de_banda > voluntario
   if (nivel === 'admin') return {
-    pode_criar_ministerios:true, pode_editar_ministerios:true, pode_excluir_ministerios:true,
+    pode_criar_ministerios:true,  pode_editar_ministerios:true,  pode_excluir_ministerios:true,
     pode_cadastrar_voluntarios:true, pode_editar_voluntarios:true, pode_remover_voluntarios:true,
-    pode_criar_eventos:true, pode_editar_eventos:true, pode_excluir_eventos:true,
+    pode_criar_eventos:true,  pode_editar_eventos:true,  pode_excluir_eventos:true,
+    pode_ver_todos_ministerios:true, pode_ver_total_voluntarios:true
+  };
+  if (nivel === 'pastor') return {
+    pode_criar_ministerios:true,  pode_editar_ministerios:true,  pode_excluir_ministerios:false,
+    pode_cadastrar_voluntarios:true, pode_editar_voluntarios:true, pode_remover_voluntarios:true,
+    pode_criar_eventos:true,  pode_editar_eventos:true,  pode_excluir_eventos:true,
     pode_ver_todos_ministerios:true, pode_ver_total_voluntarios:true
   };
   if (nivel === 'lider') return {
-    pode_criar_ministerios:false, pode_editar_ministerios:false, pode_excluir_ministerios:false,
+    pode_criar_ministerios:false, pode_editar_ministerios:true,  pode_excluir_ministerios:false,
     pode_cadastrar_voluntarios:true, pode_editar_voluntarios:true, pode_remover_voluntarios:false,
-    pode_criar_eventos:true, pode_editar_eventos:true, pode_excluir_eventos:false,
-    pode_ver_todos_ministerios:false, pode_ver_total_voluntarios:true
+    pode_criar_eventos:true,  pode_editar_eventos:true,  pode_excluir_eventos:false,
+    pode_ver_todos_ministerios:false, pode_ver_total_voluntarios:false
   };
+  if (nivel === 'lider_de_banda') return {
+    pode_criar_ministerios:false, pode_editar_ministerios:false, pode_excluir_ministerios:false,
+    pode_cadastrar_voluntarios:false, pode_editar_voluntarios:false, pode_remover_voluntarios:false,
+    pode_criar_eventos:false, pode_editar_eventos:true,  pode_excluir_eventos:false,
+    pode_ver_todos_ministerios:false, pode_ver_total_voluntarios:false
+  };
+  // voluntario e qualquer outro sem registro
   return {
     pode_criar_ministerios:false, pode_editar_ministerios:false, pode_excluir_ministerios:false,
     pode_cadastrar_voluntarios:false, pode_editar_voluntarios:false, pode_remover_voluntarios:false,
@@ -90,17 +104,21 @@ function nivelPodeVerTotalVoluntarios(nivel) {
   return !!n.pode_ver_total_voluntarios;
 }
 function getNivelLabel(nivel) {
-  if (nivel === 'admin') return 'Administrador';
-  if (nivel === 'lider') return 'Líder';
-  if (nivel === 'voluntario') return 'Voluntário';
+  const labels = {
+    admin:'Administrador', pastor:'Pastor',
+    lider:'Líder', lider_de_banda:'Líder de Banda', voluntario:'Voluntário'
+  };
+  if (labels[nivel]) return labels[nivel];
   const n = niveisAcesso.find(n=>n.nome===nivel);
   if (n) return n.nome.charAt(0).toUpperCase() + n.nome.slice(1).replace(/_/g,' ');
   return nivel;
 }
 function getNivelClass(nivel) {
+  // Classes CSS disponíveis: admin (amber), lider (blue), voluntario (green)
   if (nivel === 'admin') return 'admin';
-  if (nivel === 'lider') return 'lider';
-  return 'voluntario'; // fallback para avatar/badge CSS
+  if (nivel === 'pastor') return 'admin';
+  if (nivel === 'lider' || nivel === 'lider_de_banda') return 'lider';
+  return 'voluntario';
 }
 let ministerios = [], voluntarios = [], eventos = [], notificacoes = [];
 let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
