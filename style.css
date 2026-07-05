@@ -251,3 +251,23 @@ hr{border:none;border-top:0.5px solid var(--border);margin:14px 0}
   /* Card precisam de voluntários */
   #dash-precisam-vols > div{padding:10px 4px}
 }
+
+/* ===== NÍVEIS DE ACESSO MOBILE ===== */
+.nivel-card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.nivel-card-actions{display:flex;gap:6px;flex-shrink:0;flex-direction:row;flex-wrap:wrap;justify-content:flex-end}
+/* Permissões tags */
+.perm-tag{font-size:11px;padding:3px 8px;border-radius:var(--radius);font-weight:500;display:inline-flex;align-items:center;gap:3px;margin:2px}
+@media(max-width:768px){
+  /* Cards em coluna única */
+  #niveis-grid{grid-template-columns:1fr !important}
+  /* Header do card vira coluna */
+  .nivel-card-header{flex-direction:column;gap:10px}
+  /* Ações ficam em linha no mobile */
+  .nivel-card-actions{flex-direction:row;justify-content:flex-start;width:100%}
+  .nivel-card-actions .btn{flex:1;justify-content:center}
+  /* Esconder label dos botões no mobile, manter só ícone — não nesse caso, manter texto */
+  .btn-label{display:inline}
+}
+@media(max-width:380px){
+  .nivel-card-actions .btn{padding:8px 10px;font-size:12px}
+}
