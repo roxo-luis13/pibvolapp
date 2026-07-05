@@ -72,7 +72,32 @@ async function marcarTodasLidas() {
 function renderConvidarLista(convitesAtuais) {
   const container = document.getElementById('ev-convidar-lista');
   if (!container) return;
-  container.innerHTML = voluntarios.filter(v=>v.id!==currentProfile.id).map(v => {
+
+  // Admin e pastor veem todos; outros veem apenas voluntários dos seus ministérios
+  const nivel = getNivelAtivo();
+  const verTodos = nivelIsAdmin(nivel) || nivel === 'pastor';
+  
+  // Ministérios que o usuário lidera
+  const meusMinIds = currentProfile.ministerios || [];
+  const minQueLidero = ministerios
+    .filter(m => m.lider_id === currentProfile.id)
+    .map(m => m.id);
+  // IDs dos ministérios visíveis: os que lidero + os que participo
+  const minsVisiveis = verTodos ? null : [...new Set([...meusMinIds, ...minQueLidero])];
+
+  const lista = voluntarios.filter(v => {
+    if (v.id === currentProfile.id) return false;
+    if (verTodos) return true;
+    // Mostrar apenas voluntários que pertencem aos mesmos ministérios
+    return (v.ministerios||[]).some(mid => minsVisiveis.includes(mid));
+  });
+
+  if (!lista.length) {
+    container.innerHTML = '<p style="font-size:13px;color:var(--text-secondary);padding:12px">Nenhum voluntário disponível nos seus ministérios.</p>';
+    return;
+  }
+
+  container.innerHTML = lista.map(v => {
     const jaConvidado = convitesAtuais.find(c=>c.volId===v.id);
     const status = jaConvidado?.status||null;
     return `<label style="display:flex;align-items:center;gap:10px;padding:8px;border-radius:var(--radius);cursor:pointer" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='transparent'">
