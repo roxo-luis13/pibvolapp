@@ -92,13 +92,13 @@ function clicouDia(ds) {
         const c = m ? m.cor : 'purple';
         const inscrito = (e.inscritos||[]).some(i=>i.volId===currentProfile.id);
         const hora = e.dias_horarios?.[ds]?.inicio || e.hora || '';
-        return `<div onclick="showEventDetail('${e.id}')" style="display:flex;align-items:center;gap:10px;padding:12px;border-radius:var(--radius);border:0.5px solid var(--border);margin-bottom:8px;cursor:pointer;background:var(--bg-secondary)">
+        return `<div style="display:flex;align-items:center;gap:10px;padding:12px;border-radius:var(--radius);border:0.5px solid var(--border);margin-bottom:8px;background:var(--bg-secondary)">
           <div style="width:8px;height:8px;border-radius:50%;background:var(--${c}-text);flex-shrink:0"></div>
-          <div style="flex:1;min-width:0">
+          <div onclick="showEventDetail('${e.id}')" style="flex:1;min-width:0;cursor:pointer">
             <p style="font-size:14px;font-weight:500">${e.nome}</p>
             <p style="font-size:12px;color:var(--text-secondary)">${hora}${inscrito?' · <span style="color:var(--success-text)">✓ Inscrito</span>':''}</p>
           </div>
-          <i class="ti ti-chevron-right" style="color:var(--text-tertiary);font-size:14px"></i>
+          ${perm(getNivelAtivo(),'pode_editar_eventos')?`<button class="btn sm" onclick="editEvento('${e.id}')" style="flex-shrink:0"><i class="ti ti-edit"></i></button>`:'<i class="ti ti-chevron-right" style="color:var(--text-tertiary);font-size:14px;flex-shrink:0"></i>'}
         </div>`;
       }).join('')}`;
     renderCalendario();
@@ -165,7 +165,16 @@ function showEventDetail(evId) {
     <p style="font-size:13px;color:var(--text-secondary);margin-bottom:10px;white-space:pre-wrap">${ev.descricao||''}</p>
     ${ev.banda&&podVerBanda()?`<div style="background:var(--amber-bg);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px"><p style="font-size:11px;font-weight:500;color:var(--amber-text);margin-bottom:3px"><i class="ti ti-music"></i> FORMAÇÃO DA BANDA</p><p style="font-size:13px;white-space:pre-wrap">${ev.banda}</p></div>`:''}
     <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px">${minsTag}</div>
-    <div style="background:var(--bg-secondary);border-radius:var(--radius);padding:12px">${buildVolsPorMin(ev)}</div>`;
+    <div style="background:var(--bg-secondary);border-radius:var(--radius);padding:12px">${buildVolsPorMin(ev)}</div>
+    ${perm(getNivelAtivo(),'pode_editar_eventos') ? `
+    <div style="display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:0.5px solid var(--border)">
+      <button class="btn primary sm" onclick="editEvento('${ev.id}');closeModal && closeModal();" style="flex:1;justify-content:center">
+        <i class="ti ti-edit"></i>Editar evento
+      </button>
+      ${perm(getNivelAtivo(),'pode_excluir_eventos') ? `<button class="btn sm danger" onclick="if(confirm('Excluir este evento?'))deleteEv('${ev.id}')">
+        <i class="ti ti-trash"></i>
+      </button>` : ''}
+    </div>` : ''}`;
 }
 
 function changeMonth(d) {
