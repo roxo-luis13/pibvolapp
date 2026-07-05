@@ -32,8 +32,10 @@ function openModal(id, modoEdicao) {
 // ===== BANDA VISIBILITY =====
 // ===== BANDA VISIBILITY =====
 function podVerBanda() {
-  if (nivelIsAdmin(getNivelAtivo())) return true;
-  // Verificar se o usuário pertence a um ministério de som/transmissão/multimídia/banda
+  const nivel = getNivelAtivo();
+  if (nivelIsAdmin(nivel)) return true;
+  if (nivel === 'pastor' || nivel === 'lider_de_banda') return true;
+  // Verificar pelo nome do ministério
   const palavrasChave = ['som', 'transmiss', 'multim', 'banda', 'music', 'louvor', 'worship', 'audio', 'áudio', 'mídia', 'media'];
   const meusMinisterios = ministerios.filter(m => (currentProfile.ministerios||[]).includes(m.id));
   return meusMinisterios.some(m => {
