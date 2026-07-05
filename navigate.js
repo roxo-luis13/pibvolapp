@@ -14,7 +14,7 @@ function navigate(sec, extra) {
   if (perm(nav,'pode_criar_ministerios') && sec==='ministerios') acts.innerHTML = `<button class="btn primary" onclick="openModalMin()"><i class="ti ti-plus"></i>Novo ministério</button>`;
   if (nivelPodeGerenciarVoluntarios(nav) && sec==='voluntarios') acts.innerHTML = `<button class="btn primary" onclick="openModal('modal-vol')"><i class="ti ti-user-plus"></i>Novo voluntário</button>`;
   if (nivelPodeGerenciarEventos(nav) && sec==='eventos') acts.innerHTML = `<button class="btn primary" onclick="openModal('modal-ev')"><i class="ti ti-plus"></i>Novo evento</button>`;
-  if (isAdmin && sec==='niveis') acts.innerHTML = `<button class="btn primary" onclick="openModalNivel()"><i class="ti ti-plus"></i>Novo nível</button>`;
+  if (nivelPodeVerNiveis(nav) && sec==='niveis') acts.innerHTML = `<button class="btn primary" onclick="openModalNivel()"><i class="ti ti-plus"></i>Novo nível</button>`;
   const renders = {dashboard:renderDashboard,calendario:renderCalendario,ministerios:renderMinisterios,voluntarios:renderVoluntarios,eventos:renderEventos,niveis:renderNiveis,perfil:renderPerfil};
   if (renders[sec]) renders[sec]();
   if (sec==='ministerio-detalhe' && extra) renderDetalhe(extra);
