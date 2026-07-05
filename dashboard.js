@@ -61,9 +61,13 @@ function renderDashboard() {
     const dIni = new Date(ini+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
     const dFim = fim!==ini ? ' – '+new Date(fim+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}) : '';
     const mins = (e.ministerios||[]).map(id=>{const m=ministerios.find(m=>m.id===id);return m?m.nome:''}).filter(Boolean).join(', ');
-    return `<div style="display:flex;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border);align-items:flex-start">
-      <div style="background:var(--purple-bg);color:var(--purple-text);border-radius:var(--radius);padding:3px 8px;font-size:11px;font-weight:500;white-space:nowrap;flex-shrink:0">${dIni}${dFim}</div>
-      <div><p style="font-size:13px;font-weight:500">${e.nome}${e.live?' <span style="font-size:10px;background:var(--coral-bg);color:var(--coral-text);padding:1px 5px;border-radius:3px">LIVE</span>':''}</p><p style="font-size:11px;color:var(--text-secondary)">${e.hora||''} · ${mins}</p></div>
+    return `<div onclick="abrirDetalheEvDash('${e.id}')" style="display:flex;gap:10px;padding:10px 6px;border-bottom:0.5px solid var(--border);align-items:center;cursor:pointer;border-radius:var(--radius);margin:0 -6px;transition:background .15s" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='transparent'">
+      <div style="background:var(--purple-bg);color:var(--purple-text);border-radius:var(--radius);padding:3px 8px;font-size:11px;font-weight:500;white-space:nowrap;flex-shrink:0;text-align:center">${dIni}${dFim}</div>
+      <div style="flex:1;min-width:0">
+        <p style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.nome}${e.live?' <span style="font-size:10px;background:var(--coral-bg);color:var(--coral-text);padding:1px 5px;border-radius:3px">LIVE</span>':''}</p>
+        <p style="font-size:11px;color:var(--text-secondary)">${e.hora||''}${mins?' · '+mins:''}</p>
+      </div>
+      <i class="ti ti-chevron-right" style="color:var(--text-tertiary);flex-shrink:0;font-size:14px"></i>
     </div>`;
   }).join('') : '<div class="empty"><i class="ti ti-calendar"></i>Sem eventos próximos</div>';
   const meusEvEl = document.getElementById('dash-meus-eventos');
