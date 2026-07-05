@@ -271,3 +271,22 @@ hr{border:none;border-top:0.5px solid var(--border);margin:14px 0}
 @media(max-width:380px){
   .nivel-card-actions .btn{padding:8px 10px;font-size:12px}
 }
+
+/* ===== PERMISSÕES AGRUPADAS ===== */
+.perm-grupos{display:flex;flex-direction:column;gap:12px}
+.perm-grupo{border:0.5px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.perm-grupo-titulo{font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.4px;padding:8px 12px;background:var(--bg-secondary);display:flex;align-items:center;gap:6px;border-bottom:0.5px solid var(--border)}
+.perm-grupo-titulo i{font-size:13px}
+.perm-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:0}
+.perm-grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:0}
+.perm-check{display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;border-right:0.5px solid var(--border);transition:background .15s;font-size:13px;color:var(--text-primary)}
+.perm-check:last-child{border-right:none}
+.perm-check:hover{background:var(--bg-secondary)}
+.perm-check input{width:16px;height:16px;flex-shrink:0;cursor:pointer}
+.perm-check span{font-size:12px;font-weight:500;line-height:1.2}
+@media(max-width:480px){
+  .perm-grid-3{grid-template-columns:1fr}
+  .perm-grid-2{grid-template-columns:1fr}
+  .perm-check{border-right:none;border-bottom:0.5px solid var(--border)}
+  .perm-check:last-child{border-bottom:none}
+}
