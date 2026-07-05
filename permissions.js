@@ -37,8 +37,24 @@ function nivelIsAdmin(nivel) {
 }
 
 function nivelPodeVerNiveis(nivel) {
-  // Apenas admin real vê a tela de níveis de acesso
   return nivelIsAdmin(nivel);
+}
+
+// Verifica se o usuário pode editar um ministério específico
+// Admin pode editar qualquer um; outros só o que lideram
+function podEditarMinisterio(minId) {
+  if (!perm(getNivelAtivo(), 'pode_editar_ministerios')) return false;
+  if (nivelIsAdmin(getNivelAtivo())) return true;
+  // Não-admin: só pode editar se for o líder do ministério
+  const m = ministerios.find(m => m.id === minId);
+  return m && m.lider_id === currentProfile.id;
+}
+
+function podExcluirMinisterio(minId) {
+  if (!perm(getNivelAtivo(), 'pode_excluir_ministerios')) return false;
+  if (nivelIsAdmin(getNivelAtivo())) return true;
+  const m = ministerios.find(m => m.id === minId);
+  return m && m.lider_id === currentProfile.id;
 }
 
 function nivelIsLiderOuAdmin(nivel) {
