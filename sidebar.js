@@ -50,7 +50,7 @@ function updateSidebar() {
   document.getElementById('nav-ministerios').style.display = isLiderOuAdmin ? 'flex' : 'none';
   document.getElementById('nav-voluntarios').style.display = nivelPodeGerenciarVoluntarios(nivel) ? 'flex' : 'none';
   document.getElementById('nav-eventos').style.display = nivelPodeGerenciarEventos(nivel) ? 'flex' : 'none';
-  document.getElementById('nav-niveis').style.display = isAdmin ? 'flex' : 'none';
+  document.getElementById('nav-niveis').style.display = nivelPodeVerNiveis(nivel) ? 'flex' : 'none';
   document.getElementById('admin-section').style.display = isLiderOuAdmin ? 'block' : 'none';
   atualizarBadgeNotif();
 }
