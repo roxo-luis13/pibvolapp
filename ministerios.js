@@ -30,8 +30,6 @@ function renderMinisterios() {
   }
   const isAdmin = nivelIsAdmin(getNivelAtivo());
   const podeCriarMin = perm(getNivelAtivo(),'pode_criar_ministerios');
-  const podeEditarMin = perm(getNivelAtivo(),'pode_editar_ministerios');
-  const podeExcluirMin = perm(getNivelAtivo(),'pode_excluir_ministerios');
   grid.innerHTML = '';
   lista.forEach(m => {
     const locked = !canAccess(m.id);
@@ -46,8 +44,8 @@ function renderMinisterios() {
     html += `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:12px;color:var(--text-secondary)">${vols.length} voluntário(s)</span>${locked?'<span class="tag" style="background:var(--bg-secondary);color:var(--text-tertiary)">Sem acesso</span>':`<span class="tag ${m.cor}">Aberto</span>`}</div>`;
     if (!locked) html += `<button class="btn sm" style="width:100%;justify-content:center;margin-bottom:6px" data-open="${m.id}"><i class="ti ti-eye"></i>Ver ministério</button>`;
     const minBtns = [];
-    if (podeEditarMin) minBtns.push(`<button class="btn sm" style="flex:1;justify-content:center" data-edit="${m.id}"><i class="ti ti-edit"></i>Editar</button>`);
-    if (podeExcluirMin) minBtns.push(`<button class="btn sm danger" style="flex:1;justify-content:center" data-del="${m.id}"><i class="ti ti-trash"></i>Excluir</button>`);
+    if (podEditarMinisterio(m.id)) minBtns.push(`<button class="btn sm" style="flex:1;justify-content:center" data-edit="${m.id}"><i class="ti ti-edit"></i>Editar</button>`);
+    if (podExcluirMinisterio(m.id)) minBtns.push(`<button class="btn sm danger" style="flex:1;justify-content:center" data-del="${m.id}"><i class="ti ti-trash"></i>Excluir</button>`);
     if (minBtns.length) html += `<div style="display:flex;gap:4px">${minBtns.join('')}</div>`;
     div.innerHTML = html;
     grid.appendChild(div);
@@ -64,12 +62,10 @@ function renderDetalhe(id) {
   const m = ministerios.find(m=>m.id===id); if (!m) return;
   const isAdmin = nivelIsAdmin(getNivelAtivo());
   const isLiderOuAdmin = nivelIsLiderOuAdmin(getNivelAtivo());
-  const podeEdMin = perm(getNivelAtivo(),'pode_editar_ministerios');
-  const podeExMin = perm(getNivelAtivo(),'pode_excluir_ministerios');
   document.getElementById('detalhe-nome').textContent = m.nome;
   const detBtns = [];
-  if (podeEdMin) detBtns.push(`<button class="btn sm" onclick="editMinisterio('${id}')"><i class="ti ti-edit"></i>Editar</button>`);
-  if (podeExMin) detBtns.push(`<button class="btn sm danger" onclick="deleteMinisterio('${id}',true)"><i class="ti ti-trash"></i>Excluir</button>`);
+  if (podEditarMinisterio(id)) detBtns.push(`<button class="btn sm" onclick="editMinisterio('${id}')"><i class="ti ti-edit"></i>Editar</button>`);
+  if (podExcluirMinisterio(id)) detBtns.push(`<button class="btn sm danger" onclick="deleteMinisterio('${id}',true)"><i class="ti ti-trash"></i>Excluir</button>`);
   document.getElementById('detalhe-admin-btns').innerHTML = detBtns.length ? `<div style="display:flex;gap:6px">${detBtns.join('')}</div>` : '';
   const lider = voluntarios.find(v=>v.id===m.lider_id);
   const liderBar = document.getElementById('detalhe-lider-bar');
