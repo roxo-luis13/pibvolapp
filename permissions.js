@@ -32,8 +32,13 @@ function perm(nivel, permissao) {
 
 function nivelIsAdmin(nivel) {
   const n = getNivelObj(nivel);
-  // Admin = pode criar E excluir ministérios E criar eventos
+  // Admin = pode criar E excluir ministérios E criar eventos E gerenciar níveis
   return n.pode_criar_ministerios && n.pode_excluir_ministerios && n.pode_criar_eventos;
+}
+
+function nivelPodeVerNiveis(nivel) {
+  // Apenas admin real vê a tela de níveis de acesso
+  return nivelIsAdmin(nivel);
 }
 
 function nivelIsLiderOuAdmin(nivel) {
