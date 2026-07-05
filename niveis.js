@@ -82,19 +82,23 @@ function renderNiveis() {
     const div = document.createElement('div');
     div.className = 'card';
     div.style.cssText = 'display:flex;flex-direction:column;gap:10px';
-    let html = `<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
-      <div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-          <i class="ti ti-shield-lock" style="font-size:20px;color:var(--${cor}-text)"></i>
-          <h3 style="font-size:15px;font-weight:500">${n.nome.charAt(0).toUpperCase()+n.nome.slice(1)}</h3>
-          ${isPadrao?'<span style="font-size:10px;background:var(--bg-secondary);color:var(--text-tertiary);padding:2px 7px;border-radius:4px">Padrão</span>':''}
+    let html = `<div class="nivel-card-header">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <div style="width:36px;height:36px;border-radius:var(--radius);background:var(--${cor}-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ti-shield-lock" style="font-size:18px;color:var(--${cor}-text)"></i>
         </div>
-        <p style="font-size:12px;color:var(--text-secondary)">${n.descricao||'Sem descrição'}</p>
+        <div style="min-width:0">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <h3 style="font-size:15px;font-weight:500">${n.nome.charAt(0).toUpperCase()+n.nome.slice(1)}</h3>
+            ${isPadrao?'<span style="font-size:10px;background:var(--bg-secondary);color:var(--text-tertiary);padding:2px 7px;border-radius:4px">Padrão</span>':''}
+          </div>
+          <p style="font-size:12px;color:var(--text-secondary);margin-top:1px">${n.descricao||'Sem descrição'}</p>
+        </div>
       </div>
-      <div style="display:flex;gap:4px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">
-        <button class="btn sm" onclick="preVisualizarNivel('${n.nome}')" style="background:var(--purple-bg);color:var(--purple-text);border-color:var(--purple-text)"><i class="ti ti-eye"></i>Pré-visualizar</button>
-        <button class="btn sm" onclick="editNivel('${n.id}')"><i class="ti ti-edit"></i>Editar</button>
-        ${!isPadrao?`<button class="btn sm danger" onclick="deleteNivel('${n.id}')"><i class="ti ti-trash"></i>Excluir</button>`:''}
+      <div class="nivel-card-actions">
+        <button class="btn sm" onclick="preVisualizarNivel('${n.nome}')" style="background:var(--purple-bg);color:var(--purple-text);border-color:#AFA9EC" title="Pré-visualizar"><i class="ti ti-eye"></i><span class="btn-label">Pré-visualizar</span></button>
+        <button class="btn sm" onclick="editNivel('${n.id}')" title="Editar permissões"><i class="ti ti-edit"></i><span class="btn-label">Editar</span></button>
+        ${!isPadrao?`<button class="btn sm danger" onclick="deleteNivel('${n.id}')" title="Excluir nível"><i class="ti ti-trash"></i><span class="btn-label">Excluir</span></button>`:''}
       </div>
     </div>`;
     html += `<div style="border-top:0.5px solid var(--border);padding-top:10px">
