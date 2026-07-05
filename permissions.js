@@ -8,21 +8,21 @@ function getNivelObj(nivel) {
   // Defaults para níveis padrão caso não estejam na tabela
   if (nivel === 'admin') return {
     pode_criar_ministerios:true, pode_editar_ministerios:true, pode_excluir_ministerios:true,
-    pode_cadastrar_voluntarios:true, pode_editar_voluntarios:true,
-    pode_criar_eventos:true, pode_editar_eventos:true, pode_ver_todos_ministerios:true,
-    pode_ver_total_voluntarios:true
+    pode_cadastrar_voluntarios:true, pode_editar_voluntarios:true, pode_remover_voluntarios:true,
+    pode_criar_eventos:true, pode_editar_eventos:true, pode_excluir_eventos:true,
+    pode_ver_todos_ministerios:true, pode_ver_total_voluntarios:true
   };
   if (nivel === 'lider') return {
     pode_criar_ministerios:false, pode_editar_ministerios:false, pode_excluir_ministerios:false,
-    pode_cadastrar_voluntarios:true, pode_editar_voluntarios:true,
-    pode_criar_eventos:true, pode_editar_eventos:true, pode_ver_todos_ministerios:false,
-    pode_ver_total_voluntarios:true
+    pode_cadastrar_voluntarios:true, pode_editar_voluntarios:true, pode_remover_voluntarios:false,
+    pode_criar_eventos:true, pode_editar_eventos:true, pode_excluir_eventos:false,
+    pode_ver_todos_ministerios:false, pode_ver_total_voluntarios:true
   };
   return {
     pode_criar_ministerios:false, pode_editar_ministerios:false, pode_excluir_ministerios:false,
-    pode_cadastrar_voluntarios:false, pode_editar_voluntarios:false,
-    pode_criar_eventos:false, pode_editar_eventos:false, pode_ver_todos_ministerios:false,
-    pode_ver_total_voluntarios:false
+    pode_cadastrar_voluntarios:false, pode_editar_voluntarios:false, pode_remover_voluntarios:false,
+    pode_criar_eventos:false, pode_editar_eventos:false, pode_excluir_eventos:false,
+    pode_ver_todos_ministerios:false, pode_ver_total_voluntarios:false
   };
 }
 
@@ -51,7 +51,7 @@ function nivelIsLiderOuAdmin(nivel) {
 
 function nivelPodeGerenciarEventos(nivel) {
   const n = getNivelObj(nivel);
-  return n.pode_criar_eventos || n.pode_editar_eventos;
+  return n.pode_criar_eventos || n.pode_editar_eventos || n.pode_excluir_eventos;
 }
 
 function nivelPodeGerenciarMinisterios(nivel) {
@@ -61,7 +61,7 @@ function nivelPodeGerenciarMinisterios(nivel) {
 
 function nivelPodeGerenciarVoluntarios(nivel) {
   const n = getNivelObj(nivel);
-  return n.pode_cadastrar_voluntarios || n.pode_editar_voluntarios;
+  return n.pode_cadastrar_voluntarios || n.pode_editar_voluntarios || n.pode_remover_voluntarios;
 }
 
 function nivelPodeVerTotalVoluntarios(nivel) {
