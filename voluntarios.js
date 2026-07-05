@@ -36,7 +36,9 @@ function renderVoluntarios() {
     return a.nome.localeCompare(b.nome,'pt');
   });
 
-  const canManage = nivelPodeGerenciarVoluntarios(getNivelAtivo());
+  const canEdit = perm(getNivelAtivo(),'pode_editar_voluntarios');
+  const canRemove = perm(getNivelAtivo(),'pode_remover_voluntarios');
+  const canManage = canEdit || canRemove;
   const tbody = document.getElementById('vol-tbody');
 
   if (!lista.length) {
@@ -47,7 +49,7 @@ function renderVoluntarios() {
   // Desktop table
   tbody.innerHTML = lista.map(v => {
     const mins = (v.ministerios||[]).map(id=>{const m=ministerios.find(m=>m.id===id);return m?`<span class="tag ${m.cor}">${m.nome}</span>`:''}).join('');
-    const btns = canManage ? `<div style="display:flex;gap:4px"><button class="btn sm" onclick="editVoluntario('${v.id}')"><i class="ti ti-edit"></i></button>${v.id!==currentProfile.id?`<button class="btn sm danger" onclick="deleteVol('${v.id}')"><i class="ti ti-trash"></i></button>`:''}</div>` : '';
+    const btns = canManage ? `<div style="display:flex;gap:4px">${canEdit?`<button class="btn sm" onclick="editVoluntario('${v.id}')"><i class="ti ti-edit"></i></button>`:''} ${canRemove&&v.id!==currentProfile.id?`<button class="btn sm danger" onclick="deleteVol('${v.id}')"><i class="ti ti-trash"></i></button>`:''}</div>` : '';
     return `<tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar ${getNivelClass(v.nivel)}" style="width:28px;height:28px;font-size:10px">${ini(v.nome)}</div>${v.nome}</div></td><td style="color:var(--text-secondary)">${v.email}</td><td style="color:var(--text-secondary)">${v.tel||'—'}</td><td>${mins||'—'}</td><td><span class="badge ${getNivelClass(v.nivel)}">${getNivelLabel(v.nivel)}</span></td><td>${btns}</td></tr>`;
   }).join('');
 
@@ -59,8 +61,8 @@ function renderVoluntarios() {
       const nivelLabel = getNivelLabel(v.nivel);
       const nivelClass = getNivelClass(v.nivel);
       const btns = canManage ? `<div style="display:flex;gap:6px;margin-top:8px">
-        <button class="btn sm" onclick="editVoluntario('${v.id}')"><i class="ti ti-edit"></i>Editar</button>
-        ${v.id!==currentProfile.id?`<button class="btn sm danger" onclick="deleteVol('${v.id}')"><i class="ti ti-trash"></i>Remover</button>`:''}
+        ${canEdit?`<button class="btn sm" onclick="editVoluntario('${v.id}')"><i class="ti ti-edit"></i>Editar</button>`:''}
+        ${canRemove&&v.id!==currentProfile.id?`<button class="btn sm danger" onclick="deleteVol('${v.id}')"><i class="ti ti-trash"></i>Remover</button>`:''}
       </div>` : '';
       return `<div class="vol-card">
         <div class="avatar ${nivelClass}" style="width:42px;height:42px;font-size:14px;flex-shrink:0">${ini(v.nome)}</div>
