@@ -32,18 +32,20 @@ async function loadProfile(userId) {
 }
 
 async function loadAllData() {
-  const [m, v, e, n, niv] = await Promise.all([
+  const [m, v, e, n, niv, g] = await Promise.all([
     sb('ministerios?select=*&order=nome'),
     sb('voluntarios?select=*&order=nome'),
     sb('eventos?select=*&order=data'),
     sb(`notificacoes?vol_id=eq.${currentProfile.id}&select=*&order=criado_em.desc`),
-    sb('niveis_acesso?select=*&order=nome')
+    sb('niveis_acesso?select=*&order=nome'),
+    sb('grupos_ministerios?select=*&order=nome')
   ]);
   ministerios = (m||[]).map(r => ({...r, ministerios: r.ministerios || [], inscritos: [], convites: []}));
   voluntarios = (v||[]).map(r => ({...r, ministerios: r.ministerios || []}));
   eventos = (e||[]).map(r => ({...r, ministerios: r.ministerios||[], inscritos: r.inscritos||[], convites: r.convites||[]}));
   notificacoes = (n||[]);
   niveisAcesso = (niv||[]);
+  gruposMinisterios = (g||[]);
   atualizarBadgeNotif();
   atualizarSelectNiveis();
 }
