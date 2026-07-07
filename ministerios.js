@@ -57,8 +57,11 @@ function renderMinisterios() {
     const mins = comGrupo[g.id];
     if (!mins || !mins.length) return;
     const lider = voluntarios.find(v => v.id === g.lider_id);
+    // Estado de colapso — persistir em memória
+    const collapsed = grupoCollapsed[g.id] || false;
     const grupoEl = document.createElement('div');
-    grupoEl.innerHTML = `<div class="grupo-header">
+    grupoEl.className = 'grupo-bloco';
+    grupoEl.innerHTML = `<div class="grupo-header" onclick="toggleGrupo('${g.id}')" style="cursor:pointer">
       <div class="grupo-icone" style="background:var(--${g.cor}-bg)">
         <i class="ti ${g.icone}" style="color:var(--${g.cor}-text);font-size:16px"></i>
       </div>
@@ -67,13 +70,16 @@ function renderMinisterios() {
         ${lider ? `<div class="grupo-lider"><i class="ti ti-crown" style="font-size:10px;color:var(--amber-text)"></i> ${lider.nome}</div>` : ''}
         ${g.descricao ? `<div style="font-size:11px;color:var(--text-tertiary);margin-top:1px">${g.descricao}</div>` : ''}
       </div>
-      <span class="grupo-count">${mins.length} ministério(s)</span>
-      ${isAdmin ? `<div class="grupo-actions">
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <span class="grupo-count">${mins.length} ministério(s)</span>
+        <i class="ti ti-chevron-down grupo-chevron" id="grupo-chevron-${g.id}" style="font-size:16px;color:var(--text-tertiary);transition:transform .2s;${collapsed?'transform:rotate(-90deg)':''}"></i>
+      </div>
+      ${isAdmin ? `<div class="grupo-actions" onclick="event.stopPropagation()">
         <button class="btn sm" onclick="editGrupo('${g.id}')"><i class="ti ti-edit"></i></button>
         <button class="btn sm danger" onclick="deleteGrupo('${g.id}')"><i class="ti ti-trash"></i></button>
       </div>` : ''}
     </div>
-    <div class="grid-3 grupo-grid" id="grupo-grid-${g.id}"></div>`;
+    <div class="grid-3 grupo-grid" id="grupo-grid-${g.id}" style="${collapsed?'display:none':''}"></div>`;
     gruposContainer.appendChild(grupoEl);
     const grupoGrid = grupoEl.querySelector(`#grupo-grid-${g.id}`);
     mins.forEach(m => grupoGrid.appendChild(buildMinCard(m, isAdmin, podeCriarMin)));
@@ -196,6 +202,15 @@ async function saveAddVolMin() {
 }
 
 // ===== GRUPOS DE MINISTÉRIOS =====
+const grupoCollapsed = {}; // persiste estado de colapso por id
+
+function toggleGrupo(id) {
+  grupoCollapsed[id] = !grupoCollapsed[id];
+  const grid = document.getElementById('grupo-grid-'+id);
+  const chevron = document.getElementById('grupo-chevron-'+id);
+  if (grid) grid.style.display = grupoCollapsed[id] ? 'none' : '';
+  if (chevron) chevron.style.transform = grupoCollapsed[id] ? 'rotate(-90deg)' : '';
+}
 function openModalGrupo() {
   document.getElementById('modal-grupo-title').textContent = 'Criar grupo';
   document.getElementById('grupo-edit-id').value = '';
