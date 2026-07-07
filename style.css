@@ -290,3 +290,15 @@ hr{border:none;border-top:0.5px solid var(--border);margin:14px 0}
   .perm-check{border-right:none;border-bottom:0.5px solid var(--border)}
   .perm-check:last-child{border-bottom:none}
 }
+
+/* ===== GRUPOS DE MINISTÉRIOS ===== */
+.grupo-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;margin-top:20px;padding-bottom:10px;border-bottom:0.5px solid var(--border)}
+.grupo-header:first-child{margin-top:0}
+.grupo-icone{width:36px;height:36px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.grupo-info{flex:1;min-width:0}
+.grupo-nome{font-size:14px;font-weight:600;color:var(--text-primary)}
+.grupo-lider{font-size:12px;color:var(--text-secondary);margin-top:1px}
+.grupo-count{font-size:11px;color:var(--text-tertiary);white-space:nowrap}
+.grupo-actions{display:flex;gap:4px;flex-shrink:0}
+.grupo-sem-grupo{margin-top:20px;padding-top:16px;border-top:0.5px dashed var(--border)}
+.grupo-sem-grupo-label{font-size:11px;font-weight:500;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.4px;margin-bottom:12px}
