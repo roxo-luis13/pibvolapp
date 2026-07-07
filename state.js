@@ -4,5 +4,6 @@ const ICONES = {'ti-music':'🎵','ti-baby-carriage':'👶','ti-heart-handshake'
 const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 let session = null, currentProfile = null;
 let niveisAcesso = [];
+let gruposMinisterios = [];
 
 // Helpers de permissão baseados em niveisAcesso
