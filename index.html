@@ -184,6 +184,7 @@
             <option value="vols">Ordenar: Mais voluntários</option>
           </select>
         </div>
+        <div id="grupos-container"></div>
         <div class="grid-3" id="ministerios-grid"></div>
       </div>
 
@@ -328,6 +329,39 @@
 </div>
 
 <!-- MODAIS -->
+<div class="modal-backdrop" id="modal-grupo">
+  <div class="modal" style="max-width:480px">
+    <h2 id="modal-grupo-title">Criar grupo</h2>
+    <input type="hidden" id="grupo-edit-id" value="">
+    <div class="form-group"><label>Nome do grupo *</label><input id="grupo-nome" type="text" placeholder="ex: Ministérios de Louvor, Ministérios de Ensino..."></div>
+    <div class="form-group"><label>Descrição</label><input id="grupo-desc" type="text" placeholder="Descreva o grupo"></div>
+    <div class="form-group"><label>Ícone</label>
+      <select id="grupo-icone">
+        <option value="ti-layout-grid">⊞ Grade</option>
+        <option value="ti-music">🎵 Música/Louvor</option>
+        <option value="ti-book">📖 Ensino</option>
+        <option value="ti-heart-handshake">🤝 Cuidado</option>
+        <option value="ti-device-speaker">📢 Comunicação</option>
+        <option value="ti-users">👥 Pessoas</option>
+        <option value="ti-star">⭐ Destaque</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Cor</label>
+      <select id="grupo-cor">
+        <option value="purple">Roxo</option><option value="teal">Verde-água</option>
+        <option value="blue">Azul</option><option value="coral">Coral</option>
+        <option value="amber">Âmbar</option><option value="pink">Rosa</option>
+        <option value="green">Verde</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Líder do grupo</label><select id="grupo-lider"><option value="">— Sem líder —</option></select></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-grupo')">Cancelar</button>
+      <button class="btn primary" onclick="saveGrupo()">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-backdrop" id="modal-vol">
   <div class="modal">
     <h2 id="modal-vol-title">Cadastrar voluntário</h2>
@@ -365,6 +399,7 @@
     <div class="form-group"><label>Cor</label>
       <select id="min-cor"><option value="purple">Roxo</option><option value="teal">Verde-água</option><option value="blue">Azul</option><option value="coral">Coral</option><option value="amber">Âmbar</option><option value="pink">Rosa</option><option value="green">Verde</option></select>
     </div>
+    <div class="form-group"><label>Grupo</label><select id="min-grupo"><option value="">— Sem grupo —</option></select></div>
     <div class="form-group"><label>Líder do ministério</label><select id="min-lider"><option value="">— Sem líder —</option></select></div>
     <div class="modal-footer">
       <button class="btn" onclick="closeModal('modal-min')">Cancelar</button>
