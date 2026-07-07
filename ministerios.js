@@ -7,53 +7,120 @@ function renderMinisterios() {
 
   let lista = ministerios.filter(m => {
     if (busca && !m.nome.toLowerCase().includes(busca) && !(m.descricao||'').toLowerCase().includes(busca)) return false;
-    if (filtroAcesso === 'meus' && !canAccess(m.id)) return false;
-    if (filtroAcesso === 'outros' && canAccess(m.id)) return false;
+    if (filtroAcesso === 'meus') return canAccess(m.id) && !locked(m.id);
+    if (filtroAcesso === 'sem') return !canAccess(m.id);
     return true;
   });
 
-  lista = lista.sort((a,b) => {
-    if (ordem === 'nome') return a.nome.localeCompare(b.nome,'pt-BR');
-    if (ordem === 'nome-desc') return b.nome.localeCompare(a.nome,'pt-BR');
-    if (ordem === 'vols') {
-      const va = voluntarios.filter(v=>(v.ministerios||[]).includes(a.id)).length;
-      const vb = voluntarios.filter(v=>(v.ministerios||[]).includes(b.id)).length;
-      return vb - va;
-    }
-    return 0;
+  lista.sort((a,b) => {
+    if (ordem === 'nome-desc') return b.nome.localeCompare(a.nome,'pt');
+    if (ordem === 'vols') return voluntarios.filter(v=>(v.ministerios||[]).includes(b.id)).length - voluntarios.filter(v=>(v.ministerios||[]).includes(a.id)).length;
+    return a.nome.localeCompare(b.nome,'pt');
   });
 
+  const gruposContainer = document.getElementById('grupos-container');
   const grid = document.getElementById('ministerios-grid');
-  if (!lista.length) {
-    grid.innerHTML = '<div class="empty" style="grid-column:1/-1"><i class="ti ti-search"></i>Nenhum ministério encontrado</div>';
-    return;
-  }
   const isAdmin = nivelIsAdmin(getNivelAtivo());
   const podeCriarMin = perm(getNivelAtivo(),'pode_criar_ministerios');
-  grid.innerHTML = '';
+
+  if (!lista.length) {
+    gruposContainer.innerHTML = '';
+    grid.innerHTML = '<div class="empty" style="grid-column:1/-1"><i class="ti ti-users-group"></i>Nenhum ministério encontrado</div>';
+    return;
+  }
+
+  // Se há busca/filtro ativo, mostrar flat sem grupos
+  if (busca || filtroAcesso) {
+    gruposContainer.innerHTML = '';
+    grid.innerHTML = '';
+    lista.forEach(m => grid.appendChild(buildMinCard(m, isAdmin, podeCriarMin)));
+    return;
+  }
+
+  // Organizar por grupos
+  const comGrupo = {};
+  const semGrupo = [];
   lista.forEach(m => {
-    const locked = !canAccess(m.id);
-    const vols = voluntarios.filter(v=>(v.ministerios||[]).includes(m.id));
-    const lider = voluntarios.find(v=>v.id===m.lider_id);
-    const div = document.createElement('div');
-    div.className = 'ministry-card' + (locked?' locked':'');
-    div.style.cssText = 'display:flex;flex-direction:column';
-    let html = `<div class="icon" style="background:var(--${m.cor}-bg)">${locked?`<i class="ti ti-lock" style="font-size:18px;color:var(--${m.cor}-text)"></i>`:ICONES[m.icone]||'⭐'}</div>`;
-    html += `<h3>${m.nome}</h3><p style="flex:1;margin-bottom:8px">${m.descricao||''}</p>`;
-    if (lider) html += `<p style="font-size:11px;color:var(--text-secondary);margin-bottom:8px"><i class="ti ti-crown" style="font-size:11px;margin-right:3px"></i>Líder: ${lider.nome}</p>`;
-    html += `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:12px;color:var(--text-secondary)">${vols.length} voluntário(s)</span>${locked?'<span class="tag" style="background:var(--bg-secondary);color:var(--text-tertiary)">Sem acesso</span>':`<span class="tag ${m.cor}">Aberto</span>`}</div>`;
-    if (!locked) html += `<button class="btn sm" style="width:100%;justify-content:center;margin-bottom:6px" data-open="${m.id}"><i class="ti ti-eye"></i>Ver ministério</button>`;
-    const minBtns = [];
-    if (podEditarMinisterio(m.id)) minBtns.push(`<button class="btn sm" style="flex:1;justify-content:center" data-edit="${m.id}"><i class="ti ti-edit"></i>Editar</button>`);
-    if (podExcluirMinisterio(m.id)) minBtns.push(`<button class="btn sm danger" style="flex:1;justify-content:center" data-del="${m.id}"><i class="ti ti-trash"></i>Excluir</button>`);
-    if (minBtns.length) html += `<div style="display:flex;gap:4px">${minBtns.join('')}</div>`;
-    div.innerHTML = html;
-    grid.appendChild(div);
-    const ob = div.querySelector('[data-open]'); if (ob) ob.addEventListener('click',()=>openDetalhe(ob.dataset.open));
-    const eb = div.querySelector('[data-edit]'); if (eb) eb.addEventListener('click',()=>editMinisterio(eb.dataset.edit));
-    const db2 = div.querySelector('[data-del]'); if (db2) db2.addEventListener('click',()=>deleteMinisterio(db2.dataset.del));
+    if (m.grupo_id) {
+      if (!comGrupo[m.grupo_id]) comGrupo[m.grupo_id] = [];
+      comGrupo[m.grupo_id].push(m);
+    } else {
+      semGrupo.push(m);
+    }
   });
+
+  gruposContainer.innerHTML = '';
+  grid.innerHTML = '';
+
+  // Render grupos
+  gruposMinisterios.forEach(g => {
+    const mins = comGrupo[g.id];
+    if (!mins || !mins.length) return;
+    const lider = voluntarios.find(v => v.id === g.lider_id);
+    const grupoEl = document.createElement('div');
+    grupoEl.innerHTML = `<div class="grupo-header">
+      <div class="grupo-icone" style="background:var(--${g.cor}-bg)">
+        <i class="ti ${g.icone}" style="color:var(--${g.cor}-text);font-size:16px"></i>
+      </div>
+      <div class="grupo-info">
+        <div class="grupo-nome">${g.nome}</div>
+        ${lider ? `<div class="grupo-lider"><i class="ti ti-crown" style="font-size:10px;color:var(--amber-text)"></i> ${lider.nome}</div>` : ''}
+        ${g.descricao ? `<div style="font-size:11px;color:var(--text-tertiary);margin-top:1px">${g.descricao}</div>` : ''}
+      </div>
+      <span class="grupo-count">${mins.length} ministério(s)</span>
+      ${isAdmin ? `<div class="grupo-actions">
+        <button class="btn sm" onclick="editGrupo('${g.id}')"><i class="ti ti-edit"></i></button>
+        <button class="btn sm danger" onclick="deleteGrupo('${g.id}')"><i class="ti ti-trash"></i></button>
+      </div>` : ''}
+    </div>
+    <div class="grid-3 grupo-grid" id="grupo-grid-${g.id}"></div>`;
+    gruposContainer.appendChild(grupoEl);
+    const grupoGrid = grupoEl.querySelector(`#grupo-grid-${g.id}`);
+    mins.forEach(m => grupoGrid.appendChild(buildMinCard(m, isAdmin, podeCriarMin)));
+  });
+
+  // Render sem grupo
+  if (semGrupo.length) {
+    const semGrupoEl = document.createElement('div');
+    semGrupoEl.className = gruposMinisterios.length ? 'grupo-sem-grupo' : '';
+    if (gruposMinisterios.length) {
+      semGrupoEl.innerHTML = '<div class="grupo-sem-grupo-label"><i class="ti ti-layout-grid" style="margin-right:4px"></i>Sem grupo</div>';
+    }
+    const semGrupoGrid = document.createElement('div');
+    semGrupoGrid.className = 'grid-3';
+    semGrupoEl.appendChild(semGrupoGrid);
+    gruposContainer.appendChild(semGrupoEl);
+    semGrupo.forEach(m => semGrupoGrid.appendChild(buildMinCard(m, isAdmin, podeCriarMin)));
+  }
 }
+
+function locked(mId) {
+  return !canAccess(mId);
+}
+
+function buildMinCard(m, isAdmin, podeCriarMin) {
+  const locked = !canAccess(m.id);
+  const vols = voluntarios.filter(v=>(v.ministerios||[]).includes(m.id));
+  const lider = voluntarios.find(v=>v.id===m.lider_id);
+  const div = document.createElement('div');
+  div.className = 'ministry-card' + (locked?' locked':'');
+  div.style.cssText = 'display:flex;flex-direction:column';
+  let html = `<div class="icon" style="background:var(--${m.cor}-bg)">${locked?`<i class="ti ti-lock" style="font-size:18px;color:var(--${m.cor}-text)"></i>`:ICONES[m.icone]||'⭐'}</div>`;
+  html += `<h3>${m.nome}</h3><p style="flex:1;margin-bottom:8px">${m.descricao||''}</p>`;
+  if (lider) html += `<p style="font-size:11px;color:var(--text-secondary);margin-bottom:8px"><i class="ti ti-crown" style="font-size:11px;margin-right:3px"></i>Líder: ${lider.nome}</p>`;
+  html += `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:12px;color:var(--text-secondary)">${vols.length} voluntário(s)</span>${locked?'<span class="tag" style="background:var(--bg-secondary);color:var(--text-tertiary)">Sem acesso</span>':`<span class="tag ${m.cor}">Aberto</span>`}</div>`;
+  if (!locked) html += `<button class="btn sm" style="width:100%;justify-content:center;margin-bottom:6px" data-open="${m.id}"><i class="ti ti-eye"></i>Ver ministério</button>`;
+  const minBtns = [];
+  if (podEditarMinisterio(m.id)) minBtns.push(`<button class="btn sm" style="flex:1;justify-content:center" data-edit="${m.id}"><i class="ti ti-edit"></i>Editar</button>`);
+  if (podExcluirMinisterio(m.id)) minBtns.push(`<button class="btn sm danger" style="flex:1;justify-content:center" data-del="${m.id}"><i class="ti ti-trash"></i>Excluir</button>`);
+  if (minBtns.length) html += `<div style="display:flex;gap:4px">${minBtns.join('')}</div>`;
+  div.innerHTML = html;
+  const ob = div.querySelector('[data-open]'); if (ob) ob.addEventListener('click',()=>openDetalhe(ob.dataset.open));
+  const eb = div.querySelector('[data-edit]'); if (eb) eb.addEventListener('click',()=>editMinisterio(eb.dataset.edit));
+  const db2 = div.querySelector('[data-del]'); if (db2) db2.addEventListener('click',()=>deleteMinisterio(db2.dataset.del));
+  return div;
+}
+
 
 function openDetalhe(id) { navigate('ministerio-detalhe', id); }
 
@@ -128,6 +195,75 @@ async function saveAddVolMin() {
   renderDetalhe(minId);
 }
 
+// ===== GRUPOS DE MINISTÉRIOS =====
+function openModalGrupo() {
+  document.getElementById('modal-grupo-title').textContent = 'Criar grupo';
+  document.getElementById('grupo-edit-id').value = '';
+  document.getElementById('grupo-nome').value = '';
+  document.getElementById('grupo-desc').value = '';
+  document.getElementById('grupo-icone').value = 'ti-layout-grid';
+  document.getElementById('grupo-cor').value = 'purple';
+  populateGrupoLiderSelect(null);
+  openModal('modal-grupo');
+}
+
+function editGrupo(id) {
+  const g = gruposMinisterios.find(g=>g.id===id); if (!g) return;
+  document.getElementById('modal-grupo-title').textContent = 'Editar grupo';
+  document.getElementById('grupo-edit-id').value = id;
+  document.getElementById('grupo-nome').value = g.nome;
+  document.getElementById('grupo-desc').value = g.descricao||'';
+  document.getElementById('grupo-icone').value = g.icone||'ti-layout-grid';
+  document.getElementById('grupo-cor').value = g.cor||'purple';
+  populateGrupoLiderSelect(g.lider_id||null);
+  openModal('modal-grupo', true);
+}
+
+function populateGrupoLiderSelect(selectedId) {
+  document.getElementById('grupo-lider').innerHTML = '<option value="">— Sem líder —</option>' +
+    voluntarios.map(v=>`<option value="${v.id}"${v.id===selectedId?' selected':''}>${v.nome}</option>`).join('');
+}
+
+async function saveGrupo() {
+  const nome = document.getElementById('grupo-nome').value.trim();
+  if (!nome) { alert('Nome é obrigatório.'); return; }
+  const dados = {
+    nome,
+    descricao: document.getElementById('grupo-desc').value.trim(),
+    icone: document.getElementById('grupo-icone').value,
+    cor: document.getElementById('grupo-cor').value,
+    lider_id: document.getElementById('grupo-lider').value || null
+  };
+  const editId = document.getElementById('grupo-edit-id').value;
+  try {
+    if (editId) {
+      await sb(`grupos_ministerios?id=eq.${editId}`, {method:'PATCH', body:JSON.stringify(dados)});
+      const g = gruposMinisterios.find(g=>g.id===editId); if (g) Object.assign(g,dados);
+    } else {
+      const rows = await sb('grupos_ministerios', {method:'POST', body:JSON.stringify(dados)});
+      if (rows && rows[0]) gruposMinisterios.push(rows[0]);
+    }
+    closeModal('modal-grupo');
+    renderMinisterios();
+  } catch(e) { alert('Erro: '+e.message); }
+}
+
+async function deleteGrupo(id) {
+  const g = gruposMinisterios.find(g=>g.id===id); if (!g) return;
+  if (!confirm(`Excluir o grupo "${g.nome}"?
+Os ministérios não serão excluídos, apenas desvinculados do grupo.`)) return;
+  try {
+    // Desvincular ministérios do grupo
+    for (const m of ministerios.filter(m=>m.grupo_id===id)) {
+      await sb(`ministerios?id=eq.${m.id}`, {method:'PATCH', body:JSON.stringify({grupo_id:null})});
+      m.grupo_id = null;
+    }
+    await sb(`grupos_ministerios?id=eq.${id}`, {method:'DELETE', prefer:'return=minimal'});
+    gruposMinisterios = gruposMinisterios.filter(g=>g.id!==id);
+    renderMinisterios();
+  } catch(e) { alert('Erro: '+e.message); }
+}
+
 function openModalMin() {
   document.getElementById('modal-min-title').textContent = 'Criar ministério';
   document.getElementById('min-edit-id').value = '';
@@ -136,7 +272,15 @@ function openModalMin() {
   document.getElementById('min-icone').value = 'ti-music';
   document.getElementById('min-cor').value = 'purple';
   populateLiderSelect(null);
+  populateGrupoSelect(null);
   openModal('modal-min');
+}
+
+function populateGrupoSelect(selectedId) {
+  const sel = document.getElementById('min-grupo');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">— Sem grupo —</option>' +
+    gruposMinisterios.map(g=>`<option value="${g.id}"${g.id===selectedId?' selected':''}>${g.nome}</option>`).join('');
 }
 
 function populateLiderSelect(selectedId) {
@@ -153,13 +297,14 @@ function editMinisterio(id) {
   document.getElementById('min-icone').value = m.icone;
   document.getElementById('min-cor').value = m.cor;
   populateLiderSelect(m.lider_id||null);
+  populateGrupoSelect(m.grupo_id||null);
   openModal('modal-min', true);
 }
 
 async function saveMinisterio() {
   const nome = document.getElementById('min-nome').value.trim();
   if (!nome) { alert('Nome é obrigatório.'); return; }
-  const dados = {nome, descricao:document.getElementById('min-desc').value.trim(), icone:document.getElementById('min-icone').value, cor:document.getElementById('min-cor').value, lider_id:document.getElementById('min-lider').value||null};
+  const dados = {nome, descricao:document.getElementById('min-desc').value.trim(), icone:document.getElementById('min-icone').value, cor:document.getElementById('min-cor').value, lider_id:document.getElementById('min-lider').value||null, grupo_id:document.getElementById('min-grupo')?.value||null};
   const editId = document.getElementById('min-edit-id').value;
   if (editId) {
     await sb(`ministerios?id=eq.${editId}`,{method:'PATCH',body:JSON.stringify(dados)});
