@@ -11,7 +11,9 @@ function navigate(sec, extra) {
   const nav = getNivelAtivo();
   const isAdmin = nivelIsAdmin(nav);
   const isLiderOuAdmin = nivelIsLiderOuAdmin(nav);
-  if (perm(nav,'pode_criar_ministerios') && sec==='ministerios') acts.innerHTML = `<button class="btn primary" onclick="openModalMin()"><i class="ti ti-plus"></i>Novo ministério</button>`;
+  if (perm(nav,'pode_criar_ministerios') && sec==='ministerios') acts.innerHTML = `
+    <button class="btn" onclick="openModalGrupo()"><i class="ti ti-folder-plus"></i>Novo grupo</button>
+    <button class="btn primary" onclick="openModalMin()"><i class="ti ti-plus"></i>Novo ministério</button>`;
   if (nivelPodeGerenciarVoluntarios(nav) && sec==='voluntarios') acts.innerHTML = `<button class="btn primary" onclick="openModal('modal-vol')"><i class="ti ti-user-plus"></i>Novo voluntário</button>`;
   if (nivelPodeGerenciarEventos(nav) && sec==='eventos') acts.innerHTML = `<button class="btn primary" onclick="openModal('modal-ev')"><i class="ti ti-plus"></i>Novo evento</button>`;
   if (nivelPodeVerNiveis(nav) && sec==='niveis') acts.innerHTML = `<button class="btn primary" onclick="openModalNivel()"><i class="ti ti-plus"></i>Novo nível</button>`;
