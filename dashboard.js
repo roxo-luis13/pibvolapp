@@ -158,7 +158,10 @@ function abrirDetalheEvDash(evId) {
       <div><h2 style="font-size:16px;font-weight:500;margin-bottom:4px">${ev.nome}${ev.live?' <span style="font-size:10px;background:var(--coral-bg);color:var(--coral-text);padding:2px 7px;border-radius:4px">LIVE</span>':''}</h2><p style="font-size:13px;color:var(--text-secondary)">${ds} · ${ev.hora||''}</p></div>
       <span style="font-size:11px;font-weight:500;padding:4px 10px;border-radius:var(--radius);background:${diff<=1?'var(--coral-bg)':'var(--purple-bg)'};color:${diff<=1?'var(--coral-text)':'var(--purple-text)'};white-space:nowrap;margin-left:10px">${diffTxt}</span>
     </div>
-    ${ev.descricao?`<p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;white-space:pre-wrap">${ev.descricao}</p>`:''}
+    ${ev.descricao?`<div style="margin-bottom:14px">
+      <p style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px"><i class="ti ti-list-details" style="font-size:11px;margin-right:4px"></i>PROGRAMAÇÃO</p>
+      <p style="font-size:13px;color:var(--text-secondary);white-space:pre-wrap">${ev.descricao}</p>
+    </div>`:''}
     ${ev.banda?`<div style="background:var(--amber-bg);border-radius:var(--radius);padding:10px 12px;margin-bottom:14px"><p style="font-size:11px;font-weight:500;color:var(--amber-text);margin-bottom:3px"><i class="ti ti-music"></i> FORMAÇÃO DA BANDA</p><p style="font-size:13px;white-space:pre-wrap">${ev.banda}</p></div>`:''}
     ${min?`<div style="background:var(--success-bg);color:var(--success-text);border-radius:var(--radius);padding:10px 14px;font-size:13px;margin-bottom:14px"><i class="ti ti-check" style="margin-right:6px"></i>Você servirá no ministério <strong>${min.nome}</strong></div>`:''}
     <p style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:10px;text-transform:uppercase;letter-spacing:.3px">Equipe confirmada</p>
