@@ -24,18 +24,49 @@ function renderNotificacoes() {
   if (!notificacoes.length) { lista.innerHTML='<p style="font-size:13px;color:var(--text-secondary);padding:20px;text-align:center">Nenhuma notificação</p>'; return; }
   lista.innerHTML = notificacoes.map(n => {
     const ev = eventos.find(e=>e.id===n.ev_id);
-    const convite = ev?.convites?.find(c=>c.volId===currentProfile.id);
-    const status = convite?.status||'pendente';
     const d = new Date((n.ev_data||'')+'T12:00:00');
     const ds = isNaN(d) ? n.ev_data : d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
-    return `<div style="padding:12px 16px;border-bottom:0.5px solid var(--border);background:${n.lida?'transparent':'var(--purple-bg)'}">
-      <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px">
-        <div style="width:32px;height:32px;border-radius:50%;background:var(--purple-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0"><i class="ti ti-calendar-event" style="color:var(--purple-text);font-size:16px"></i></div>
-        <div style="flex:1;min-width:0"><p style="font-size:13px;font-weight:500;margin-bottom:2px">Convite: ${n.ev_nome||'Evento'}</p><p style="font-size:11px;color:var(--text-secondary)">${ds} · ${n.ev_hora||''}</p></div>
+    const tipo = n.tipo || 'convite';
+
+    // Ícone e cor por tipo
+    const tipoConfig = {
+      convite:      {icon:'ti-calendar-event', bg:'var(--purple-bg)', color:'var(--purple-text)', titulo:'Convite'},
+      lider_evento: {icon:'ti-bell-ringing',   bg:'var(--amber-bg)',  color:'var(--amber-text)',  titulo:'Mobilize sua equipe'},
+      update_evento:{icon:'ti-refresh',         bg:'var(--blue-bg)',   color:'var(--blue-text)',   titulo:'Evento atualizado'},
+    };
+    const cfg = tipoConfig[tipo] || tipoConfig['convite'];
+
+    let acoes = '';
+    if (tipo === 'convite') {
+      const convite = ev?.convites?.find(c=>c.volId===currentProfile.id);
+      const status = convite?.status||'pendente';
+      acoes = status==='pendente'
+        ? `<div style="display:flex;gap:6px;margin-top:8px">
+            <button class="btn sm primary" style="flex:1;justify-content:center" onclick="responderConvite('${n.id}','${n.ev_id}','aceito')"><i class="ti ti-check"></i>Aceitar</button>
+            <button class="btn sm danger" style="flex:1;justify-content:center" onclick="responderConvite('${n.id}','${n.ev_id}','recusado')"><i class="ti ti-x"></i>Recusar</button>
+           </div>`
+        : status==='aceito'
+          ? `<span style="font-size:12px;color:var(--success-text);font-weight:500"><i class="ti ti-check" style="margin-right:4px"></i>Confirmado</span>`
+          : `<span style="font-size:12px;color:var(--danger-text);font-weight:500"><i class="ti ti-x" style="margin-right:4px"></i>Recusado</span>`;
+    } else if (tipo === 'lider_evento' || tipo === 'update_evento') {
+      acoes = `<button class="btn sm" onclick="abrirDetalheEvDash('${n.ev_id}');marcarLida('${n.id}')">
+        <i class="ti ti-eye"></i>Ver evento
+      </button>`;
+    }
+
+    return `<div style="padding:12px 16px;border-bottom:0.5px solid var(--border);background:${n.lida?'transparent':cfg.bg.replace('bg','bg')+'33'}" onclick="marcarLida('${n.id}')">
+      <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:6px">
+        <div style="width:34px;height:34px;border-radius:50%;background:${cfg.bg};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="ti ${cfg.icon}" style="color:${cfg.color};font-size:16px"></i>
+        </div>
+        <div style="flex:1;min-width:0">
+          <p style="font-size:13px;font-weight:500;margin-bottom:2px">${cfg.titulo}: ${n.ev_nome||'Evento'}</p>
+          <p style="font-size:11px;color:var(--text-secondary);margin-bottom:${n.mensagem?'4px':'0'}">${ds}${n.ev_hora?' · '+n.ev_hora:''}</p>
+          ${n.mensagem?`<p style="font-size:12px;color:var(--text-secondary);font-style:italic">${n.mensagem}</p>`:''}
+        </div>
+        ${!n.lida?`<div style="width:8px;height:8px;border-radius:50%;background:var(--coral-text);flex-shrink:0;margin-top:4px"></div>`:''}
       </div>
-      ${status==='pendente'?`<div style="display:flex;gap:6px"><button class="btn sm primary" style="flex:1;justify-content:center" onclick="responderConvite('${n.id}','${n.ev_id}','aceito')"><i class="ti ti-check"></i>Aceitar</button><button class="btn sm danger" style="flex:1;justify-content:center" onclick="responderConvite('${n.id}','${n.ev_id}','recusado')"><i class="ti ti-x"></i>Recusar</button></div>`:
-       status==='aceito'?`<span style="font-size:12px;color:var(--success-text);font-weight:500"><i class="ti ti-check" style="margin-right:4px"></i>Aceito</span>`:
-       `<span style="font-size:12px;color:var(--danger-text);font-weight:500"><i class="ti ti-x" style="margin-right:4px"></i>Recusado</span>`}
+      ${acoes}
     </div>`;
   }).join('');
 }
@@ -59,6 +90,15 @@ async function responderConvite(notifId, evId, resposta) {
     ev.convites = convites; ev.inscritos = inscritos;
   }
   atualizarBadgeNotif(); renderNotificacoes(); renderDashboard();
+}
+
+async function marcarLida(notifId) {
+  const n = notificacoes.find(n=>n.id===notifId);
+  if (!n || n.lida) return;
+  n.lida = true;
+  await sb(`notificacoes?id=eq.${notifId}`,{method:'PATCH',body:JSON.stringify({lida:true})});
+  atualizarBadgeNotif();
+  renderNotificacoes();
 }
 
 async function marcarTodasLidas() {
