@@ -445,7 +445,22 @@
     </div>
 
     <hr style="margin:0 0 16px 0">
-    <div class="form-group"><label>Programação</label><textarea id="ev-desc" placeholder="Descreva a programação do evento..." style="min-height:72px"></textarea></div>
+    <div class="form-group">
+      <label>Programação</label>
+      <div style="position:relative">
+        <textarea id="ev-desc" placeholder="Descreva a programação do evento..." style="min-height:72px;padding-right:44px"></textarea>
+        <label for="ev-arquivo" title="Anexar PDF ou Word" style="position:absolute;right:8px;top:8px;cursor:pointer;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius);background:var(--bg-secondary);border:0.5px solid var(--border);transition:background .15s" onmouseover="this.style.background='var(--bg-tertiary)'" onmouseout="this.style.background='var(--bg-secondary)'">
+          <i class="ti ti-paperclip" style="font-size:16px;color:var(--text-secondary)"></i>
+        </label>
+        <input type="file" id="ev-arquivo" accept=".pdf,.doc,.docx" style="display:none" onchange="previewArquivo(this)">
+      </div>
+      <div id="ev-arquivo-preview" style="display:none;margin-top:6px;display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-secondary);border-radius:var(--radius);border:0.5px solid var(--border)">
+        <i class="ti ti-file" style="font-size:18px;color:var(--blue-text);flex-shrink:0"></i>
+        <span id="ev-arquivo-nome" style="font-size:13px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+        <button type="button" class="btn sm danger" onclick="removerArquivo()" style="flex-shrink:0"><i class="ti ti-x"></i></button>
+      </div>
+      <div id="ev-arquivo-atual" style="display:none;margin-top:6px"></div>
+    </div>
     <div class="form-group"><label>Formação da banda *</label><textarea id="ev-banda" placeholder="ex:
 Voz: Maria
 Violão: João
