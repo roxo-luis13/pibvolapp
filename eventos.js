@@ -29,34 +29,6 @@ function buildEvRow(e) {
 }
 
 
-// ===== HELPERS DE NOTIFICAÇÃO =====
-async function criarNotificacao(vol_id, tipo, ev_id, ev_nome, ev_data, ev_hora, mensagem) {
-  try {
-    await sb('notificacoes', {method:'POST', prefer:'return=minimal',
-      body: JSON.stringify({vol_id, tipo, ev_id, ev_nome, ev_data, ev_hora, mensagem, lida:false})});
-  } catch(e) { console.warn('Erro notificação:', e.message); }
-}
-
-async function notificarLideresEvento(evId, evNome, evData, evHora, minIds) {
-  const lideresIds = new Set();
-  for (const minId of minIds) {
-    const m = ministerios.find(m => m.id === minId);
-    if (m && m.lider_id && m.lider_id !== currentProfile.id) lideresIds.add(m.lider_id);
-  }
-  for (const lid of lideresIds) {
-    await criarNotificacao(lid, 'lider_evento', evId, evNome, evData, evHora,
-      'Seu ministério foi adicionado a este evento. Mobilize sua equipe!');
-  }
-}
-
-async function notificarInscritosEdicao(evId, evNome, evData, evHora, inscritos) {
-  for (const insc of (inscritos||[])) {
-    if (insc.volId === currentProfile.id) continue;
-    await criarNotificacao(insc.volId, 'update_evento', evId, evNome, evData, evHora,
-      'O evento foi atualizado. Verifique os novos detalhes.');
-  }
-}
-
 function buildEvCard(e) {
   const nav = getNivelAtivo();
   const podeEditar = perm(nav,'pode_editar_eventos');
@@ -218,16 +190,24 @@ async function saveEvento() {
       const dados = {nome,data:data_inicio,data_inicio,data_fim:data_fim||null,hora,dias_horarios,descricao:document.getElementById('ev-desc').value.trim(),banda,live:document.getElementById('ev-live').checked,som:document.getElementById('ev-som').checked,local:document.getElementById('ev-local').value,ministerios:mins,convites};
       await sb(`eventos?id=eq.${editId}`,{method:'PATCH',body:JSON.stringify(dados)});
       if (e) Object.assign(e,dados);
-      // Notificar novos convidados
+      // Criar notificações
+      // Convites novos
       for (const c of novosConvites) {
-        await criarNotificacao(c.volId, 'convite', editId, nome, data_inicio, hora,
-          'Você foi convidado para servir neste evento.');
+        await sb('notificacoes',{method:'POST',prefer:'return=minimal',body:JSON.stringify({vol_id:c.volId,tipo:'convite',ev_id:editId,ev_nome:nome,ev_data:data_inicio,ev_hora:hora,mensagem:'Você foi convidado para servir neste evento.'})});
       }
-      // Notificar inscritos sobre edição
-      await notificarInscritosEdicao(editId, nome, data_inicio, hora, e.inscritos);
-      // Notificar líderes de ministérios novos
+      // Notificar inscritos que o evento foi editado
+      for (const insc of (e.inscritos||[])) {
+        if (insc.volId === currentProfile.id) continue;
+        await sb('notificacoes',{method:'POST',prefer:'return=minimal',body:JSON.stringify({vol_id:insc.volId,tipo:'update_evento',ev_id:editId,ev_nome:nome,ev_data:data_inicio,ev_hora:hora,mensagem:'O evento foi atualizado. Verifique os novos detalhes.'})});
+      }
+      // Notificar líderes de ministérios novos adicionados
       const minsNovos = mins.filter(id => !(e.ministerios||[]).includes(id));
-      if (minsNovos.length > 0) await notificarLideresEvento(editId, nome, data_inicio, hora, minsNovos);
+      for (const minId of minsNovos) {
+        const m = ministerios.find(m => m.id === minId);
+        if (m && m.lider_id && m.lider_id !== currentProfile.id) {
+          await sb('notificacoes',{method:'POST',prefer:'return=minimal',body:JSON.stringify({vol_id:m.lider_id,tipo:'lider_evento',ev_id:editId,ev_nome:nome,ev_data:data_inicio,ev_hora:hora,mensagem:'Seu ministério foi adicionado a este evento. Mobilize sua equipe.'})});
+        }
+      }
     } else {
       const convites = convidadosNovos.map(vid=>({volId:vid,status:'pendente'}));
       const dados = {nome,data:data_inicio,data_inicio,data_fim:data_fim||null,hora,dias_horarios,descricao:document.getElementById('ev-desc').value.trim(),banda,live:document.getElementById('ev-live').checked,som:document.getElementById('ev-som').checked,local:document.getElementById('ev-local').value,ministerios:mins,inscritos:[],convites};
@@ -235,12 +215,17 @@ async function saveEvento() {
       if (rows && rows[0]) {
         const novoEv = {...rows[0],ministerios:mins,inscritos:[],convites};
         eventos.push(novoEv);
-        for (const c of convites) {
-          await criarNotificacao(c.volId, 'convite', rows[0].id, nome, data_inicio, hora,
-            'Você foi convidado para servir neste evento.');
+        // Convites
+      for (const c of convites) {
+          await sb('notificacoes',{method:'POST',prefer:'return=minimal',body:JSON.stringify({vol_id:c.volId,tipo:'convite',ev_id:rows[0].id,ev_nome:nome,ev_data:data_inicio,ev_hora:hora,mensagem:'Você foi convidado para servir neste evento.'})});
         }
         // Notificar líderes dos ministérios vinculados
-        await notificarLideresEvento(rows[0].id, nome, data_inicio, hora, mins);
+        for (const minId of mins) {
+          const m = ministerios.find(m => m.id === minId);
+          if (m && m.lider_id && m.lider_id !== currentProfile.id) {
+            await sb('notificacoes',{method:'POST',prefer:'return=minimal',body:JSON.stringify({vol_id:m.lider_id,tipo:'lider_evento',ev_id:rows[0].id,ev_nome:nome,ev_data:data_inicio,ev_hora:hora,mensagem:'Seu ministério foi adicionado a este evento. Mobilize sua equipe.'})});
+          }
+        }
       }
     }
     closeModal('modal-ev'); renderEventos(); renderDashboard(); renderCalendario();
