@@ -27,12 +27,12 @@ function renderNotificacoes() {
     const d = new Date((n.ev_data||'')+'T12:00:00');
     const ds = isNaN(d) ? n.ev_data : d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
     const tipo = n.tipo || 'convite';
-    const cfgs = {
+    const cfg = {
       convite:      {icon:'ti-calendar-event', bg:'var(--purple-bg)', color:'var(--purple-text)', titulo:'Convite'},
       lider_evento: {icon:'ti-bell-ringing',   bg:'var(--amber-bg)',  color:'var(--amber-text)',  titulo:'Mobilize sua equipe'},
       update_evento:{icon:'ti-refresh',         bg:'var(--blue-bg)',   color:'var(--blue-text)',   titulo:'Evento atualizado'},
-    };
-    const cfg = cfgs[tipo] || cfgs['convite'];
+    }[tipo] || {icon:'ti-bell', bg:'var(--purple-bg)', color:'var(--purple-text)', titulo:'Notificação'};
+
     let acoes = '';
     if (tipo === 'convite') {
       const convite = ev?.convites?.find(c=>c.volId===currentProfile.id);
@@ -48,8 +48,9 @@ function renderNotificacoes() {
     } else {
       acoes = `<button class="btn sm" style="margin-top:6px" onclick="abrirDetalheEvDash('${n.ev_id}');marcarLida('${n.id}')"><i class="ti ti-eye"></i>Ver evento</button>`;
     }
+
     return `<div style="padding:12px 16px;border-bottom:0.5px solid var(--border);background:${n.lida?'transparent':'var(--bg-secondary)'}" onclick="marcarLida('${n.id}')">
-      <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:6px">
+      <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:4px">
         <div style="width:34px;height:34px;border-radius:50%;background:${cfg.bg};display:flex;align-items:center;justify-content:center;flex-shrink:0">
           <i class="ti ${cfg.icon}" style="color:${cfg.color};font-size:16px"></i>
         </div>
@@ -63,15 +64,6 @@ function renderNotificacoes() {
       ${acoes}
     </div>`;
   }).join('');
-}
-
-async function marcarLida(notifId) {
-  const n = notificacoes.find(n=>n.id===notifId);
-  if (!n || n.lida) return;
-  n.lida = true;
-  await sb(`notificacoes?id=eq.${notifId}`,{method:'PATCH',body:JSON.stringify({lida:true})});
-  atualizarBadgeNotif();
-  renderNotificacoes();
 }
 
 async function responderConvite(notifId, evId, resposta) {
@@ -93,6 +85,15 @@ async function responderConvite(notifId, evId, resposta) {
     ev.convites = convites; ev.inscritos = inscritos;
   }
   atualizarBadgeNotif(); renderNotificacoes(); renderDashboard();
+}
+
+async function marcarLida(notifId) {
+  const n = notificacoes.find(n=>n.id===notifId);
+  if (!n || n.lida) return;
+  n.lida = true;
+  await sb(`notificacoes?id=eq.${notifId}`,{method:'PATCH',body:JSON.stringify({lida:true})});
+  atualizarBadgeNotif();
+  renderNotificacoes();
 }
 
 async function marcarTodasLidas() {
