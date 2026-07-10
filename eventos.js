@@ -1,6 +1,70 @@
 // ===== EVENTOS =====
 // ===== EVENTOS =====
 
+// ===== ARQUIVO DO EVENTO =====
+const SUPA_URL_STORAGE = 'https://knxdadcfphqadskwscya.supabase.co';
+const SUPA_KEY_STORAGE = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtueGRhZGNmcGhxYWRza3dzY3lhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4NDQzNTksImV4cCI6MjA5ODQyMDM1OX0.LInOxT_IubbrMfsd5d3waDRwCfJK9leA3bjSRDE8tKY';
+
+function previewArquivo(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const preview = document.getElementById('ev-arquivo-preview');
+  const nome = document.getElementById('ev-arquivo-nome');
+  if (preview) { preview.style.display='flex'; nome.textContent=file.name; }
+  delete input.dataset.remover;
+}
+
+function removerArquivo() {
+  const input = document.getElementById('ev-arquivo');
+  if (input) { input.value=''; input.dataset.remover='1'; }
+  const preview = document.getElementById('ev-arquivo-preview');
+  if (preview) preview.style.display='none';
+  const atual = document.getElementById('ev-arquivo-atual');
+  if (atual) atual.style.display='none';
+}
+
+async function uploadArquivoEvento(file, evId) {
+  const ext = file.name.split('.').pop();
+  const path = `${evId}/${Date.now()}.${ext}`;
+  const res = await fetch(`${SUPA_URL_STORAGE}/storage/v1/object/eventos-arquivos/${path}`, {
+    method: 'POST',
+    headers: { 'apikey': SUPA_KEY_STORAGE, 'Authorization': 'Bearer '+SUPA_KEY_STORAGE, 'Content-Type': file.type, 'x-upsert': 'true' },
+    body: file
+  });
+  if (!res.ok) throw new Error('Erro ao fazer upload: ' + res.status);
+  return { url: `${SUPA_URL_STORAGE}/storage/v1/object/public/eventos-arquivos/${path}`, nome: file.name, tipo: file.type };
+}
+
+async function deletarArquivoEvento(url) {
+  if (!url) return;
+  const path = url.split('/object/public/eventos-arquivos/')[1];
+  if (!path) return;
+  await fetch(`${SUPA_URL_STORAGE}/storage/v1/object/eventos-arquivos/${path}`, {
+    method: 'DELETE',
+    headers: { 'apikey': SUPA_KEY_STORAGE, 'Authorization': 'Bearer '+SUPA_KEY_STORAGE }
+  }).catch(()=>{});
+}
+
+function iconeArquivo(tipo) {
+  if (tipo && tipo.includes('pdf')) return 'ti-file-type-pdf';
+  if (tipo && (tipo.includes('word')||tipo.includes('document'))) return 'ti-file-type-doc';
+  return 'ti-file';
+}
+
+function buildArquivoHtml(url, nome, tipo) {
+  if (!url) return '';
+  return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--blue-bg);border-radius:var(--radius);margin-bottom:10px">
+    <i class="ti ${iconeArquivo(tipo)}" style="font-size:22px;color:var(--blue-text);flex-shrink:0"></i>
+    <div style="flex:1;min-width:0">
+      <p style="font-size:13px;font-weight:500;color:var(--blue-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nome||'Arquivo anexado'}</p>
+      <p style="font-size:11px;color:var(--blue-text);opacity:.7">Toque para abrir ou baixar</p>
+    </div>
+    <a href="${url}" target="_blank" download="${nome||''}" class="btn sm" style="flex-shrink:0;background:var(--blue-text);color:#fff;border-color:var(--blue-text)">
+      <i class="ti ti-download"></i>
+    </a>
+  </div>`;
+}
+
 function buildEvRow(e) {
   const nav = getNivelAtivo();
   const podeCriar = perm(nav,'pode_criar_eventos');
@@ -140,6 +204,26 @@ function editEvento(id) {
   populateChips('ev-ministerios-chips');
   document.querySelectorAll('#ev-ministerios-chips .chip').forEach(c=>{if((e.ministerios||[]).includes(c.dataset.id))c.classList.add('selected');});
   renderConvidarLista(e.convites||[]);
+  // Mostrar arquivo atual se existir
+  const arqAtual = document.getElementById('ev-arquivo-atual');
+  const arqInput = document.getElementById('ev-arquivo');
+  if (arqInput) { arqInput.value = ''; delete arqInput.dataset.remover; }
+  const arqPreview = document.getElementById('ev-arquivo-preview');
+  if (arqPreview) arqPreview.style.display = 'none';
+  if (arqAtual) {
+    if (e.arquivo_url) {
+      arqAtual.style.display = 'block';
+      arqAtual.innerHTML = `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg-secondary);border-radius:var(--radius);border:0.5px solid var(--border)">
+        <i class="ti ${iconeArquivo(e.arquivo_tipo)}" style="font-size:18px;color:var(--blue-text);flex-shrink:0"></i>
+        <span style="font-size:12px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-secondary)">${e.arquivo_nome||'Arquivo atual'}</span>
+        <a href="${e.arquivo_url}" target="_blank" class="btn sm" style="flex-shrink:0"><i class="ti ti-eye"></i></a>
+        <button class="btn sm danger" onclick="removerArquivo()" style="flex-shrink:0"><i class="ti ti-trash"></i></button>
+      </div>
+      <p style="font-size:11px;color:var(--text-tertiary);margin-top:4px">Para substituir, selecione um novo arquivo acima.</p>`;
+    } else {
+      arqAtual.style.display = 'none';
+    }
+  }
   document.getElementById('modal-ev').classList.add('open');
   setTimeout(()=>{
     atualizarDiasEvento();
@@ -158,6 +242,9 @@ function editEvento(id) {
 async function saveEvento() {
   const nome = document.getElementById('ev-nome').value.trim();
   const data_inicio = document.getElementById('ev-data-inicio').value;
+  const arquivoInput = document.getElementById('ev-arquivo');
+  const arquivoFile = arquivoInput?.files[0] || null;
+  const arquivoRemover = arquivoInput?.dataset.remover === '1';
   const data_fim = document.getElementById('ev-data-fim').value;
   const banda = document.getElementById('ev-banda').value.trim();
   if (!nome||!data_inicio) { alert('Nome e data de início são obrigatórios.'); return; }
@@ -187,7 +274,20 @@ async function saveEvento() {
       const convites = [...(e.convites||[])];
       const novosConvites = convidadosNovos.filter(vid=>!convites.find(c=>c.volId===vid)).map(vid=>({volId:vid,status:'pendente'}));
       convites.push(...novosConvites);
-      const dados = {nome,data:data_inicio,data_inicio,data_fim:data_fim||null,hora,dias_horarios,descricao:document.getElementById('ev-desc').value.trim(),banda,live:document.getElementById('ev-live').checked,som:document.getElementById('ev-som').checked,local:document.getElementById('ev-local').value,ministerios:mins,convites};
+      // Handle file upload/remove on edit
+      let arquivo_url = e.arquivo_url || null;
+      let arquivo_nome = e.arquivo_nome || null;
+      let arquivo_tipo = e.arquivo_tipo || null;
+      if (arquivoRemover && e.arquivo_url) {
+        await deletarArquivoEvento(e.arquivo_url);
+        arquivo_url = null; arquivo_nome = null; arquivo_tipo = null;
+      }
+      if (arquivoFile) {
+        if (e.arquivo_url) await deletarArquivoEvento(e.arquivo_url);
+        const up = await uploadArquivoEvento(arquivoFile, editId);
+        arquivo_url = up.url; arquivo_nome = up.nome; arquivo_tipo = up.tipo;
+      }
+      const dados = {nome,data:data_inicio,data_inicio,data_fim:data_fim||null,hora,dias_horarios,descricao:document.getElementById('ev-desc').value.trim(),banda,live:document.getElementById('ev-live').checked,som:document.getElementById('ev-som').checked,local:document.getElementById('ev-local').value,ministerios:mins,convites,arquivo_url,arquivo_nome,arquivo_tipo};
       await sb(`eventos?id=eq.${editId}`,{method:'PATCH',body:JSON.stringify(dados)});
       if (e) Object.assign(e,dados);
       // Criar notificações
@@ -210,7 +310,12 @@ async function saveEvento() {
       }
     } else {
       const convites = convidadosNovos.map(vid=>({volId:vid,status:'pendente'}));
-      const dados = {nome,data:data_inicio,data_inicio,data_fim:data_fim||null,hora,dias_horarios,descricao:document.getElementById('ev-desc').value.trim(),banda,live:document.getElementById('ev-live').checked,som:document.getElementById('ev-som').checked,local:document.getElementById('ev-local').value,ministerios:mins,inscritos:[],convites};
+      let new_arquivo_url = null, new_arquivo_nome = null, new_arquivo_tipo = null;
+      if (arquivoFile) {
+        // Upload after we have the ID — upload with temp name then update
+        new_arquivo_url = '_pending_'; // will update after insert
+      }
+      const dados = {nome,data:data_inicio,data_inicio,data_fim:data_fim||null,hora,dias_horarios,descricao:document.getElementById('ev-desc').value.trim(),banda,live:document.getElementById('ev-live').checked,som:document.getElementById('ev-som').checked,local:document.getElementById('ev-local').value,ministerios:mins,inscritos:[],convites,arquivo_url:null,arquivo_nome:null,arquivo_tipo:null};
       const rows = await sb('eventos',{method:'POST',body:JSON.stringify(dados)});
       if (rows && rows[0]) {
         const novoEv = {...rows[0],ministerios:mins,inscritos:[],convites};
