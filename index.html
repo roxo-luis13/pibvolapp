@@ -75,10 +75,13 @@
         <h1 id="page-title">Dashboard</h1>
       </div>
       <div style="display:flex;align-items:center;gap:8px">
-        <button class="sidebar-toggle" id="notif-btn" onclick="toggleNotificacoes()" style="position:relative">
-          <i class="ti ti-bell" style="font-size:20px"></i>
-          <span id="notif-badge" style="display:none;position:absolute;top:2px;right:2px;width:8px;height:8px;background:#D85A30;border-radius:50%"></span>
-        </button>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span id="topbar-date" style="font-size:12px;font-weight:500;color:var(--text-secondary)"></span>
+          <button class="sidebar-toggle" id="notif-btn" onclick="toggleNotificacoes()" style="position:relative">
+            <i class="ti ti-bell" style="font-size:20px"></i>
+            <span id="notif-badge" style="display:none;position:absolute;top:2px;right:2px;width:8px;height:8px;background:#D85A30;border-radius:50%"></span>
+          </button>
+        </div>
         <div class="topbar-actions" id="topbar-actions"></div>
       </div>
       <div id="notif-panel" style="display:none;position:absolute;top:56px;right:16px;width:320px;background:var(--bg-primary);border:0.5px solid var(--border);border-radius:var(--radius-lg);box-shadow:0 8px 24px rgba(0,0,0,.12);z-index:100;overflow:hidden">
@@ -114,7 +117,7 @@
             <div id="dash-ministerios-list"></div>
           </div>
           <div class="card">
-            <h3 style="font-size:14px;font-weight:500;margin-bottom:14px">Próximos eventos</h3>
+            <h3 style="font-size:14px;font-weight:500;margin-bottom:14px">Próximos eventos nesse mês</h3>
             <div id="dash-eventos-list"></div>
           </div>
         </div>
@@ -125,13 +128,7 @@
           </div>
           <div id="dash-meus-eventos"></div>
         </div>
-        <div class="card" style="margin-top:16px">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-            <i class="ti ti-alert-circle" style="font-size:18px;color:var(--coral-text)"></i>
-            <h3 style="font-size:14px;font-weight:500">Eventos que precisam de você</h3>
-          </div>
-          <div id="dash-precisam-vols"></div>
-        </div>
+
       </div>
 
       <div class="modal-backdrop" id="modal-dash-evento">
