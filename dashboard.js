@@ -182,8 +182,48 @@ function irParaCalendario() {
 function buildVolsPorMin(ev) {
   return (ev.ministerios||[]).map(mid => {
     const m = ministerios.find(m=>m.id===mid); if (!m) return '';
+
+    // Confirmados (inscritos)
     const inscritos = (ev.inscritos||[]).filter(i=>i.minId===mid);
-    const rows = inscritos.map(i => { const v = voluntarios.find(v=>v.id===i.volId); return v ? `<div style="display:flex;align-items:center;gap:8px;padding:5px 0"><div class="avatar ${v.nivel}" style="width:24px;height:24px;font-size:9px;flex-shrink:0">${ini(v.nome)}</div><span style="font-size:12px">${v.nome}${v.id===currentProfile.id?' <strong>(você)</strong>':''}</span></div>` : ''; }).join('');
-    return `<div style="margin-bottom:12px"><div style="display:flex;align-items:center;gap:6px;background:var(--bg-secondary);border-radius:var(--radius);padding:7px 10px;margin-bottom:4px"><span>${ICONES[m.icone]||'⭐'}</span><span style="font-size:12px;font-weight:500;color:var(--${m.cor}-text)">${m.nome}</span><span style="font-size:11px;color:var(--text-tertiary);margin-left:auto">${inscritos.length} pessoa(s)</span></div>${rows||'<p style="font-size:11px;color:var(--text-tertiary);padding-left:4px">Nenhum inscrito</p>'}</div>`;
+    const rowsConf = inscritos.map(i => {
+      const v = voluntarios.find(v=>v.id===i.volId);
+      return v ? `<div style="display:flex;align-items:center;gap:8px;padding:5px 0">
+        <div class="avatar ${getNivelClass(v.nivel)}" style="width:24px;height:24px;font-size:9px;flex-shrink:0">${ini(v.nome)}</div>
+        <span style="font-size:12px;flex:1">${v.nome}${v.id===currentProfile.id?' <strong>(você)</strong>':''}</span>
+        <span style="font-size:10px;background:var(--success-bg);color:var(--success-text);padding:1px 6px;border-radius:3px">✓ Confirmado</span>
+      </div>` : '';
+    }).join('');
+
+    // Pendentes (convidados mas ainda não responderam)
+    const inscritosIds = new Set(inscritos.map(i=>i.volId));
+    const pendentes = (ev.convites||[]).filter(c => c.status === 'pendente' && !inscritosIds.has(c.volId));
+    // Filtrar pendentes que pertencem a este ministério
+    const pendentesDMin = pendentes.filter(c => {
+      const v = voluntarios.find(v=>v.id===c.volId);
+      return v && (v.ministerios||[]).includes(mid);
+    });
+    const rowsPend = pendentesDMin.map(c => {
+      const v = voluntarios.find(v=>v.id===c.volId);
+      return v ? `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;opacity:.7">
+        <div class="avatar ${getNivelClass(v.nivel)}" style="width:24px;height:24px;font-size:9px;flex-shrink:0">${ini(v.nome)}</div>
+        <span style="font-size:12px;flex:1">${v.nome}</span>
+        <span style="font-size:10px;background:var(--amber-bg);color:var(--amber-text);padding:1px 6px;border-radius:3px">⏳ Pendente</span>
+      </div>` : '';
+    }).join('');
+
+    const total = inscritos.length;
+    const totalPend = pendentesDMin.length;
+    const countLabel = `${total} confirmado(s)${totalPend > 0 ? ` · ${totalPend} pendente(s)` : ''}`;
+
+    return `<div style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:6px;background:var(--bg-secondary);border-radius:var(--radius);padding:7px 10px;margin-bottom:4px">
+        <span>${ICONES[m.icone]||'⭐'}</span>
+        <span style="font-size:12px;font-weight:500;color:var(--${m.cor}-text)">${m.nome}</span>
+        <span style="font-size:11px;color:var(--text-tertiary);margin-left:auto">${countLabel}</span>
+      </div>
+      ${rowsConf}
+      ${rowsPend}
+      ${(!rowsConf && !rowsPend) ? '<p style="font-size:11px;color:var(--text-tertiary);padding-left:4px">Nenhum inscrito ou pendente</p>' : ''}
+    </div>`;
   }).join('');
 }
