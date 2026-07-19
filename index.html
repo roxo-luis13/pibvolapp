@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Igreja App — PIBC</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <link rel="stylesheet" href="style.css">
@@ -125,7 +125,13 @@
           </div>
           <div id="dash-meus-eventos"></div>
         </div>
-
+        <div class="card" style="margin-top:16px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+            <i class="ti ti-alert-circle" style="font-size:18px;color:var(--coral-text)"></i>
+            <h3 style="font-size:14px;font-weight:500">Eventos que precisam de você</h3>
+          </div>
+          <div id="dash-precisam-vols"></div>
+        </div>
       </div>
 
       <div class="modal-backdrop" id="modal-dash-evento">
