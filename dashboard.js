@@ -47,13 +47,15 @@ function renderDashboard() {
   }).join('') : '<div class="empty"><i class="ti ti-users-group"></i>Nenhum ministério</div>';
   // Próximos eventos - deduplica por id (evento multi-dia aparece uma vez)
   const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const fimDoMes = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0, 23, 59, 59);
   const evupMap = new Map();
   eventos.forEach(e => {
     const dataRef = new Date((e.data_inicio||e.data)+'T00:00:00');
     const dataFim = new Date((e.data_fim||e.data_inicio||e.data)+'T23:59:59');
-    if (dataFim >= hoje && !evupMap.has(e.id)) evupMap.set(e.id, e);
+    // Apenas eventos deste mês
+    if (dataFim >= hoje && dataRef <= fimDoMes && !evupMap.has(e.id)) evupMap.set(e.id, e);
   });
-  const evup = [...evupMap.values()].sort((a,b)=>new Date(a.data_inicio||a.data)-new Date(b.data_inicio||b.data)).slice(0,5);
+  const evup = [...evupMap.values()].sort((a,b)=>new Date(a.data_inicio||a.data)-new Date(b.data_inicio||b.data)).slice(0,10);
   const el = document.getElementById('dash-eventos-list');
   el.innerHTML = evup.length ? evup.map(e => {
     const ini = e.data_inicio||e.data;
