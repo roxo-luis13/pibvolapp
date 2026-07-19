@@ -95,52 +95,7 @@ function renderDashboard() {
     }).join('') + '</div>';
   }
 
-  // Eventos que precisam de voluntários do meu ministério (sem inscritos suficientes)
-  const precisamEl = document.getElementById('dash-precisam-vols');
-  if (precisamEl) {
-    const meusMinIds = currentProfile.ministerios || [];
-    // Eventos futuros que têm ministérios do usuário mas ele ainda não está inscrito
-    const precisam = eventos.filter(e => {
-      const fim = new Date((e.data_fim||e.data_inicio||e.data)+'T23:59:59');
-      if (fim < new Date()) return false; // já passou
-      const temMeuMin = (e.ministerios||[]).some(mid => meusMinIds.includes(mid));
-      if (!temMeuMin) return false;
-      const jaInscrito = (e.inscritos||[]).some(i=>i.volId===currentProfile.id);
-      return !jaInscrito; // só mostra se ainda não está inscrito
-    }).sort((a,b)=>new Date(a.data_inicio||a.data)-new Date(b.data_inicio||b.data)).slice(0,5);
 
-    if (!precisam.length) {
-      precisamEl.innerHTML = '<div class="empty" style="padding:20px"><i class="ti ti-check"></i>Você está em dia com todos os eventos dos seus ministérios.</div>';
-    } else {
-      precisamEl.innerHTML = precisam.map(e => {
-        const ini = e.data_inicio||e.data;
-        const fim = e.data_fim||ini;
-        const dIni = new Date(ini+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'});
-        const dFim = fim!==ini?' – '+new Date(fim+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}):'';
-        const hoje2 = new Date(); hoje2.setHours(0,0,0,0);
-        const diff = Math.round((new Date(ini+'T00:00:00')-hoje2)/(1000*60*60*24));
-        const diffTxt = diff===0?'Hoje':diff===1?'Amanhã':`Em ${diff} dias`;
-        // Ministérios do evento que o usuário pertence
-        const meusMinNoEv = (e.ministerios||[]).filter(mid=>meusMinIds.includes(mid)).map(mid=>{
-          const m=ministerios.find(m=>m.id===mid); return m?`<span class="tag ${m.cor}">${ICONES[m.icone]||'⭐'} ${m.nome}</span>`:'';
-        }).join('');
-        // Quantos já estão inscritos nos meus ministérios
-        const inscritosNosMeusMin = (e.inscritos||[]).filter(i=>{
-          const v=voluntarios.find(v=>v.id===i.volId);
-          return v&&(v.ministerios||[]).some(mid=>meusMinIds.includes(mid));
-        }).length;
-        return `<div onclick="abrirDetalheEvDash('${e.id}')" style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:0.5px solid var(--border);cursor:pointer" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='transparent'">
-          <div style="background:var(--coral-bg);color:var(--coral-text);border-radius:var(--radius);padding:3px 8px;font-size:11px;font-weight:500;white-space:nowrap;flex-shrink:0">${diffTxt}</div>
-          <div style="flex:1;min-width:0">
-            <p style="font-size:13px;font-weight:500;margin-bottom:2px">${e.nome}</p>
-            <p style="font-size:11px;color:var(--text-secondary);margin-bottom:4px">${dIni}${dFim} · ${e.hora||''}</p>
-            <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center">${meusMinNoEv}<span style="font-size:11px;color:var(--text-tertiary)">${inscritosNosMeusMin} inscrito(s)</span></div>
-          </div>
-          <i class="ti ti-chevron-right" style="color:var(--text-tertiary);flex-shrink:0;margin-top:2px"></i>
-        </div>`;
-      }).join('');
-    }
-  }
 }
 
 function abrirDetalheEvDash(evId) {
