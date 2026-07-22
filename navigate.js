@@ -1,6 +1,8 @@
 // ===== NAVEGAÇÃO =====
 // ===== NAVEGAÇÃO =====
 function navigate(sec, extra) {
+  // Salvar seção atual para restaurar no refresh
+  try { localStorage.setItem('igreja_last_section', sec); } catch(e) {}
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
   const el = document.getElementById('section-' + sec);
