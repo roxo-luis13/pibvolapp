@@ -1,6 +1,7 @@
 // ===== DASHBOARD =====
 // ===== DASHBOARD =====
 function renderDashboard() {
+  atualizarDataTopbar();
   // Mostrar card de total de voluntários apenas para quem tem permissão
   const totalVolCard = document.getElementById('m-total-vol-card');
   const grid = document.getElementById('dash-metrics-grid');
@@ -175,4 +176,12 @@ function buildVolsPorMin(ev) {
       ${!rows&&!rowsPend?'<p style="font-size:11px;color:var(--text-tertiary);padding-left:4px">Nenhum inscrito</p>':''}
     </div>`;
   }).join('');
+}
+
+
+// ===== DATA NA TOPBAR =====
+function atualizarDataTopbar() {
+  const el = document.getElementById('topbar-date');
+  if (!el) return;
+  el.textContent = new Date().toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'});
 }
