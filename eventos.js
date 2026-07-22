@@ -422,23 +422,19 @@ function preencherCulto(tipo) {
   document.getElementById('ev-nome').value = cfg.nome;
   document.getElementById('ev-local').value = 'salao_principal';
 
-  // Preencher horários - se já tem data selecionada, preenche os campos de horário
-  const dataIni = document.getElementById('ev-data-inicio').value;
-  if (dataIni) {
-    atualizarDiasEvento();
-    // Aguardar renderização dos campos
-    setTimeout(() => {
-      document.querySelectorAll('[id^="hora-inicio-"]').forEach(el => el.value = cfg.inicio);
-      document.querySelectorAll('[id^="hora-fim-"]').forEach(el => el.value = cfg.fim);
-    }, 50);
-  } else {
-    // Sem data ainda, definir data de hoje
-    const hoje = new Date().toISOString().split('T')[0];
-    document.getElementById('ev-data-inicio').value = hoje;
-    atualizarDiasEvento();
-    setTimeout(() => {
-      document.querySelectorAll('[id^="hora-inicio-"]').forEach(el => el.value = cfg.inicio);
-      document.querySelectorAll('[id^="hora-fim-"]').forEach(el => el.value = cfg.fim);
-    }, 50);
+  // Se não tem data, usar hoje
+  const dataInput = document.getElementById('ev-data-inicio');
+  if (!dataInput.value) {
+    const hoje = new Date();
+    dataInput.value = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}-${String(hoje.getDate()).padStart(2,'0')}`;
   }
+
+  // Regenerar campos de horário
+  atualizarDiasEvento();
+
+  // Preencher os horários — IDs corretos são hora-ini- e hora-fim-
+  setTimeout(() => {
+    document.querySelectorAll('[id^="hora-ini-"]').forEach(el => el.value = cfg.inicio);
+    document.querySelectorAll('[id^="hora-fim-"]').forEach(el => el.value = cfg.fim);
+  }, 60);
 }
