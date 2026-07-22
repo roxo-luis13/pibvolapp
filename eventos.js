@@ -459,3 +459,17 @@ function atualizarTodasAsViews() {
     try { renderAgenda(); } catch(e) {}
   }
 }
+
+
+// ===== CRIAR EVENTO EM DATA ESPECÍFICA =====
+function criarEventoNaData(ds) {
+  openModal('modal-ev');
+  // Aguardar o modal abrir e limpar antes de preencher a data
+  setTimeout(() => {
+    const dataInput = document.getElementById('ev-data-inicio');
+    if (dataInput) {
+      dataInput.value = ds;
+      atualizarDiasEvento();
+    }
+  }, 60);
+}
