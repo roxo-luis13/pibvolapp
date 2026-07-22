@@ -333,7 +333,7 @@ async function saveEvento() {
         }
       }
     }
-    closeModal('modal-ev'); renderEventos(); renderDashboard(); renderCalendario();
+    closeModal('modal-ev'); atualizarTodasAsViews();
   } catch(e) { alert('Erro ao salvar: '+e.message); }
   btn.innerHTML = 'Salvar'; btn.disabled = false;
 }
@@ -437,4 +437,25 @@ function preencherCulto(tipo) {
     document.querySelectorAll('[id^="hora-ini-"]').forEach(el => el.value = cfg.inicio);
     document.querySelectorAll('[id^="hora-fim-"]').forEach(el => el.value = cfg.fim);
   }, 60);
+}
+
+
+// ===== ATUALIZAÇÃO EM TEMPO REAL =====
+function atualizarTodasAsViews() {
+  // Re-renderiza todas as telas que dependem de eventos/voluntários
+  try { renderDashboard(); } catch(e) {}
+  try { renderCalendario(); } catch(e) {}
+  try { renderEventos(); } catch(e) {}
+  try { renderMinisterios(); } catch(e) {}
+  try { renderVoluntarios(); } catch(e) {}
+  try { renderNotificacoes(); atualizarBadgeNotif(); } catch(e) {}
+  // Se está vendo detalhes de um evento, atualizar
+  if (selectedEvento) {
+    const ev = eventos.find(e => e.id === selectedEvento.id);
+    if (ev) { selectedEvento = ev; try { showEventDetail(ev.id); } catch(e) {} }
+  }
+  // Se está na vista agenda do calendário
+  if (typeof calView !== 'undefined' && calView === 'agenda') {
+    try { renderAgenda(); } catch(e) {}
+  }
 }
