@@ -84,7 +84,7 @@ async function responderConvite(notifId, evId, resposta) {
     await sb(`eventos?id=eq.${evId}`,{method:'PATCH',body:JSON.stringify({convites,inscritos})});
     ev.convites = convites; ev.inscritos = inscritos;
   }
-  atualizarBadgeNotif(); renderNotificacoes(); renderDashboard();
+  atualizarTodasAsViews();
 }
 
 async function marcarLida(notifId) {
