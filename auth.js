@@ -28,7 +28,13 @@ async function loadProfile(userId) {
   showScreen('app');
   updateSidebar();
   checkMobileLayout();
-  navigate('dashboard');
+  // Restaurar última seção visitada
+  let lastSec = 'dashboard';
+  try {
+    const saved = localStorage.getItem('igreja_last_section');
+    if (saved && saved !== 'ministerio-detalhe') lastSec = saved;
+  } catch(e) {}
+  navigate(lastSec);
 }
 
 async function loadAllData() {
