@@ -409,3 +409,36 @@ document.getElementById('login-senha').addEventListener('keydown',e=>{if(e.key==
 
 // Iniciar
 init();
+
+
+// ===== PREENCHIMENTO RÁPIDO DE CULTOS =====
+function preencherCulto(tipo) {
+  const cfg = {
+    manha: { nome: 'Culto Manhã', inicio: '10:30', fim: '12:00' },
+    noite: { nome: 'Culto Noite', inicio: '18:20', fim: '20:00' }
+  }[tipo];
+  if (!cfg) return;
+
+  document.getElementById('ev-nome').value = cfg.nome;
+  document.getElementById('ev-local').value = 'salao_principal';
+
+  // Preencher horários - se já tem data selecionada, preenche os campos de horário
+  const dataIni = document.getElementById('ev-data-inicio').value;
+  if (dataIni) {
+    atualizarDiasEvento();
+    // Aguardar renderização dos campos
+    setTimeout(() => {
+      document.querySelectorAll('[id^="hora-inicio-"]').forEach(el => el.value = cfg.inicio);
+      document.querySelectorAll('[id^="hora-fim-"]').forEach(el => el.value = cfg.fim);
+    }, 50);
+  } else {
+    // Sem data ainda, definir data de hoje
+    const hoje = new Date().toISOString().split('T')[0];
+    document.getElementById('ev-data-inicio').value = hoje;
+    atualizarDiasEvento();
+    setTimeout(() => {
+      document.querySelectorAll('[id^="hora-inicio-"]').forEach(el => el.value = cfg.inicio);
+      document.querySelectorAll('[id^="hora-fim-"]').forEach(el => el.value = cfg.fim);
+    }, 50);
+  }
+}
