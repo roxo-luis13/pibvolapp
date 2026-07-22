@@ -66,17 +66,22 @@ function clicouDia(ds) {
   const labelCap = label.charAt(0).toUpperCase()+label.slice(1);
   const detalhe = document.getElementById('cal-event-detail');
 
+  const podeCriarEv = perm(getNivelAtivo(), 'pode_criar_eventos');
+
   if (devs.length === 0) {
     selectedEvento = null;
     document.getElementById('btn-inscricao').style.display = 'none';
     detalhe.innerHTML = `
-      <div style="display:flex;align-items:center;gap:10px;color:var(--text-tertiary)">
+      <div style="display:flex;align-items:center;gap:10px;color:var(--text-tertiary);margin-bottom:${podeCriarEv?'12px':'0'}">
         <i class="ti ti-calendar-off" style="font-size:24px;flex-shrink:0"></i>
         <div>
           <p style="font-size:13px;font-weight:500;color:var(--text-secondary)">Nenhum evento programado</p>
           <p style="font-size:12px;color:var(--text-tertiary)">${labelCap}</p>
         </div>
-      </div>`;
+      </div>
+      ${podeCriarEv?`<button class="btn primary sm" onclick="criarEventoNaData('${ds}')" style="width:100%;justify-content:center">
+        <i class="ti ti-plus"></i>Criar evento nesta data
+      </button>`:''}`;
     renderCalendario();
     return;
   }
@@ -87,6 +92,9 @@ function clicouDia(ds) {
     document.getElementById('btn-inscricao').style.display = 'none';
     detalhe.innerHTML = `
       <p style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:10px;text-transform:uppercase;letter-spacing:.3px">${labelCap} · ${devs.length} eventos</p>
+      ${podeCriarEv?`<button class="btn sm" onclick="criarEventoNaData('${ds}')" style="width:100%;justify-content:center;margin-bottom:10px">
+        <i class="ti ti-plus"></i>Criar evento nesta data
+      </button>`:''}
       ${devs.map(e=>{
         const m = ministerios.find(m=>(e.ministerios||[]).includes(m.id));
         const c = m ? m.cor : 'purple';
@@ -170,11 +178,14 @@ function showEventDetail(evId) {
     ${ev.banda&&podVerBanda()?`<div style="background:var(--amber-bg);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px"><p style="font-size:11px;font-weight:500;color:var(--amber-text);margin-bottom:3px"><i class="ti ti-music"></i> FORMAÇÃO DA BANDA</p><p style="font-size:13px;white-space:pre-wrap">${ev.banda}</p></div>`:''}
     <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px">${minsTag}</div>
     <div style="background:var(--bg-secondary);border-radius:var(--radius);padding:12px">${buildVolsPorMin(ev)}</div>
-    ${perm(getNivelAtivo(),'pode_editar_eventos') ? `
-    <div style="display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:0.5px solid var(--border)">
-      <button class="btn primary sm" onclick="editEvento('${ev.id}');closeModal && closeModal();" style="flex:1;justify-content:center">
+    ${(perm(getNivelAtivo(),'pode_editar_eventos')||perm(getNivelAtivo(),'pode_criar_eventos')) ? `
+    <div style="display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:0.5px solid var(--border);flex-wrap:wrap">
+      ${perm(getNivelAtivo(),'pode_editar_eventos')?`<button class="btn primary sm" onclick="editEvento('${ev.id}')" style="flex:1;justify-content:center;min-width:120px">
         <i class="ti ti-edit"></i>Editar evento
-      </button>
+      </button>`:''}
+      ${perm(getNivelAtivo(),'pode_criar_eventos')?`<button class="btn sm" onclick="criarEventoNaData('${ev.data_inicio||ev.data}')" style="flex:1;justify-content:center;min-width:120px">
+        <i class="ti ti-plus"></i>Novo evento
+      </button>`:''}
       ${perm(getNivelAtivo(),'pode_excluir_eventos') ? `<button class="btn sm danger" onclick="if(confirm('Excluir este evento?'))deleteEv('${ev.id}')">
         <i class="ti ti-trash"></i>
       </button>` : ''}
