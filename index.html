@@ -441,6 +441,14 @@
     <h2 id="modal-ev-title">Criar evento</h2>
     <input type="hidden" id="ev-edit-id" value="">
 
+    <div style="display:flex;gap:6px;margin-bottom:12px">
+      <button type="button" class="btn sm" onclick="preencherCulto('manha')" style="flex:1;justify-content:center;background:var(--amber-bg);color:var(--amber-text);border-color:var(--amber-text)">
+        <i class="ti ti-sun"></i>Culto Manhã
+      </button>
+      <button type="button" class="btn sm" onclick="preencherCulto('noite')" style="flex:1;justify-content:center;background:var(--purple-bg);color:var(--purple-text);border-color:var(--purple-text)">
+        <i class="ti ti-moon"></i>Culto Noite
+      </button>
+    </div>
     <div class="form-group"><label>Nome do evento *</label><input id="ev-nome" type="text" placeholder="Nome do evento"></div>
 
     <p style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:8px;text-transform:uppercase;letter-spacing:.3px">Datas e horários</p>
