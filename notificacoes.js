@@ -108,22 +108,15 @@ function renderConvidarLista(convitesAtuais) {
   const container = document.getElementById('ev-convidar-lista');
   if (!container) return;
 
-  // Admin e pastor veem todos; outros veem apenas voluntários dos seus ministérios
   const nivel = getNivelAtivo();
   const verTodos = nivelIsAdmin(nivel) || nivel === 'pastor';
-  
-  // Ministérios que o usuário lidera
   const meusMinIds = currentProfile.ministerios || [];
-  const minQueLidero = ministerios
-    .filter(m => m.lider_id === currentProfile.id)
-    .map(m => m.id);
-  // IDs dos ministérios visíveis: os que lidero + os que participo
+  const minQueLidero = ministerios.filter(m => m.lider_id === currentProfile.id).map(m => m.id);
   const minsVisiveis = verTodos ? null : [...new Set([...meusMinIds, ...minQueLidero])];
 
-  const lista = voluntarios.filter(v => {
+  let lista = voluntarios.filter(v => {
     if (v.id === currentProfile.id) return false;
     if (verTodos) return true;
-    // Mostrar apenas voluntários que pertencem aos mesmos ministérios
     return (v.ministerios||[]).some(mid => minsVisiveis.includes(mid));
   });
 
@@ -132,7 +125,21 @@ function renderConvidarLista(convitesAtuais) {
     return;
   }
 
-  container.innerHTML = lista.map(v => {
+  // Ordenar: minha equipe primeiro, depois alfabético
+  const minhaEquipe = new Set([...meusMinIds, ...minQueLidero]);
+  const ehDaEquipe = v => (v.ministerios||[]).some(mid => minhaEquipe.has(mid));
+  lista.sort((a, b) => {
+    const ae = ehDaEquipe(a), be = ehDaEquipe(b);
+    if (ae && !be) return -1;
+    if (!ae && be) return 1;
+    return a.nome.localeCompare(b.nome, 'pt');
+  });
+
+  const temEquipe = lista.some(ehDaEquipe);
+  const temOutros = lista.some(v => !ehDaEquipe(v));
+  let separadorColocado = false;
+
+  const cardVol = (v) => {
     const jaConvidado = convitesAtuais.find(c=>c.volId===v.id);
     const status = jaConvidado?.status||null;
     return `<label style="display:flex;align-items:center;gap:10px;padding:8px;border-radius:var(--radius);cursor:pointer" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='transparent'">
@@ -140,6 +147,18 @@ function renderConvidarLista(convitesAtuais) {
       <div class="avatar ${v.nivel}" style="width:28px;height:28px;font-size:10px;flex-shrink:0">${ini(v.nome)}</div>
       <div style="flex:1;min-width:0"><p style="font-size:13px;font-weight:500">${v.nome}</p><p style="font-size:11px;color:var(--text-secondary)">${(v.ministerios||[]).map(id=>{const m=ministerios.find(m=>m.id===id);return m?m.nome:''}).filter(Boolean).join(', ')||'Sem ministério'}</p></div>
       ${status?`<span style="font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500;background:${status==='aceito'?'var(--success-bg)':status==='recusado'?'var(--danger-bg)':'var(--warning-bg)'};color:${status==='aceito'?'var(--success-text)':status==='recusado'?'var(--danger-text)':'var(--warning-text)'}">${status==='aceito'?'Aceitou':status==='recusado'?'Recusou':'Pendente'}</span>`:''}
-    </label>`;
-  }).join('') || '<p style="font-size:13px;color:var(--text-secondary);padding:8px">Nenhum voluntário cadastrado.</p>';
+    </label>`
+  };
+
+  let html = '';
+  if (temEquipe) html += '<p style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.3px;padding:6px 8px">Minha equipe</p>';
+  lista.forEach(v => {
+    if (!separadorColocado && temEquipe && temOutros && !ehDaEquipe(v)) {
+      html += '<p style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.3px;padding:6px 8px;margin-top:4px;border-top:0.5px solid var(--border)">Outros voluntários</p>';
+      separadorColocado = true;
+    }
+    html += cardVol(v);
+  });
+  container.innerHTML = html;
 }
+
