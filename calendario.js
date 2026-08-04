@@ -170,6 +170,7 @@ function showEventDetail(evId) {
       </div>
       ${inscrito?`<span class="badge voluntario" style="white-space:nowrap">✓ ${minInscritoObj?minInscritoObj.nome:'Inscrito'}</span>`:''}
     </div>
+    ${buildConvitePendente(ev)}
     ${ev.descricao ? `<div style="margin-bottom:10px">
       <p style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px"><i class="ti ti-list-details" style="font-size:11px;margin-right:4px"></i>PROGRAMAÇÃO</p>
       <p style="font-size:13px;color:var(--text-secondary);white-space:pre-wrap">${ev.descricao}</p>
@@ -336,4 +337,51 @@ function renderAgenda() {
       <i class="ti ti-chevron-right" style="color:var(--text-tertiary);flex-shrink:0;margin-top:4px;font-size:14px"></i>
     </div>`;
   }).join('');
+}
+
+// ===== CONVITE PENDENTE NO EVENTO =====
+function buildConvitePendente(ev) {
+  // Verificar se há convite pendente para o usuário atual neste evento
+  const convite = (ev.convites||[]).find(c => c.volId === currentProfile.id && c.status === 'pendente');
+  if (!convite) return '';
+  // Encontrar a notificação correspondente
+  const notif = notificacoes.find(n => n.ev_id === ev.id && n.vol_id === currentProfile.id && (n.tipo === 'convite' || !n.tipo));
+  const notifId = notif ? notif.id : '';
+  return `<div style="background:var(--purple-bg);border-radius:var(--radius);padding:12px;margin-bottom:12px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <i class="ti ti-hand-stop" style="font-size:18px;color:var(--purple-text)"></i>
+      <p style="font-size:13px;font-weight:500;color:var(--purple-text)">Você foi convidado para servir neste evento</p>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn sm primary" style="flex:1;justify-content:center" onclick="responderConviteEvento('${notifId}','${ev.id}','aceito')"><i class="ti ti-check"></i>Aceitar</button>
+      <button class="btn sm danger" style="flex:1;justify-content:center" onclick="responderConviteEvento('${notifId}','${ev.id}','recusado')"><i class="ti ti-x"></i>Recusar</button>
+    </div>
+  </div>`;
+}
+
+async function responderConviteEvento(notifId, evId, resposta) {
+  // Reutiliza a lógica de responderConvite mas atualiza a vista do evento
+  if (notifId) {
+    await responderConvite(notifId, evId, resposta);
+  } else {
+    // Sem notificação — atualizar convite direto
+    const ev = eventos.find(e=>e.id===evId);
+    if (ev) {
+      const convite = (ev.convites||[]).find(c=>c.volId===currentProfile.id);
+      if (convite) {
+        convite.status = resposta;
+        if (resposta === 'aceito') {
+          const minsDoEvento = (ev.ministerios||[]).filter(mid=>(currentProfile.ministerios||[]).includes(mid));
+          if (minsDoEvento.length>0 && !(ev.inscritos||[]).find(i=>i.volId===currentProfile.id)) {
+            ev.inscritos = ev.inscritos||[];
+            ev.inscritos.push({volId:currentProfile.id, minId:minsDoEvento[0]});
+          }
+        }
+        await sb(`eventos?id=eq.${evId}`, {method:'PATCH', body:JSON.stringify({convites:ev.convites, inscritos:ev.inscritos})});
+      }
+    }
+    atualizarTodasAsViews();
+  }
+  // Reabrir detalhe do evento atualizado
+  setTimeout(() => { try { showEventDetail(evId); } catch(e){} }, 100);
 }
