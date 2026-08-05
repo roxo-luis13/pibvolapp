@@ -38,7 +38,6 @@ function renderVoluntarios() {
 
   const canEdit = perm(getNivelAtivo(),'pode_editar_voluntarios');
   const canRemove = perm(getNivelAtivo(),'pode_remover_voluntarios');
-  const canManage = canEdit || canRemove;
   const tbody = document.getElementById('vol-tbody');
 
   if (!lista.length) {
@@ -49,7 +48,7 @@ function renderVoluntarios() {
   // Desktop table
   tbody.innerHTML = lista.map(v => {
     const mins = (v.ministerios||[]).map(id=>{const m=ministerios.find(m=>m.id===id);return m?`<span class="tag ${m.cor}">${m.nome}</span>`:''}).join('');
-    const btns = canManage ? `<div style="display:flex;gap:4px">${canEdit?`<button class="btn sm" onclick="editVoluntario('${v.id}')"><i class="ti ti-edit"></i></button>`:''} ${canRemove&&v.id!==currentProfile.id?`<button class="btn sm danger" onclick="deleteVol('${v.id}')"><i class="ti ti-trash"></i></button>`:''}</div>` : '';
+    const btns = `<div style="display:flex;gap:4px"><button class="btn sm" title="Ver escala" onclick="verEscalaVoluntario('${v.id}')"><i class="ti ti-calendar-stats"></i></button>${canEdit?`<button class="btn sm" onclick="editVoluntario('${v.id}')"><i class="ti ti-edit"></i></button>`:''} ${canRemove&&v.id!==currentProfile.id?`<button class="btn sm danger" onclick="deleteVol('${v.id}')"><i class="ti ti-trash"></i></button>`:''}</div>`;
     return `<tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar ${getNivelClass(v.nivel)}" style="width:28px;height:28px;font-size:10px">${ini(v.nome)}</div>${v.nome}</div></td><td style="color:var(--text-secondary)">${v.email}</td><td style="color:var(--text-secondary)">${v.tel||'—'}</td><td>${mins||'—'}</td><td><span class="badge ${getNivelClass(v.nivel)}">${getNivelLabel(v.nivel)}</span></td><td>${btns}</td></tr>`;
   }).join('');
 
@@ -60,10 +59,11 @@ function renderVoluntarios() {
       const mins = (v.ministerios||[]).map(id=>{const m=ministerios.find(m=>m.id===id);return m?`<span class="tag ${m.cor}">${m.nome}</span>`:''}).join('');
       const nivelLabel = getNivelLabel(v.nivel);
       const nivelClass = getNivelClass(v.nivel);
-      const btns = canManage ? `<div style="display:flex;gap:6px;margin-top:8px">
+      const btns = `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+        <button class="btn sm" onclick="verEscalaVoluntario('${v.id}')"><i class="ti ti-calendar-stats"></i>Escala</button>
         ${canEdit?`<button class="btn sm" onclick="editVoluntario('${v.id}')"><i class="ti ti-edit"></i>Editar</button>`:''}
         ${canRemove&&v.id!==currentProfile.id?`<button class="btn sm danger" onclick="deleteVol('${v.id}')"><i class="ti ti-trash"></i>Remover</button>`:''}
-      </div>` : '';
+      </div>`;
       return `<div class="vol-card">
         <div class="avatar ${nivelClass}" style="width:42px;height:42px;font-size:14px;flex-shrink:0">${ini(v.nome)}</div>
         <div class="vol-card-info">
@@ -125,6 +125,46 @@ async function saveVoluntario() {
     closeModal('modal-vol'); renderVoluntarios(); renderDashboard();
   } catch(e) { alert('Erro: '+e.message); }
   btn.innerHTML = 'Salvar'; btn.disabled = false;
+}
+
+function verEscalaVoluntario(id) {
+  const v = voluntarios.find(v=>v.id===id); if (!v) return;
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const meusEventos = eventos.filter(e => {
+    const fim = new Date((e.data_fim||e.data_inicio||e.data)+'T23:59:59');
+    return fim >= hoje && (e.inscritos||[]).some(i=>i.volId===id);
+  }).sort((a,b)=>new Date(a.data_inicio||a.data)-new Date(b.data_inicio||b.data));
+
+  const porMes = new Map();
+  meusEventos.forEach(e => {
+    const d = new Date((e.data_inicio||e.data)+'T12:00:00');
+    const chave = d.getFullYear()+'-'+d.getMonth();
+    if (!porMes.has(chave)) porMes.set(chave, {ano:d.getFullYear(), mes:d.getMonth(), eventos:[]});
+    porMes.get(chave).eventos.push(e);
+  });
+
+  document.getElementById('modal-vol-escala-title').textContent = `Escala de ${v.nome}`;
+  document.getElementById('modal-vol-escala-content').innerHTML = meusEventos.length ? [...porMes.values()].map(g => {
+    const linhas = g.eventos.map(e => {
+      const d = new Date((e.data_inicio||e.data)+'T12:00:00');
+      const ds = d.toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
+      const insc = (e.inscritos||[]).find(i=>i.volId===id);
+      const min = ministerios.find(m=>m.id===insc?.minId);
+      return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:0.5px solid var(--border)">
+        <span style="font-size:11px;color:var(--text-tertiary);width:52px;flex-shrink:0">${ds}</span>
+        <span style="font-size:13px;flex:1">${e.nome}</span>
+        ${min?`<span class="tag ${min.cor}" style="flex-shrink:0">${ICONES[min.icone]||'⭐'} ${min.nome}</span>`:''}
+      </div>`;
+    }).join('');
+    return `<div style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <span style="font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.3px;color:var(--text-secondary)">${MESES[g.mes]} ${g.ano}</span>
+        <span style="background:var(--purple-bg);color:var(--purple-text);border-radius:var(--radius);padding:2px 8px;font-size:11px;font-weight:500">${g.eventos.length}x</span>
+      </div>
+      ${linhas}
+    </div>`;
+  }).join('') : '<div class="empty" style="padding:24px"><i class="ti ti-calendar-off"></i>Nenhum evento futuro para este voluntário.</div>';
+  openModal('modal-vol-escala');
 }
 
 async function deleteVol(id) {
