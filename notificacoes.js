@@ -1,5 +1,49 @@
 // ===== NOTIFICAÇÕES =====
 // ===== NOTIFICAÇÕES =====
+
+// ===== PUSH NOTIFICATIONS (navegador) =====
+let notifPollingId = null;
+
+function pedirPermissaoNotificacao() {
+  if (typeof Notification === 'undefined') return;
+  if (Notification.permission === 'default') Notification.requestPermission();
+}
+
+async function checarNovasNotificacoes() {
+  if (!currentProfile) return;
+  try {
+    const rows = await sb(`notificacoes?vol_id=eq.${currentProfile.id}&select=*&order=criado_em.desc&limit=20`);
+    if (!rows) return;
+    const idsConhecidos = new Set(notificacoes.map(n=>n.id));
+    const novas = rows.filter(n => !idsConhecidos.has(n.id));
+    if (novas.length) {
+      notificacoes = [...novas, ...notificacoes];
+      atualizarBadgeNotif();
+      const panel = document.getElementById('notif-panel');
+      if (panel && panel.style.display==='block') renderNotificacoes();
+      novas.filter(n=>!n.lida).forEach(mostrarPushNotificacao);
+    }
+  } catch(e) {}
+}
+
+function mostrarPushNotificacao(n) {
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+  const titulos = {convite:'Convite para evento', lider_evento:'Mobilize sua equipe', update_evento:'Evento atualizado'};
+  const titulo = titulos[n.tipo] || 'Nova notificação';
+  const corpo = n.ev_nome ? `${n.ev_nome}${n.ev_hora?' · '+n.ev_hora:''}` : (n.mensagem||'');
+  const notif = new Notification(titulo, { body: corpo });
+  notif.onclick = () => { window.focus(); toggleNotificacoes(); notif.close(); };
+}
+
+function iniciarPollingNotificacoes() {
+  if (notifPollingId) return;
+  notifPollingId = setInterval(checarNovasNotificacoes, 45000);
+}
+
+function pararPollingNotificacoes() {
+  if (notifPollingId) { clearInterval(notifPollingId); notifPollingId = null; }
+}
+
 function atualizarBadgeNotif() {
   const pendentes = notificacoes.filter(n=>!n.lida).length;
   const badge = document.getElementById('notif-badge');
