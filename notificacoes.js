@@ -1,47 +1,38 @@
 // ===== NOTIFICAÇÕES =====
 // ===== NOTIFICAÇÕES =====
 
-// ===== PUSH NOTIFICATIONS (navegador) =====
-let notifPollingId = null;
+// ===== PUSH NOTIFICATIONS (Web Push real - funciona com o app fechado) =====
+const VAPID_PUBLIC_KEY = 'BKKOIKl1wdxsn6KfWYrM08KAqeAnL0KlHwELSpdiD982ScXrsT-kukZIaXEoluOg9UgaT7kLybcU6unC_sifPp0';
 
-function pedirPermissaoNotificacao() {
-  if (typeof Notification === 'undefined') return;
-  if (Notification.permission === 'default') Notification.requestPermission();
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
 }
 
-async function checarNovasNotificacoes() {
-  if (!currentProfile) return;
+async function ativarNotificacoesPush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !currentProfile) return;
   try {
-    const rows = await sb(`notificacoes?vol_id=eq.${currentProfile.id}&select=*&order=criado_em.desc&limit=20`);
-    if (!rows) return;
-    const idsConhecidos = new Set(notificacoes.map(n=>n.id));
-    const novas = rows.filter(n => !idsConhecidos.has(n.id));
-    if (novas.length) {
-      notificacoes = [...novas, ...notificacoes];
-      atualizarBadgeNotif();
-      const panel = document.getElementById('notif-panel');
-      if (panel && panel.style.display==='block') renderNotificacoes();
-      novas.filter(n=>!n.lida).forEach(mostrarPushNotificacao);
+    const reg = await navigator.serviceWorker.register('sw.js');
+    let permissao = Notification.permission;
+    if (permissao === 'default') permissao = await Notification.requestPermission();
+    if (permissao !== 'granted') return;
+
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+      });
     }
-  } catch(e) {}
-}
-
-function mostrarPushNotificacao(n) {
-  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
-  const titulos = {convite:'Convite para evento', lider_evento:'Mobilize sua equipe', update_evento:'Evento atualizado'};
-  const titulo = titulos[n.tipo] || 'Nova notificação';
-  const corpo = n.ev_nome ? `${n.ev_nome}${n.ev_hora?' · '+n.ev_hora:''}` : (n.mensagem||'');
-  const notif = new Notification(titulo, { body: corpo });
-  notif.onclick = () => { window.focus(); toggleNotificacoes(); notif.close(); };
-}
-
-function iniciarPollingNotificacoes() {
-  if (notifPollingId) return;
-  notifPollingId = setInterval(checarNovasNotificacoes, 45000);
-}
-
-function pararPollingNotificacoes() {
-  if (notifPollingId) { clearInterval(notifPollingId); notifPollingId = null; }
+    const json = sub.toJSON();
+    await sb('push_subscriptions?on_conflict=endpoint', {
+      method: 'POST',
+      prefer: 'resolution=merge-duplicates,return=minimal',
+      body: JSON.stringify({ vol_id: currentProfile.id, endpoint: json.endpoint, p256dh: json.keys.p256dh, auth: json.keys.auth })
+    });
+  } catch (e) { console.error('Falha ao ativar notificações push:', e); }
 }
 
 function atualizarBadgeNotif() {
