@@ -119,14 +119,22 @@ async function responderConvite(notifId, evId, resposta) {
   if (convite) {
     convite.status = resposta;
     let inscritos = [...(ev.inscritos||[])];
+    let precisaEscolherEquipe = false;
     if (resposta==='aceito') {
       const minsDoEvento = (ev.ministerios||[]).filter(mid=>(currentProfile.ministerios||[]).includes(mid));
-      if (minsDoEvento.length>0 && !inscritos.find(i=>i.volId===currentProfile.id)) {
-        inscritos.push({volId:currentProfile.id,minId:minsDoEvento[0]});
+      if (!inscritos.find(i=>i.volId===currentProfile.id)) {
+        if (minsDoEvento.length===1) {
+          inscritos.push({volId:currentProfile.id,minId:minsDoEvento[0]});
+        } else if (minsDoEvento.length>1) {
+          precisaEscolherEquipe = true; // pertence a mais de uma equipe do evento — não escolher por ele
+        }
       }
     } else { inscritos = inscritos.filter(i=>i.volId!==currentProfile.id); }
     await sb(`eventos?id=eq.${evId}`,{method:'PATCH',body:JSON.stringify({convites,inscritos})});
     ev.convites = convites; ev.inscritos = inscritos;
+    if (precisaEscolherEquipe) {
+      alert('Você faz parte de mais de uma equipe neste evento. Abra o evento no Calendário para escolher em qual equipe vai servir.');
+    }
   }
   atualizarTodasAsViews();
 }
