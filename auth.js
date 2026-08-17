@@ -29,8 +29,7 @@ async function loadProfile(userId) {
   showScreen('app');
   updateSidebar();
   checkMobileLayout();
-  pedirPermissaoNotificacao();
-  iniciarPollingNotificacoes();
+  ativarNotificacoesPush();
   // Restaurar última seção visitada
   let lastSec = 'dashboard';
   try {
@@ -106,8 +105,7 @@ async function doLogin() {
     showScreen('app');
     updateSidebar();
     checkMobileLayout();
-    pedirPermissaoNotificacao();
-    iniciarPollingNotificacoes();
+    ativarNotificacoesPush();
     navigate('dashboard');
   } catch(e) {
     err.textContent = 'Erro ao entrar: ' + e.message; err.style.display = 'block';
@@ -162,8 +160,7 @@ async function saveNewPassword() {
     showScreen('app');
     updateSidebar();
     checkMobileLayout();
-    pedirPermissaoNotificacao();
-    iniciarPollingNotificacoes();
+    ativarNotificacoesPush();
     navigate('dashboard');
 
   } catch(e) {
@@ -191,7 +188,6 @@ function voltarParaLogin() {
 }
 
 function doLogout() {
-  pararPollingNotificacoes();
   session = null; currentProfile = null;
   localStorage.removeItem('igreja_session');
   document.getElementById('sidebar').classList.remove('mobile-open','collapsed');
