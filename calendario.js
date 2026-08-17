@@ -49,13 +49,14 @@ function renderCalendario() {
     }
 
     // Selected day highlight
-    const isSelected = selectedEvento && (selectedEvento.data_inicio||selectedEvento.data) <= ds && (selectedEvento.data_fim||selectedEvento.data_inicio||selectedEvento.data) >= ds;
+    const isSelected = selectedDia === ds;
     html += `<div class="cal-day${isToday?' today':''}${isSelected?' selected-day':''}" onclick="clicouDia('${ds}')" style="cursor:pointer"><div class="day-num">${d}</div>${evHtml}</div>`;
   }
   grid.innerHTML = html;
 }
 
 function clicouDia(ds) {
+  selectedDia = ds;
   const devs = eventos.filter(e => {
     const ini = e.data_inicio||e.data;
     const fim = e.data_fim||ini;
@@ -196,7 +197,7 @@ function showEventDetail(evId) {
 function changeMonth(d) {
   calMonth += d;
   if (calMonth<0){calMonth=11;calYear--;} if (calMonth>11){calMonth=0;calYear++;}
-  selectedEvento = null; renderCalendario();
+  selectedEvento = null; selectedDia = null; renderCalendario();
   document.getElementById('cal-event-detail').innerHTML='<p style="color:var(--text-secondary);font-size:13px">Clique em um evento para ver os detalhes.</p>';
   document.getElementById('btn-inscricao').style.display='none';
   if (calView === 'agenda') renderAgenda();
