@@ -2,6 +2,10 @@
 // ===== DASHBOARD =====
 function renderDashboard() {
   atualizarDataTopbar();
+  const v = versiculoDoDia();
+  const vTextoEl = document.getElementById('versiculo-texto');
+  const vRefEl = document.getElementById('versiculo-ref');
+  if (vTextoEl && vRefEl) { vTextoEl.textContent = `"${v.texto}"`; vRefEl.textContent = v.ref; }
   // Mostrar card de total de voluntários apenas para quem tem permissão
   const totalVolCard = document.getElementById('m-total-vol-card');
   const grid = document.getElementById('dash-metrics-grid');
