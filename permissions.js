@@ -122,7 +122,7 @@ function getNivelClass(nivel) {
 }
 let ministerios = [], voluntarios = [], eventos = [], notificacoes = [];
 let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
-let selectedEvento = null, currentDetalheId = null;
+let selectedEvento = null, currentDetalheId = null, selectedDia = null;
 let sidebarCollapsed = false;
 let previewNivel = null; // null = normal mode, string = previewing as this nivel
 const isMobile = () => window.innerWidth <= 768;
