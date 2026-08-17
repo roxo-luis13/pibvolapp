@@ -237,15 +237,18 @@ async function toggleInscricao() {
   if (!selectedEvento) return;
   const ev = selectedEvento;
   let inscritos = [...(ev.inscritos||[])];
+  let minIdConfirmado = null;
   if (isInscrito(ev)) {
     inscritos = inscritos.filter(i=>i.volId!==currentProfile.id);
   } else {
     const minId = document.getElementById('inscricao-min-select').value;
     if (!minId) { alert('Selecione um ministério.'); return; }
     inscritos.push({volId:currentProfile.id,minId});
+    minIdConfirmado = minId;
   }
   await sb(`eventos?id=eq.${ev.id}`, {method:'PATCH',body:JSON.stringify({inscritos})});
   ev.inscritos = inscritos;
+  if (minIdConfirmado) await notificarLiderConfirmacao(ev, minIdConfirmado);
   closeModal('modal-inscricao');
   showEventDetail(ev.id);
   renderCalendario();
@@ -377,6 +380,7 @@ async function responderConviteEvento(notifId, evId, resposta) {
           if (minsDoEvento.length===1) {
             ev.inscritos = ev.inscritos||[];
             ev.inscritos.push({volId:currentProfile.id, minId:minsDoEvento[0]});
+            await notificarLiderConfirmacao(ev, minsDoEvento[0]);
           } else if (minsDoEvento.length>1) {
             precisaEscolherEquipe = true;
           }
