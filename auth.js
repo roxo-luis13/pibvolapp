@@ -1,4 +1,5 @@
 // ===== AUTENTICAÇÃO =====
+let pendingLoginEmail = null, pendingSenhaHash = null; // guardam o email/hash usados no login enquanto o primeiro acesso não é concluído
 // ===== INIT =====
 async function init() {
   const saved = localStorage.getItem('igreja_session');
@@ -81,18 +82,26 @@ async function doLogin() {
   const btn = document.getElementById('btn-login');
   btn.innerHTML = '<span class="spin"></span> Entrando...'; btn.disabled = true;
   try {
-    // Verificar nas credenciais do sistema (senha hash SHA-256)
+    // Verificar credenciais via Edge Function (emite um token assinado para as próximas requisições)
     const hash = await sha256(senha);
-    const rows = await sb(`voluntarios?email=eq.${encodeURIComponent(email)}&senha_hash=eq.${hash}&select=*`);
-    if (!rows || !rows.length) {
-      err.textContent = 'Email ou senha incorretos.'; err.style.display = 'block';
+    const resp = await fetch(`${SUPA_URL}/functions/v1/login`, {
+      method: 'POST',
+      headers: { 'apikey': SUPA_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, senha_hash: hash })
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      err.textContent = data.error || 'Email ou senha incorretos.'; err.style.display = 'block';
       btn.innerHTML = '<i class="ti ti-login"></i>Entrar'; btn.disabled = false; return;
     }
-    // Criar sessão simples (sem OAuth)
-    session = { access_token: SUPA_KEY, user: { id: rows[0].id } };
+    if (data.primeiro_acesso) {
+      pendingLoginEmail = email; pendingSenhaHash = hash;
+      showFirstAccess();
+      btn.innerHTML = '<i class="ti ti-login"></i>Entrar'; btn.disabled = false; return;
+    }
+    session = { access_token: data.token, user: { id: data.profile.id } };
     localStorage.setItem('igreja_session', JSON.stringify(session));
-    currentProfile = rows[0];
-    if (currentProfile.primeiro_acesso) { showFirstAccess(); btn.innerHTML = '<i class="ti ti-login"></i>Entrar'; btn.disabled = false; return; }
+    currentProfile = data.profile;
     await loadAllData();
     showScreen('app');
     updateSidebar();
@@ -120,35 +129,30 @@ async function saveNewPassword() {
     mostraErroPrimeiroAcesso('As senhas não coincidem. Tente novamente.');
     return;
   }
+  if (!pendingLoginEmail || !pendingSenhaHash) {
+    mostraErroPrimeiroAcesso('Sessão expirada, faça login novamente.');
+    voltarParaLogin();
+    return;
+  }
 
   const btn = document.getElementById('btn-first-access');
   if (btn) { btn.innerHTML = '<span class="spin"></span> Salvando...'; btn.disabled = true; }
 
   try {
-    const hash = await sha256(nova);
+    const novaSenhaHash = await sha256(nova);
 
-    // Tentar PATCH direto via fetch com a anon key
-    const res = await fetch(`${SUPA_URL}/rest/v1/voluntarios?id=eq.${currentProfile.id}`, {
-      method: 'PATCH',
-      headers: {
-        'apikey': SUPA_KEY,
-        'Authorization': 'Bearer ' + SUPA_KEY,
-        'Content-Type': 'application/json',
-        'Prefer': 'return=minimal'
-      },
-      body: JSON.stringify({ senha_hash: hash, primeiro_acesso: false })
+    const resp = await fetch(`${SUPA_URL}/functions/v1/login`, {
+      method: 'POST',
+      headers: { 'apikey': SUPA_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: pendingLoginEmail, senha_hash: pendingSenhaHash, novaSenha_hash: novaSenhaHash })
     });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || 'Erro ao salvar senha.');
 
-    if (!res.ok) {
-      const errData = await res.json().catch(()=>({}));
-      throw new Error(errData.message || errData.hint || `Erro HTTP ${res.status}`);
-    }
-
-    // Sucesso - atualizar estado local
-    currentProfile.senha_hash = hash;
-    currentProfile.primeiro_acesso = false;
-    session = { access_token: SUPA_KEY, user: { id: currentProfile.id } };
+    session = { access_token: data.token, user: { id: data.profile.id } };
     localStorage.setItem('igreja_session', JSON.stringify(session));
+    currentProfile = data.profile;
+    pendingLoginEmail = null; pendingSenhaHash = null;
 
     await loadAllData();
 
@@ -176,6 +180,7 @@ function mostraErroPrimeiroAcesso(msg) {
 
 function voltarParaLogin() {
   currentProfile = null;
+  pendingLoginEmail = null; pendingSenhaHash = null;
   document.getElementById('first-access-form').style.display = 'none';
   document.getElementById('first-notice').style.display = 'none';
   document.getElementById('login-form-area').style.display = 'block';
@@ -223,15 +228,6 @@ function abrirEsqueciSenha() {
   openModal('modal-esqueci-senha');
 }
 
-function gerarSenhaChars() {
-  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-  let senha = '';
-  const arr = new Uint8Array(8);
-  crypto.getRandomValues(arr);
-  arr.forEach(b => senha += chars[b % chars.length]);
-  return senha;
-}
-
 async function gerarSenhaTemp() {
   const email = document.getElementById('esqueci-email').value.trim().toLowerCase();
   const errEl = document.getElementById('esqueci-error');
@@ -240,20 +236,19 @@ async function gerarSenhaTemp() {
   const btn = document.getElementById('btn-esqueci-enviar');
   btn.innerHTML = '<span class="spin"></span> Verificando...'; btn.disabled = true;
   try {
-    const rows = await sb(`voluntarios?email=eq.${encodeURIComponent(email)}&select=id,nome`);
-    if (!rows || !rows.length) {
-      errEl.textContent = 'Email não encontrado. Verifique se está correto.';
+    const resp = await fetch(`${SUPA_URL}/functions/v1/forgot-password`, {
+      method: 'POST',
+      headers: { 'apikey': SUPA_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      errEl.textContent = data.error || 'Erro ao gerar nova senha.';
       errEl.style.display = 'block';
       btn.innerHTML = '<i class="ti ti-key"></i>Gerar nova senha'; btn.disabled = false;
       return;
     }
-    const senhaTemp = gerarSenhaChars();
-    const hash = await sha256(senhaTemp);
-    await sb(`voluntarios?id=eq.${rows[0].id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ senha_hash: hash, primeiro_acesso: true })
-    });
-    document.getElementById('esqueci-senha-temp').textContent = senhaTemp;
+    document.getElementById('esqueci-senha-temp').textContent = data.senhaTemp;
     document.getElementById('esqueci-step-email').style.display = 'none';
     document.getElementById('esqueci-step-ok').style.display = 'block';
   } catch(e) {
