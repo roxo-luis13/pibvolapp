@@ -67,10 +67,14 @@ function renderNotificacoes() {
       lider_evento: {icon:'ti-bell-ringing',   bg:'var(--amber-bg)',  color:'var(--amber-text)',  titulo:'Mobilize sua equipe'},
       update_evento:{icon:'ti-refresh',         bg:'var(--blue-bg)',   color:'var(--blue-text)',   titulo:'Evento atualizado'},
       voluntario_confirmado:{icon:'ti-user-check', bg:'var(--success-bg)', color:'var(--success-text)', titulo:'Confirmação de escala'},
+      lembrete_resposta_2sem:{icon:'ti-clock-exclamation', bg:'var(--amber-bg)', color:'var(--amber-text)', titulo:'Responda ao convite'},
+      lembrete_resposta_1sem:{icon:'ti-clock-exclamation', bg:'var(--amber-bg)', color:'var(--amber-text)', titulo:'Responda ao convite'},
+      lembrete_2dias:{icon:'ti-calendar-time', bg:'var(--blue-bg)', color:'var(--blue-text)', titulo:'Evento em breve'},
+      lembrete_30min:{icon:'ti-alarm', bg:'var(--coral-bg)', color:'var(--coral-text)', titulo:'Começa em 30 minutos'},
     }[tipo] || {icon:'ti-bell', bg:'var(--purple-bg)', color:'var(--purple-text)', titulo:'Notificação'};
 
     let acoes = '';
-    if (tipo === 'convite') {
+    if (tipo === 'convite' || tipo === 'lembrete_resposta_2sem' || tipo === 'lembrete_resposta_1sem') {
       const convite = ev?.convites?.find(c=>c.volId===currentProfile.id);
       const status = convite?.status||'pendente';
       acoes = status==='pendente'
