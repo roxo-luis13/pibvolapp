@@ -66,6 +66,7 @@ function renderNotificacoes() {
       convite:      {icon:'ti-calendar-event', bg:'var(--purple-bg)', color:'var(--purple-text)', titulo:'Convite'},
       lider_evento: {icon:'ti-bell-ringing',   bg:'var(--amber-bg)',  color:'var(--amber-text)',  titulo:'Mobilize sua equipe'},
       update_evento:{icon:'ti-refresh',         bg:'var(--blue-bg)',   color:'var(--blue-text)',   titulo:'Evento atualizado'},
+      voluntario_confirmado:{icon:'ti-user-check', bg:'var(--success-bg)', color:'var(--success-text)', titulo:'Confirmação de escala'},
     }[tipo] || {icon:'ti-bell', bg:'var(--purple-bg)', color:'var(--purple-text)', titulo:'Notificação'};
 
     let acoes = '';
@@ -101,6 +102,22 @@ function renderNotificacoes() {
   }).join('');
 }
 
+async function notificarLiderConfirmacao(ev, minId) {
+  const m = ministerios.find(m => m.id === minId);
+  if (!m || !m.lider_id || m.lider_id === currentProfile.id) return;
+  try {
+    await sb('notificacoes',{method:'POST',prefer:'return=minimal',body:JSON.stringify({
+      vol_id: m.lider_id,
+      tipo: 'voluntario_confirmado',
+      ev_id: ev.id,
+      ev_nome: ev.nome,
+      ev_data: ev.data_inicio||ev.data,
+      ev_hora: ev.hora,
+      mensagem: `${currentProfile.nome} confirmou presença no ministério ${m.nome}.`
+    })});
+  } catch(e) {}
+}
+
 async function responderConvite(notifId, evId, resposta) {
   await sb(`notificacoes?id=eq.${notifId}`,{method:'PATCH',body:JSON.stringify({lida:true})});
   const n = notificacoes.find(n=>n.id===notifId); if (n) n.lida=true;
@@ -116,6 +133,7 @@ async function responderConvite(notifId, evId, resposta) {
       if (!inscritos.find(i=>i.volId===currentProfile.id)) {
         if (minsDoEvento.length===1) {
           inscritos.push({volId:currentProfile.id,minId:minsDoEvento[0]});
+          await notificarLiderConfirmacao(ev, minsDoEvento[0]);
         } else if (minsDoEvento.length>1) {
           precisaEscolherEquipe = true; // pertence a mais de uma equipe do evento — não escolher por ele
         }
