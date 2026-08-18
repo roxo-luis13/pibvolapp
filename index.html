@@ -166,7 +166,7 @@
       </div>
 
       <div class="modal-backdrop" id="modal-vol-assiduidade">
-        <div class="modal" style="max-width:480px">
+        <div class="modal be-band-color" style="max-width:480px">
           <h2 id="modal-vol-assid-title">Assiduidade</h2>
           <p style="font-size:12px;color:var(--text-secondary);margin-top:4px">Escolha o período para ver quantas vezes o voluntário foi chamado, aceitou, recusou ou não respondeu.</p>
           <div style="display:flex;gap:10px;margin:14px 0;flex-wrap:wrap">
@@ -269,8 +269,8 @@
               <div class="be-head-sub" id="bem-estar-info">—</div>
             </div>
             <div class="be-periodo">
-              <label>De<br><input id="bem-estar-data-ini" type="date" onchange="renderBemEstar()"></label>
-              <label>Até<br><input id="bem-estar-data-fim" type="date" onchange="renderBemEstar()"></label>
+              <label>De<input id="bem-estar-data-ini" type="date" onchange="renderBemEstar()"></label>
+              <label>Até<input id="bem-estar-data-fim" type="date" onchange="renderBemEstar()"></label>
             </div>
           </div>
 
@@ -291,14 +291,6 @@
             <div class="be-legend-item"><span class="be-legend-dot" style="background:var(--success-text)"></span>Na meta (20–30%)</div>
             <div class="be-legend-item"><span class="be-legend-dot" style="background:var(--danger-text)"></span>Acima da meta — risco de esgotamento</div>
           </div>
-        </div>
-
-        <div class="card be-band-color" style="margin-bottom:12px">
-          <div class="be-head" style="margin-bottom:8px">
-            <div><h3>Por voluntário</h3></div>
-            <span style="font-size:12px;color:var(--text-tertiary)">cada quadrado = um domingo com 2 cultos servido · claro/escuro = culto único/completo</span>
-          </div>
-          <div class="be-vol-list" id="bem-estar-lista"></div>
         </div>
 
         <div class="card">

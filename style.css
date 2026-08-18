@@ -320,8 +320,8 @@ hr{border:none;border-top:0.5px solid var(--border);margin:14px 0}
 .be-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:16px}
 .be-head h3{font-size:14px;font-weight:600}
 .be-head-sub{font-size:12px;color:var(--text-tertiary);margin-top:3px}
-.be-periodo{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.be-periodo label{font-size:11px;color:var(--text-secondary)}
+.be-periodo{display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap}
+.be-periodo label{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--text-secondary)}
 .be-periodo input{padding:6px 9px;border:0.5px solid var(--border-md);border-radius:var(--radius);font-size:12px;background:var(--bg-primary);color:var(--text-primary);font-family:inherit}
 
 .be-kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
@@ -362,14 +362,6 @@ hr{border:none;border-top:0.5px solid var(--border);margin:14px 0}
 .be-legend-item{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text-secondary)}
 .be-legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
 
-.be-vol-list{display:flex;flex-direction:column}
-.be-vol-row{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1.7fr) minmax(0,1.3fr) auto;gap:18px;align-items:center;padding:16px 0;border-top:0.5px solid var(--border)}
-.be-vol-row:first-child{border-top:none;padding-top:6px}
-.be-vol-who{display:flex;align-items:center;gap:10px;min-width:0}
-.be-vol-who .avatar{width:34px;height:34px;font-size:12px;flex-shrink:0}
-.be-vol-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.be-vol-min{font-size:11.5px;color:var(--text-tertiary);margin-top:1px}
-
 .be-metric-label{font-size:10px;font-weight:600;letter-spacing:.3px;text-transform:uppercase;color:var(--text-tertiary);margin-bottom:7px}
 .be-bar-track{position:relative;height:8px;background:var(--bg-tertiary);border-radius:4px}
 .be-bar-band{position:absolute;top:0;bottom:0;left:20%;right:70%;background:var(--be-band-bg)}
@@ -389,6 +381,15 @@ hr{border:none;border-top:0.5px solid var(--border);margin:14px 0}
 .be-status.low{background:var(--warning-bg);color:var(--warning-text)}
 .be-status.high{background:var(--danger-bg);color:var(--danger-text)}
 
-@media(max-width:720px){
-  .be-vol-row{grid-template-columns:1fr;gap:10px;align-items:start}
+@media(max-width:560px){
+  .be-kpi-row{grid-template-columns:1fr;gap:8px}
+  .be-kpi-tile{display:flex;align-items:baseline;justify-content:space-between;padding:11px 14px}
+  .be-kpi-tile .be-kpi-lbl{margin-top:0}
+  .be-periodo{width:100%}
+  .be-periodo label{flex:1;min-width:0}
+  .be-periodo input{width:100%}
+  .be-hist-col{padding:0 2px}
+  .be-hist-bar{max-width:24px}
+  .be-hist-axis span{font-size:8.5px}
+  .be-hist-axis span:nth-child(even){visibility:hidden}
 }

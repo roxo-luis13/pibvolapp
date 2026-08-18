@@ -231,6 +231,7 @@ function atualizarAssiduidadePeriodo() {
   const dataFim = new Date(fimStr+'T23:59:59');
   if (dataIni > dataFim) { content.innerHTML = '<p style="font-size:12px;color:var(--danger-text)">A data de início não pode ser depois da data de fim.</p>'; return; }
   const a = calcularAssiduidade(id, dataIni, dataFim);
+  const eventosPeriodo = beEventosNoPeriodo(dataIni, dataFim);
   content.innerHTML = `
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
       <div style="background:var(--bg-tertiary);border-radius:var(--radius);padding:14px;text-align:center">
@@ -249,7 +250,8 @@ function atualizarAssiduidadePeriodo() {
         <h3 style="font-size:22px;font-weight:600;color:var(--warning-text)">${a.pendente}</h3>
         <p style="font-size:11px;color:var(--warning-text);margin-top:2px">Não respondido(s)</p>
       </div>
-    </div>`;
+    </div>
+    ${beBlocoVoluntario(id, eventosPeriodo)}`;
 }
 
 async function deleteVol(id) {
@@ -340,13 +342,11 @@ function renderBemEstar() {
   const kpisEl = document.getElementById('bem-estar-kpis');
   const histEl = document.getElementById('bem-estar-hist');
   const axisEl = document.getElementById('bem-estar-axis');
-  const listaEl = document.getElementById('bem-estar-lista');
 
   if (!totalEventos) {
-    kpisEl.innerHTML = '';
+    kpisEl.innerHTML = '<p style="font-size:12px;color:var(--text-tertiary);grid-column:1/-1">Nenhum evento cadastrado nesse período.</p>';
     histEl.querySelectorAll('.be-hist-col').forEach(c=>c.remove());
     axisEl.innerHTML = '';
-    listaEl.innerHTML = '<div class="empty" style="padding:24px"><i class="ti ti-calendar-off"></i>Nenhum evento cadastrado nesse período.</div>';
     return;
   }
 
@@ -375,26 +375,38 @@ function renderBemEstar() {
     </button>`;
   }).join(''));
   axisEl.innerHTML = BE_FAIXAS.map(f=>`<span>${f}</span>`).join('');
+}
 
-  const comEventos = dados.filter(d=>d.total>0).sort((a,b)=>a.pct-b.pct);
-  listaEl.innerHTML = comEventos.length ? comEventos.map(d => {
-    const cor = beCorZona(d.zona);
-    const label = d.zona==='ok'?'Na meta':d.zona==='low'?'Abaixo da meta':'Sobrecarregado';
-    const mins = (d.v.ministerios||[]).map(id=>{const m=ministerios.find(m=>m.id===id);return m?m.nome:''}).filter(Boolean).join(', ');
-    const duo = d.domingos.length
-      ? `<div class="be-duo-row">${d.domingos.map(dom=>`<div class="be-duo"><i class="${dom.completo?'on':''}"></i><i class="${dom.completo?'on':''}"></i></div>`).join('')}</div><div class="be-duo-note">${d.completos} de ${d.domingos.length} domingo${d.domingos.length===1?'':'s'} completo${d.completos===1?'':'s'}</div>`
-      : '<span style="font-size:11px;color:var(--text-tertiary)">Sem domingos com 2 cultos servidos</span>';
-    return `<div class="be-vol-row">
-      <div class="be-vol-who"><div class="avatar ${getNivelClass(d.v.nivel)}">${ini(d.v.nome)}</div><div><div class="be-vol-name">${d.v.nome}</div><div class="be-vol-min">${mins||'—'}</div></div></div>
-      <div>
-        <div class="be-metric-label">Participação no período</div>
-        <div class="be-bar-track"><div class="be-bar-band"></div><div class="be-bar-fill" style="width:${Math.min(100,d.pct)}%;background:${cor}"></div></div>
-        <div class="be-bar-num"><strong>${Math.round(d.pct)}%</strong><span>${d.aceitos} de ${d.total} eventos</span></div>
+// Monta o bloco de participação vs. meta + cultos combinados de UM voluntário,
+// usado dentro do modal de Assiduidade (cadastro do voluntário)
+function beBlocoVoluntario(volId, eventosPeriodo) {
+  const {aceitos, total, pct} = beParticipacaoVoluntario(volId, eventosPeriodo);
+  if (!total) return '';
+  const domingos = beCultosCombinados(volId, eventosPeriodo);
+  const completos = domingos.filter(d=>d.completo).length;
+  const bucket = beBucketDe(pct);
+  const zona = beZonaDoBucket(bucket);
+  const cor = beCorZona(zona);
+  const label = zona==='ok'?'Na meta':zona==='low'?'Abaixo da meta':'Sobrecarregado';
+  const duo = domingos.length
+    ? `<div class="be-duo-row">${domingos.map(dom=>`<div class="be-duo"><i class="${dom.completo?'on':''}"></i><i class="${dom.completo?'on':''}"></i></div>`).join('')}</div><div class="be-duo-note">${completos} de ${domingos.length} domingo${domingos.length===1?'':'s'} completo${completos===1?'':'s'}</div>`
+    : '<span style="font-size:11px;color:var(--text-tertiary)">Sem domingos com 2 cultos servidos no período</span>';
+  return `
+    <div style="margin-top:14px;padding-top:14px;border-top:0.5px solid var(--border)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <span class="be-metric-label" style="margin-bottom:0">Bem-estar no período</span>
+        <span class="be-status ${zona}">${label}</span>
       </div>
-      <div><div class="be-metric-label">Cultos combinados</div>${duo}</div>
-      <span class="be-status ${d.zona}">${label}</span>
+      <div style="margin-bottom:12px">
+        <div class="be-metric-label">Participação vs. meta de 25%</div>
+        <div class="be-bar-track"><div class="be-bar-band"></div><div class="be-bar-fill" style="width:${Math.min(100,pct)}%;background:${cor}"></div></div>
+        <div class="be-bar-num"><strong>${Math.round(pct)}%</strong><span>${aceitos} de ${total} eventos</span></div>
+      </div>
+      <div>
+        <div class="be-metric-label">Cultos combinados</div>
+        ${duo}
+      </div>
     </div>`;
-  }).join('') : '<div class="empty" style="padding:24px"><i class="ti ti-user-off"></i>Nenhum voluntário cadastrado.</div>';
 }
 
 function beToggleBucket(btn) {
