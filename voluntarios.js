@@ -1,6 +1,7 @@
 // ===== VOLUNTÁRIOS =====
 // ===== VOLUNTÁRIOS =====
 function renderVoluntarios() {
+  renderBemEstar();
   // Atualizar selects de filtro
   const selMin = document.getElementById('vol-filtro-min');
   const selNivel = document.getElementById('vol-filtro-nivel');
@@ -258,3 +259,149 @@ async function deleteVol(id) {
   voluntarios = voluntarios.filter(v=>v.id!==id);
   renderVoluntarios(); renderDashboard();
 }
+
+// ===== BEM-ESTAR DO VOLUNTARIADO =====
+const BE_FAIXAS = ['0–5%','5–10%','10–15%','15–20%','20–25%','25–30%','30–35%','35–40%','40–45%','45–50%','50%+'];
+
+function beEventosNoPeriodo(dataIni, dataFim) {
+  return eventos.filter(e => {
+    const dIni = new Date((e.data_inicio||e.data)+'T00:00:00');
+    const dFim = new Date((e.data_fim||e.data_inicio||e.data)+'T23:59:59');
+    return dFim >= dataIni && dIni <= dataFim;
+  });
+}
+
+function beParticipacaoVoluntario(volId, eventosPeriodo) {
+  let aceitos = 0;
+  eventosPeriodo.forEach(e => {
+    const c = (e.convites||[]).find(c=>c.volId===volId);
+    if (c && c.status==='aceito') aceitos++;
+  });
+  const total = eventosPeriodo.length;
+  return {aceitos, total, pct: total ? (aceitos/total*100) : 0};
+}
+
+// Domingos com 2+ eventos cadastrados nesse período em que o voluntário serviu,
+// marcando se cobriu todos os eventos daquele domingo (cultos combinados) ou só parte
+function beCultosCombinados(volId, eventosPeriodo) {
+  const porData = new Map();
+  eventosPeriodo.forEach(e => {
+    const dataStr = e.data_inicio||e.data;
+    const d = new Date(dataStr+'T12:00:00');
+    if (d.getDay() !== 0) return;
+    if (!porData.has(dataStr)) porData.set(dataStr, []);
+    porData.get(dataStr).push(e);
+  });
+  const domingos = [];
+  [...porData.entries()].sort((a,b)=>a[0].localeCompare(b[0])).forEach(([dataStr, evs]) => {
+    if (evs.length < 2) return;
+    const aceitosDia = evs.filter(e => {
+      const c = (e.convites||[]).find(c=>c.volId===volId);
+      return c && c.status==='aceito';
+    }).length;
+    if (aceitosDia === 0) return;
+    domingos.push({data: dataStr, completo: aceitosDia === evs.length});
+  });
+  return domingos;
+}
+
+function beBucketDe(pct) { return Math.min(10, Math.floor(pct/5)); }
+function beZonaDoBucket(bucket) { return bucket<=3?'low':bucket<=5?'ok':'high'; }
+function beCorZona(zona) { return zona==='low'?'var(--warning-text)':zona==='ok'?'var(--success-text)':'var(--danger-text)'; }
+
+function renderBemEstar() {
+  const iniEl = document.getElementById('bem-estar-data-ini');
+  const fimEl = document.getElementById('bem-estar-data-fim');
+  if (!iniEl || !fimEl) return;
+  if (!iniEl.value || !fimEl.value) {
+    const hoje = new Date();
+    const ini = new Date(hoje); ini.setDate(ini.getDate()-90);
+    iniEl.value = ini.toISOString().split('T')[0];
+    fimEl.value = hoje.toISOString().split('T')[0];
+  }
+  const dataIni = new Date(iniEl.value+'T00:00:00');
+  const dataFim = new Date(fimEl.value+'T23:59:59');
+  const infoEl = document.getElementById('bem-estar-info');
+  if (dataIni > dataFim) { infoEl.textContent = 'A data inicial não pode ser depois da data final.'; return; }
+
+  const eventosPeriodo = beEventosNoPeriodo(dataIni, dataFim);
+  const totalEventos = eventosPeriodo.length;
+  const metaEventos = Math.round(totalEventos*0.25);
+
+  const dados = voluntarios.map(v => {
+    const {aceitos, total, pct} = beParticipacaoVoluntario(v.id, eventosPeriodo);
+    const domingos = beCultosCombinados(v.id, eventosPeriodo);
+    const bucket = beBucketDe(pct);
+    return {v, aceitos, total, pct, domingos, completos: domingos.filter(d=>d.completo).length, bucket, zona: beZonaDoBucket(bucket)};
+  });
+
+  infoEl.textContent = `${dados.length} voluntário(s) · ${totalEventos} evento(s) no período · meta 25% (${metaEventos} eventos)`;
+
+  const kpisEl = document.getElementById('bem-estar-kpis');
+  const histEl = document.getElementById('bem-estar-hist');
+  const axisEl = document.getElementById('bem-estar-axis');
+  const listaEl = document.getElementById('bem-estar-lista');
+
+  if (!totalEventos) {
+    kpisEl.innerHTML = '';
+    histEl.querySelectorAll('.be-hist-col').forEach(c=>c.remove());
+    axisEl.innerHTML = '';
+    listaEl.innerHTML = '<div class="empty" style="padding:24px"><i class="ti ti-calendar-off"></i>Nenhum evento cadastrado nesse período.</div>';
+    return;
+  }
+
+  const totalVol = dados.length || 1;
+  const nAbaixo = dados.filter(d=>d.zona==='low').length;
+  const nMeta = dados.filter(d=>d.zona==='ok').length;
+  const nAcima = dados.filter(d=>d.zona==='high').length;
+  kpisEl.innerHTML = `
+    <div class="be-kpi-tile low"><div class="be-kpi-n">${nAbaixo}<span class="be-kpi-pct">${Math.round(nAbaixo/totalVol*100)}%</span></div><div class="be-kpi-lbl">Abaixo da meta</div></div>
+    <div class="be-kpi-tile ok"><div class="be-kpi-n">${nMeta}<span class="be-kpi-pct">${Math.round(nMeta/totalVol*100)}%</span></div><div class="be-kpi-lbl">Na meta (20–30%)</div></div>
+    <div class="be-kpi-tile high"><div class="be-kpi-n">${nAcima}<span class="be-kpi-pct">${Math.round(nAcima/totalVol*100)}%</span></div><div class="be-kpi-lbl">Sobrecarregados</div></div>`;
+
+  const buckets = Array.from({length:11}, ()=>[]);
+  dados.forEach(d => buckets[d.bucket].push(d));
+  const maxCount = Math.max(1, ...buckets.map(b=>b.length));
+  const maxBarPx = 120;
+
+  histEl.querySelectorAll('.be-hist-col').forEach(c=>c.remove());
+  histEl.insertAdjacentHTML('beforeend', buckets.map((b,i) => {
+    const cor = beCorZona(beZonaDoBucket(i));
+    const h = Math.round(b.length/maxCount*maxBarPx);
+    const popList = b.length ? `<ul class="be-hist-pop-list">${b.map(d=>`<li>${d.v.nome}</li>`).join('')}</ul>` : '<p class="be-hist-pop-empty">Ninguém nessa faixa.</p>';
+    return `<button type="button" class="be-hist-col" data-bucket="${i}" onclick="beToggleBucket(this)">
+      <div class="be-hist-bar" style="height:${h}px;background:${cor}">${b.length?`<span class="be-hist-count">${b.length}</span>`:''}</div>
+      <div class="be-hist-pop"><div class="be-hist-pop-range">${BE_FAIXAS[i]} · ${b.length} voluntário${b.length===1?'':'s'}</div>${popList}</div>
+    </button>`;
+  }).join(''));
+  axisEl.innerHTML = BE_FAIXAS.map(f=>`<span>${f}</span>`).join('');
+
+  const comEventos = dados.filter(d=>d.total>0).sort((a,b)=>a.pct-b.pct);
+  listaEl.innerHTML = comEventos.length ? comEventos.map(d => {
+    const cor = beCorZona(d.zona);
+    const label = d.zona==='ok'?'Na meta':d.zona==='low'?'Abaixo da meta':'Sobrecarregado';
+    const mins = (d.v.ministerios||[]).map(id=>{const m=ministerios.find(m=>m.id===id);return m?m.nome:''}).filter(Boolean).join(', ');
+    const duo = d.domingos.length
+      ? `<div class="be-duo-row">${d.domingos.map(dom=>`<div class="be-duo"><i class="${dom.completo?'on':''}"></i><i class="${dom.completo?'on':''}"></i></div>`).join('')}</div><div class="be-duo-note">${d.completos} de ${d.domingos.length} domingo${d.domingos.length===1?'':'s'} completo${d.completos===1?'':'s'}</div>`
+      : '<span style="font-size:11px;color:var(--text-tertiary)">Sem domingos com 2 cultos servidos</span>';
+    return `<div class="be-vol-row">
+      <div class="be-vol-who"><div class="avatar ${getNivelClass(d.v.nivel)}">${ini(d.v.nome)}</div><div><div class="be-vol-name">${d.v.nome}</div><div class="be-vol-min">${mins||'—'}</div></div></div>
+      <div>
+        <div class="be-metric-label">Participação no período</div>
+        <div class="be-bar-track"><div class="be-bar-band"></div><div class="be-bar-fill" style="width:${Math.min(100,d.pct)}%;background:${cor}"></div></div>
+        <div class="be-bar-num"><strong>${Math.round(d.pct)}%</strong><span>${d.aceitos} de ${d.total} eventos</span></div>
+      </div>
+      <div><div class="be-metric-label">Cultos combinados</div>${duo}</div>
+      <span class="be-status ${d.zona}">${label}</span>
+    </div>`;
+  }).join('') : '<div class="empty" style="padding:24px"><i class="ti ti-user-off"></i>Nenhum voluntário cadastrado.</div>';
+}
+
+function beToggleBucket(btn) {
+  const wasOpen = btn.classList.contains('open');
+  document.querySelectorAll('#bem-estar-hist .be-hist-col.open').forEach(c => c.classList.remove('open'));
+  if (!wasOpen) btn.classList.add('open');
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('#bem-estar-hist')) document.querySelectorAll('#bem-estar-hist .be-hist-col.open').forEach(c => c.classList.remove('open'));
+});
