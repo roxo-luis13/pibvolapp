@@ -41,15 +41,20 @@ function renderVoluntarios() {
   const tbody = document.getElementById('vol-tbody');
 
   if (!lista.length) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-tertiary)"><i class="ti ti-search" style="font-size:20px;display:block;margin-bottom:8px"></i>Nenhum voluntário encontrado</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:32px;color:var(--text-tertiary)"><i class="ti ti-search" style="font-size:20px;display:block;margin-bottom:8px"></i>Nenhum voluntário encontrado</td></tr>`;
     return;
   }
+
+  const hoje = new Date();
+  const mesIni = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  const mesFim = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0, 23, 59, 59);
 
   // Desktop table
   tbody.innerHTML = lista.map(v => {
     const mins = (v.ministerios||[]).map(id=>{const m=ministerios.find(m=>m.id===id);return m?`<span class="tag ${m.cor}">${m.nome}</span>`:''}).join('');
-    const btns = `<div style="display:flex;gap:4px"><button class="btn sm" title="Ver escala" onclick="verEscalaVoluntario('${v.id}')"><i class="ti ti-calendar-stats"></i></button>${canEdit?`<button class="btn sm" onclick="editVoluntario('${v.id}')"><i class="ti ti-edit"></i></button>`:''} ${canRemove&&v.id!==currentProfile.id?`<button class="btn sm danger" onclick="deleteVol('${v.id}')"><i class="ti ti-trash"></i></button>`:''}</div>`;
-    return `<tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar ${getNivelClass(v.nivel)}" style="width:28px;height:28px;font-size:10px">${ini(v.nome)}</div>${v.nome}</div></td><td style="color:var(--text-secondary)">${v.email}</td><td style="color:var(--text-secondary)">${v.tel||'—'}</td><td>${mins||'—'}</td><td><span class="badge ${getNivelClass(v.nivel)}">${getNivelLabel(v.nivel)}</span></td><td>${btns}</td></tr>`;
+    const assid = calcularAssiduidade(v.id, mesIni, mesFim);
+    const btns = `<div style="display:flex;gap:4px"><button class="btn sm" title="Ver escala" onclick="verEscalaVoluntario('${v.id}')"><i class="ti ti-calendar-stats"></i></button><button class="btn sm" title="Assiduidade" onclick="verAssiduidadeVoluntario('${v.id}')"><i class="ti ti-heart-handshake"></i></button>${canEdit?`<button class="btn sm" onclick="editVoluntario('${v.id}')"><i class="ti ti-edit"></i></button>`:''} ${canRemove&&v.id!==currentProfile.id?`<button class="btn sm danger" onclick="deleteVol('${v.id}')"><i class="ti ti-trash"></i></button>`:''}</div>`;
+    return `<tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar ${getNivelClass(v.nivel)}" style="width:28px;height:28px;font-size:10px">${ini(v.nome)}</div>${v.nome}</div></td><td>${mins||'—'}</td><td>${renderAssiduidadeMini(assid)}</td><td>${btns}</td></tr>`;
   }).join('');
 
   // Mobile cards
@@ -57,10 +62,11 @@ function renderVoluntarios() {
   if (mobileCards) {
     mobileCards.innerHTML = lista.map(v => {
       const mins = (v.ministerios||[]).map(id=>{const m=ministerios.find(m=>m.id===id);return m?`<span class="tag ${m.cor}">${m.nome}</span>`:''}).join('');
-      const nivelLabel = getNivelLabel(v.nivel);
       const nivelClass = getNivelClass(v.nivel);
+      const assid = calcularAssiduidade(v.id, mesIni, mesFim);
       const btns = `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
         <button class="btn sm" onclick="verEscalaVoluntario('${v.id}')"><i class="ti ti-calendar-stats"></i>Escala</button>
+        <button class="btn sm" onclick="verAssiduidadeVoluntario('${v.id}')"><i class="ti ti-heart-handshake"></i>Assiduidade</button>
         ${canEdit?`<button class="btn sm" onclick="editVoluntario('${v.id}')"><i class="ti ti-edit"></i>Editar</button>`:''}
         ${canRemove&&v.id!==currentProfile.id?`<button class="btn sm danger" onclick="deleteVol('${v.id}')"><i class="ti ti-trash"></i>Remover</button>`:''}
       </div>`;
@@ -68,12 +74,8 @@ function renderVoluntarios() {
         <div class="avatar ${nivelClass}" style="width:42px;height:42px;font-size:14px;flex-shrink:0">${ini(v.nome)}</div>
         <div class="vol-card-info">
           <div class="vol-card-nome">${v.nome}${v.id===currentProfile.id?' <span style="font-size:10px;color:var(--purple-text)">(você)</span>':''}</div>
-          <div class="vol-card-email">${v.email}</div>
-          <div class="vol-card-tags">
-            <span class="badge ${nivelClass}" style="margin-right:4px">${nivelLabel}</span>
-            ${mins}
-          </div>
-          ${v.tel?`<div style="font-size:12px;color:var(--text-secondary);margin-top:3px"><i class="ti ti-phone" style="font-size:11px"></i> ${v.tel}</div>`:''}
+          <div class="vol-card-tags">${mins}</div>
+          <div style="margin-top:6px">${renderAssiduidadeMini(assid)}</div>
           ${btns}
         </div>
       </div>`;
@@ -165,6 +167,75 @@ function verEscalaVoluntario(id) {
     </div>`;
   }).join('') : '<div class="empty" style="padding:24px"><i class="ti ti-calendar-off"></i>Nenhum evento futuro para este voluntário.</div>';
   openModal('modal-vol-escala');
+}
+
+// Conta, dentro de um período, quantos convites o voluntário recebeu e como respondeu
+function calcularAssiduidade(volId, dataIni, dataFim) {
+  let aceito = 0, recusado = 0, pendente = 0;
+  eventos.forEach(e => {
+    const d = new Date((e.data_inicio||e.data)+'T00:00:00');
+    if (d < dataIni || d > dataFim) return;
+    const c = (e.convites||[]).find(c=>c.volId===volId);
+    if (!c) return;
+    if (c.status==='aceito') aceito++;
+    else if (c.status==='recusado') recusado++;
+    else pendente++;
+  });
+  return {chamado: aceito+recusado+pendente, aceito, recusado, pendente};
+}
+
+function renderAssiduidadeMini(a) {
+  if (!a.chamado) return '<span style="font-size:11px;color:var(--text-tertiary)">Sem chamados</span>';
+  return `<div style="display:flex;gap:4px;flex-wrap:wrap">
+    <span title="Chamado(s)" style="font-size:10px;font-weight:500;background:var(--bg-tertiary);color:var(--text-secondary);padding:1px 6px;border-radius:3px">${a.chamado} chamado${a.chamado===1?'':'s'}</span>
+    <span title="Aceitou" style="font-size:10px;font-weight:500;background:var(--success-bg);color:var(--success-text);padding:1px 6px;border-radius:3px">${a.aceito} aceito${a.aceito===1?'':'s'}</span>
+    <span title="Recusou" style="font-size:10px;font-weight:500;background:var(--danger-bg);color:var(--danger-text);padding:1px 6px;border-radius:3px">${a.recusado} recusado${a.recusado===1?'':'s'}</span>
+    <span title="Não respondeu" style="font-size:10px;font-weight:500;background:var(--warning-bg);color:var(--warning-text);padding:1px 6px;border-radius:3px">${a.pendente} pendente${a.pendente===1?'':'s'}</span>
+  </div>`;
+}
+
+function verAssiduidadeVoluntario(id) {
+  const v = voluntarios.find(v=>v.id===id); if (!v) return;
+  document.getElementById('modal-vol-assid-title').textContent = `Assiduidade de ${v.nome}`;
+  document.getElementById('modal-vol-assiduidade').dataset.volId = id;
+  const hoje = new Date();
+  const mesIni = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  const mesFim = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0);
+  document.getElementById('assid-data-ini').value = mesIni.toISOString().split('T')[0];
+  document.getElementById('assid-data-fim').value = mesFim.toISOString().split('T')[0];
+  openModal('modal-vol-assiduidade');
+  atualizarAssiduidadePeriodo();
+}
+
+function atualizarAssiduidadePeriodo() {
+  const id = document.getElementById('modal-vol-assiduidade').dataset.volId;
+  const iniStr = document.getElementById('assid-data-ini').value;
+  const fimStr = document.getElementById('assid-data-fim').value;
+  const content = document.getElementById('modal-vol-assid-content');
+  if (!id || !iniStr || !fimStr) { content.innerHTML = ''; return; }
+  const dataIni = new Date(iniStr+'T00:00:00');
+  const dataFim = new Date(fimStr+'T23:59:59');
+  if (dataIni > dataFim) { content.innerHTML = '<p style="font-size:12px;color:var(--danger-text)">A data de início não pode ser depois da data de fim.</p>'; return; }
+  const a = calcularAssiduidade(id, dataIni, dataFim);
+  content.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+      <div style="background:var(--bg-tertiary);border-radius:var(--radius);padding:14px;text-align:center">
+        <h3 style="font-size:22px;font-weight:600;color:var(--text-primary)">${a.chamado}</h3>
+        <p style="font-size:11px;color:var(--text-secondary);margin-top:2px">Chamado(s)</p>
+      </div>
+      <div style="background:var(--success-bg);border-radius:var(--radius);padding:14px;text-align:center">
+        <h3 style="font-size:22px;font-weight:600;color:var(--success-text)">${a.aceito}</h3>
+        <p style="font-size:11px;color:var(--success-text);margin-top:2px">Aceito(s)</p>
+      </div>
+      <div style="background:var(--danger-bg);border-radius:var(--radius);padding:14px;text-align:center">
+        <h3 style="font-size:22px;font-weight:600;color:var(--danger-text)">${a.recusado}</h3>
+        <p style="font-size:11px;color:var(--danger-text);margin-top:2px">Recusado(s)</p>
+      </div>
+      <div style="background:var(--warning-bg);border-radius:var(--radius);padding:14px;text-align:center">
+        <h3 style="font-size:22px;font-weight:600;color:var(--warning-text)">${a.pendente}</h3>
+        <p style="font-size:11px;color:var(--warning-text);margin-top:2px">Não respondido(s)</p>
+      </div>
+    </div>`;
 }
 
 async function deleteVol(id) {
