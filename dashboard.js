@@ -79,7 +79,7 @@ function renderDashboard() {
     return `<div onclick="abrirDetalheEvDash('${e.id}')" style="display:flex;gap:10px;padding:10px 6px;border-bottom:0.5px solid var(--border);align-items:center;cursor:pointer;border-radius:var(--radius);margin:0 -6px;transition:background .15s" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='transparent'">
       <div style="background:var(--purple-bg);color:var(--purple-text);border-radius:var(--radius);padding:3px 8px;font-size:11px;font-weight:500;white-space:nowrap;flex-shrink:0;text-align:center">${dIni}${dFim}</div>
       <div style="flex:1;min-width:0">
-        <p style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.nome}${e.live?' <span style="font-size:10px;background:var(--coral-bg);color:var(--coral-text);padding:1px 5px;border-radius:3px">LIVE</span>':''}</p>
+        <p style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.nome}${e.live?' <span style="font-size:10px;background:var(--coral-bg);color:var(--coral-text);padding:1px 5px;border-radius:3px">LIVE</span>':''}${e.som?' <span style="font-size:10px;background:var(--blue-bg);color:var(--blue-text);padding:1px 5px;border-radius:3px">SOM</span>':''}</p>
         <p style="font-size:11px;color:var(--text-secondary)">${e.hora||''}${mins?' · '+mins:''}</p>
       </div>
       <i class="ti ti-chevron-right" style="color:var(--text-tertiary);flex-shrink:0;font-size:14px"></i>
@@ -125,7 +125,7 @@ function abrirDetalheEvDash(evId) {
   const volsPorMin = buildVolsPorMin(ev);
   document.getElementById('modal-dash-evento-content').innerHTML = `
     <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
-      <div><h2 style="font-size:16px;font-weight:500;margin-bottom:4px">${ev.nome}${ev.live?' <span style="font-size:10px;background:var(--coral-bg);color:var(--coral-text);padding:2px 7px;border-radius:4px">LIVE</span>':''}</h2><p style="font-size:13px;color:var(--text-secondary)">${ds} · ${ev.hora||''}</p></div>
+      <div><h2 style="font-size:16px;font-weight:500;margin-bottom:4px">${ev.nome}${ev.live?' <span style="font-size:10px;background:var(--coral-bg);color:var(--coral-text);padding:2px 7px;border-radius:4px">LIVE</span>':''}${ev.som?' <span style="font-size:10px;background:var(--blue-bg);color:var(--blue-text);padding:2px 7px;border-radius:4px">SOM</span>':''}</h2><p style="font-size:13px;color:var(--text-secondary)">${ds} · ${ev.hora||''}</p></div>
       <span style="font-size:11px;font-weight:500;padding:4px 10px;border-radius:var(--radius);background:${diff<=1?'var(--coral-bg)':'var(--purple-bg)'};color:${diff<=1?'var(--coral-text)':'var(--purple-text)'};white-space:nowrap;margin-left:10px">${diffTxt}</span>
     </div>
     ${ev.descricao?`<div style="margin-bottom:14px">
