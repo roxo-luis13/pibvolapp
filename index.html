@@ -262,6 +262,45 @@
       </div>
 
       <div class="section" id="section-voluntarios">
+        <div class="card be-band-color" style="margin-bottom:12px">
+          <div class="be-head">
+            <div>
+              <h3>Bem-estar do voluntariado</h3>
+              <div class="be-head-sub" id="bem-estar-info">—</div>
+            </div>
+            <div class="be-periodo">
+              <label>De<br><input id="bem-estar-data-ini" type="date" onchange="renderBemEstar()"></label>
+              <label>Até<br><input id="bem-estar-data-fim" type="date" onchange="renderBemEstar()"></label>
+            </div>
+          </div>
+
+          <div class="be-kpi-row" id="bem-estar-kpis"></div>
+
+          <div class="be-hist-wrap">
+            <div class="be-hist-plot" id="bem-estar-hist">
+              <div class="be-hist-band"></div>
+              <div class="be-hist-band-label">meta</div>
+            </div>
+            <div class="be-hist-baseline"></div>
+            <div class="be-hist-axis" id="bem-estar-axis"></div>
+            <p style="font-size:11px;color:var(--text-tertiary);margin-top:10px;text-align:center">voluntários por faixa de participação no período · clique numa coluna para ver os nomes</p>
+          </div>
+
+          <div class="be-legend">
+            <div class="be-legend-item"><span class="be-legend-dot" style="background:var(--warning-text)"></span>Abaixo da meta — risco de desengajamento</div>
+            <div class="be-legend-item"><span class="be-legend-dot" style="background:var(--success-text)"></span>Na meta (20–30%)</div>
+            <div class="be-legend-item"><span class="be-legend-dot" style="background:var(--danger-text)"></span>Acima da meta — risco de esgotamento</div>
+          </div>
+        </div>
+
+        <div class="card be-band-color" style="margin-bottom:12px">
+          <div class="be-head" style="margin-bottom:8px">
+            <div><h3>Por voluntário</h3></div>
+            <span style="font-size:12px;color:var(--text-tertiary)">cada quadrado = um domingo com 2 cultos servido · claro/escuro = culto único/completo</span>
+          </div>
+          <div class="be-vol-list" id="bem-estar-lista"></div>
+        </div>
+
         <div class="card">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
             <input id="vol-busca" type="text" placeholder="Buscar por nome, email ou telefone..." oninput="renderVoluntarios()" style="flex:1;min-width:180px;padding:7px 12px;border:0.5px solid var(--border-md);border-radius:var(--radius);font-size:13px;background:var(--bg-primary);color:var(--text-primary);font-family:inherit">
