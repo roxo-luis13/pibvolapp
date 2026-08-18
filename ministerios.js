@@ -70,14 +70,14 @@ function renderMinisterios() {
         ${lider ? `<div class="grupo-lider"><i class="ti ti-crown" style="font-size:10px;color:var(--amber-text)"></i> ${lider.nome}</div>` : ''}
         ${g.descricao ? `<div style="font-size:11px;color:var(--text-tertiary);margin-top:1px">${g.descricao}</div>` : ''}
       </div>
-      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+      <div class="grupo-trailing">
         <span class="grupo-count">${mins.length} ministério(s)</span>
         <i class="ti ti-chevron-down grupo-chevron" id="grupo-chevron-${g.id}" style="font-size:16px;color:var(--text-tertiary);transition:transform .2s;${collapsed?'transform:rotate(-90deg)':''}"></i>
+        ${isAdmin ? `<div class="grupo-actions" onclick="event.stopPropagation()">
+          <button class="btn sm" onclick="editGrupo('${g.id}')"><i class="ti ti-edit"></i></button>
+          <button class="btn sm danger" onclick="deleteGrupo('${g.id}')"><i class="ti ti-trash"></i></button>
+        </div>` : ''}
       </div>
-      ${isAdmin ? `<div class="grupo-actions" onclick="event.stopPropagation()">
-        <button class="btn sm" onclick="editGrupo('${g.id}')"><i class="ti ti-edit"></i></button>
-        <button class="btn sm danger" onclick="deleteGrupo('${g.id}')"><i class="ti ti-trash"></i></button>
-      </div>` : ''}
     </div>
     <div class="grid-3 grupo-grid" id="grupo-grid-${g.id}" style="${collapsed?'display:none':''}"></div>`;
     gruposContainer.appendChild(grupoEl);
