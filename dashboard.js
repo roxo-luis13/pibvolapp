@@ -33,10 +33,18 @@ function renderDashboard() {
   document.getElementById('m-min').textContent = qtdMeusMin;
   document.getElementById('m-min-total').textContent = ministerios.length;
 
-  // Eventos: quantidade em que o usuário está inscrito vs total da igreja
-  const meusEventos = eventos.filter(e=>(e.inscritos||[]).some(i=>i.volId===currentProfile.id));
+  // Eventos: quantidade em que o usuário está inscrito vs total da igreja, no mês vigente
+  const agora = new Date();
+  const mesAtualIni = new Date(agora.getFullYear(), agora.getMonth(), 1);
+  const mesAtualFim = new Date(agora.getFullYear(), agora.getMonth()+1, 0, 23, 59, 59);
+  const eventosMes = eventos.filter(e => {
+    const dIni = new Date((e.data_inicio||e.data)+'T00:00:00');
+    const dFim = new Date((e.data_fim||e.data_inicio||e.data)+'T23:59:59');
+    return dFim >= mesAtualIni && dIni <= mesAtualFim;
+  });
+  const meusEventos = eventosMes.filter(e=>(e.inscritos||[]).some(i=>i.volId===currentProfile.id));
   document.getElementById('m-ev').textContent = meusEventos.length;
-  document.getElementById('m-ev-total').textContent = eventos.length;
+  document.getElementById('m-ev-total').textContent = eventosMes.length;
   document.getElementById('dash-min-count').textContent = ministerios.length + ' ativos';
   const ml = document.getElementById('dash-ministerios-list');
   const vMin = ministerios.filter(m => canAccess(m.id));
