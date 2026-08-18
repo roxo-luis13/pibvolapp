@@ -53,7 +53,7 @@ function renderVoluntarios() {
   tbody.innerHTML = lista.map(v => {
     const mins = (v.ministerios||[]).map(id=>{const m=ministerios.find(m=>m.id===id);return m?`<span class="tag ${m.cor}">${m.nome}</span>`:''}).join('');
     const assid = calcularAssiduidade(v.id, mesIni, mesFim);
-    const btns = `<div style="display:flex;gap:4px"><button class="btn sm" title="Ver escala" onclick="verEscalaVoluntario('${v.id}')"><i class="ti ti-calendar-stats"></i></button><button class="btn sm" title="Assiduidade" onclick="verAssiduidadeVoluntario('${v.id}')"><i class="ti ti-heart-handshake"></i></button>${canEdit?`<button class="btn sm" onclick="editVoluntario('${v.id}')"><i class="ti ti-edit"></i></button>`:''} ${canRemove&&v.id!==currentProfile.id?`<button class="btn sm danger" onclick="deleteVol('${v.id}')"><i class="ti ti-trash"></i></button>`:''}</div>`;
+    const btns = `<div style="display:flex;gap:4px"><button class="btn sm" title="Visualizar" onclick="verContatoVoluntario('${v.id}')"><i class="ti ti-eye"></i></button><button class="btn sm" title="Ver escala" onclick="verEscalaVoluntario('${v.id}')"><i class="ti ti-calendar-stats"></i></button><button class="btn sm" title="Assiduidade" onclick="verAssiduidadeVoluntario('${v.id}')"><i class="ti ti-heart-handshake"></i></button>${canEdit?`<button class="btn sm" onclick="editVoluntario('${v.id}')"><i class="ti ti-edit"></i></button>`:''} ${canRemove&&v.id!==currentProfile.id?`<button class="btn sm danger" onclick="deleteVol('${v.id}')"><i class="ti ti-trash"></i></button>`:''}</div>`;
     return `<tr><td><div style="display:flex;align-items:center;gap:8px"><div class="avatar ${getNivelClass(v.nivel)}" style="width:28px;height:28px;font-size:10px">${ini(v.nome)}</div>${v.nome}</div></td><td>${mins||'—'}</td><td>${renderAssiduidadeMini(assid)}</td><td>${btns}</td></tr>`;
   }).join('');
 
@@ -65,6 +65,7 @@ function renderVoluntarios() {
       const nivelClass = getNivelClass(v.nivel);
       const assid = calcularAssiduidade(v.id, mesIni, mesFim);
       const btns = `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+        <button class="btn sm" onclick="verContatoVoluntario('${v.id}')"><i class="ti ti-eye"></i>Visualizar</button>
         <button class="btn sm" onclick="verEscalaVoluntario('${v.id}')"><i class="ti ti-calendar-stats"></i>Escala</button>
         <button class="btn sm" onclick="verAssiduidadeVoluntario('${v.id}')"><i class="ti ti-heart-handshake"></i>Assiduidade</button>
         ${canEdit?`<button class="btn sm" onclick="editVoluntario('${v.id}')"><i class="ti ti-edit"></i>Editar</button>`:''}
@@ -167,6 +168,18 @@ function verEscalaVoluntario(id) {
     </div>`;
   }).join('') : '<div class="empty" style="padding:24px"><i class="ti ti-calendar-off"></i>Nenhum evento futuro para este voluntário.</div>';
   openModal('modal-vol-escala');
+}
+
+function verContatoVoluntario(id) {
+  const v = voluntarios.find(v=>v.id===id); if (!v) return;
+  document.getElementById('modal-vol-contato-title').textContent = v.nome;
+  document.getElementById('modal-vol-contato-content').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div><p style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.3px">Email</p><p style="font-size:14px;margin-top:2px">${v.email}</p></div>
+      <div><p style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.3px">Telefone</p><p style="font-size:14px;margin-top:2px">${v.tel||'—'}</p></div>
+      <div><p style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.3px">Nível</p><p style="font-size:14px;margin-top:2px"><span class="badge ${getNivelClass(v.nivel)}">${getNivelLabel(v.nivel)}</span></p></div>
+    </div>`;
+  openModal('modal-vol-contato');
 }
 
 // Conta, dentro de um período, quantos convites o voluntário recebeu e como respondeu
