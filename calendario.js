@@ -383,6 +383,10 @@ async function responderConviteEvento(notifId, evId, resposta) {
             await notificarLiderConfirmacao(ev, minsDoEvento[0]);
           } else if (minsDoEvento.length>1) {
             precisaEscolherEquipe = true;
+          } else {
+            // Chamado avulso: não pertence a nenhum dos ministérios convocados deste evento
+            ev.inscritos = ev.inscritos||[];
+            ev.inscritos.push({volId:currentProfile.id, minId:null});
           }
         }
         await sb(`eventos?id=eq.${evId}`, {method:'PATCH', body:JSON.stringify({convites:ev.convites, inscritos:ev.inscritos})});
