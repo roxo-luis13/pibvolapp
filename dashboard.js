@@ -134,7 +134,7 @@ function abrirDetalheEvDash(evId) {
     </div>`:''}
     ${ev.arquivo_url ? buildArquivoHtml(ev.arquivo_url, ev.arquivo_nome, ev.arquivo_tipo) : ''}
     ${ev.banda?`<div style="background:var(--amber-bg);border-radius:var(--radius);padding:10px 12px;margin-bottom:14px"><p style="font-size:11px;font-weight:500;color:var(--amber-text);margin-bottom:3px"><i class="ti ti-music"></i> FORMAÇÃO DA BANDA</p><p style="font-size:13px;white-space:pre-wrap">${ev.banda}</p></div>`:''}
-    ${min?`<div style="background:var(--success-bg);color:var(--success-text);border-radius:var(--radius);padding:10px 14px;font-size:13px;margin-bottom:14px"><i class="ti ti-check" style="margin-right:6px"></i>Você servirá no ministério <strong>${min.nome}</strong></div>`:''}
+    ${insc?`<div style="background:var(--success-bg);color:var(--success-text);border-radius:var(--radius);padding:10px 14px;font-size:13px;margin-bottom:14px"><i class="ti ti-check" style="margin-right:6px"></i>${min?`Você servirá no ministério <strong>${min.nome}</strong>`:'Você está confirmado neste evento'}</div>`:''}
     <p style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:10px;text-transform:uppercase;letter-spacing:.3px">Equipe confirmada</p>
     ${volsPorMin}`;
   document.getElementById('modal-dash-evento').dataset.evId = evId;
@@ -149,8 +149,25 @@ function irParaCalendario() {
   setTimeout(() => showEventDetail(evId), 100);
 }
 
+function buildLinhaVolConfirmado(v) {
+  return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0">
+    <div class="avatar ${getNivelClass(v.nivel)}" style="width:24px;height:24px;font-size:9px;flex-shrink:0">${ini(v.nome)}</div>
+    <span style="font-size:12px;flex:1">${v.nome}${v.id===currentProfile.id?' <strong>(você)</strong>':''}</span>
+    <span style="font-size:10px;background:var(--success-bg);color:var(--success-text);padding:1px 6px;border-radius:3px">✓ Confirmado</span>
+  </div>`;
+}
+
+function buildLinhaVolPendente(v) {
+  return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;opacity:.7">
+    <div class="avatar voluntario" style="width:24px;height:24px;font-size:9px;flex-shrink:0">${ini(v.nome)}</div>
+    <span style="font-size:12px;flex:1">${v.nome}</span>
+    <span style="font-size:10px;background:var(--warning-bg);color:var(--warning-text);padding:1px 6px;border-radius:3px">⏳ Pendente</span>
+  </div>`;
+}
+
 function buildVolsPorMin(ev) {
-  return (ev.ministerios||[]).map(mid => {
+  const minIds = ev.ministerios||[];
+  const blocos = minIds.map(mid => {
     const m = ministerios.find(m=>m.id===mid); if (!m) return '';
     const inscritos = (ev.inscritos||[]).filter(i=>i.minId===mid);
     // Pendentes: convidados que ainda não responderam ou aceitaram mas não estão em inscritos
@@ -161,22 +178,8 @@ function buildVolsPorMin(ev) {
       // Verificar se o voluntário pertence a este ministério
       return (v.ministerios||[]).includes(mid);
     });
-    const rows = inscritos.map(i => {
-      const v = voluntarios.find(v=>v.id===i.volId);
-      return v ? `<div style="display:flex;align-items:center;gap:8px;padding:5px 0">
-        <div class="avatar ${getNivelClass(v.nivel)}" style="width:24px;height:24px;font-size:9px;flex-shrink:0">${ini(v.nome)}</div>
-        <span style="font-size:12px;flex:1">${v.nome}${v.id===currentProfile.id?' <strong>(você)</strong>':''}</span>
-        <span style="font-size:10px;background:var(--success-bg);color:var(--success-text);padding:1px 6px;border-radius:3px">✓ Confirmado</span>
-      </div>` : '';
-    }).join('');
-    const rowsPend = pendentes.map(c => {
-      const v = voluntarios.find(v=>v.id===c.volId);
-      return v ? `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;opacity:.7">
-        <div class="avatar voluntario" style="width:24px;height:24px;font-size:9px;flex-shrink:0">${ini(v.nome)}</div>
-        <span style="font-size:12px;flex:1">${v.nome}</span>
-        <span style="font-size:10px;background:var(--warning-bg);color:var(--warning-text);padding:1px 6px;border-radius:3px">⏳ Pendente</span>
-      </div>` : '';
-    }).join('');
+    const rows = inscritos.map(i => { const v = voluntarios.find(v=>v.id===i.volId); return v ? buildLinhaVolConfirmado(v) : ''; }).join('');
+    const rowsPend = pendentes.map(c => { const v = voluntarios.find(v=>v.id===c.volId); return v ? buildLinhaVolPendente(v) : ''; }).join('');
     const totalLabel = `${inscritos.length} confirmado(s)${pendentes.length>0?' · '+pendentes.length+' pendente(s)':''}`;
     return `<div style="margin-bottom:12px">
       <div style="display:flex;align-items:center;gap:6px;background:var(--bg-secondary);border-radius:var(--radius);padding:7px 10px;margin-bottom:4px">
@@ -187,7 +190,31 @@ function buildVolsPorMin(ev) {
       ${rows||''}${rowsPend||''}
       ${!rows&&!rowsPend?'<p style="font-size:11px;color:var(--text-tertiary);padding-left:4px">Nenhum inscrito</p>':''}
     </div>`;
-  }).join('');
+  });
+
+  // Convidados avulsos: chamados para o evento sem pertencer a nenhum dos ministérios convocados
+  const inscritosAvulsos = (ev.inscritos||[]).filter(i => !minIds.includes(i.minId));
+  const pendentesAvulsos = (ev.convites||[]).filter(c => {
+    if (c.status !== 'pendente') return false;
+    const v = voluntarios.find(v=>v.id===c.volId);
+    if (!v) return false;
+    return !(v.ministerios||[]).some(mid=>minIds.includes(mid));
+  });
+  if (inscritosAvulsos.length || pendentesAvulsos.length) {
+    const rows = inscritosAvulsos.map(i => { const v = voluntarios.find(v=>v.id===i.volId); return v ? buildLinhaVolConfirmado(v) : ''; }).join('');
+    const rowsPend = pendentesAvulsos.map(c => { const v = voluntarios.find(v=>v.id===c.volId); return v ? buildLinhaVolPendente(v) : ''; }).join('');
+    const totalLabel = `${inscritosAvulsos.length} confirmado(s)${pendentesAvulsos.length>0?' · '+pendentesAvulsos.length+' pendente(s)':''}`;
+    blocos.push(`<div style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:6px;background:var(--bg-secondary);border-radius:var(--radius);padding:7px 10px;margin-bottom:4px">
+        <span><i class="ti ti-user-plus" style="font-size:13px;color:var(--text-secondary)"></i></span>
+        <span style="font-size:12px;font-weight:500;color:var(--text-secondary)">Convidados avulsos</span>
+        <span style="font-size:11px;color:var(--text-tertiary);margin-left:auto">${totalLabel}</span>
+      </div>
+      ${rows}${rowsPend}
+    </div>`);
+  }
+
+  return blocos.join('');
 }
 
 

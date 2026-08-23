@@ -140,6 +140,9 @@ async function responderConvite(notifId, evId, resposta) {
           await notificarLiderConfirmacao(ev, minsDoEvento[0]);
         } else if (minsDoEvento.length>1) {
           precisaEscolherEquipe = true; // pertence a mais de uma equipe do evento — não escolher por ele
+        } else {
+          // Chamado avulso: não pertence a nenhum dos ministérios convocados deste evento
+          inscritos.push({volId:currentProfile.id,minId:null});
         }
       }
     } else { inscritos = inscritos.filter(i=>i.volId!==currentProfile.id); }
