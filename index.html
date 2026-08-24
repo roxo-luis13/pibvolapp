@@ -319,6 +319,23 @@
       </div>
 
       <div class="section" id="section-eventos">
+        <!-- Presença -->
+        <div class="card" style="margin-bottom:12px">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:12px">
+            <h3 style="font-size:14px;font-weight:500">Presença</h3>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+              <label style="display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--text-secondary)">De<input id="presenca-data-ini" type="date" onchange="renderRelatorioPresenca()" style="padding:6px 9px;border:0.5px solid var(--border-md);border-radius:var(--radius);font-size:12px;background:var(--bg-primary);color:var(--text-primary);font-family:inherit"></label>
+              <label style="display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--text-secondary)">Até<input id="presenca-data-fim" type="date" onchange="renderRelatorioPresenca()" style="padding:6px 9px;border:0.5px solid var(--border-md);border-radius:var(--radius);font-size:12px;background:var(--bg-primary);color:var(--text-primary);font-family:inherit"></label>
+              <select id="presenca-turno" onchange="renderRelatorioPresenca()" style="padding:7px 9px;border:0.5px solid var(--border-md);border-radius:var(--radius);font-size:12px;background:var(--bg-primary);color:var(--text-primary);font-family:inherit">
+                <option value="">Todos os turnos</option>
+                <option value="manha">Culto Manhã</option>
+                <option value="noite">Culto Noite</option>
+              </select>
+            </div>
+          </div>
+          <div id="presenca-resultado"></div>
+        </div>
+
         <!-- Eventos deste mês -->
         <div class="card" style="margin-bottom:12px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
@@ -326,7 +343,7 @@
             <span id="ev-mes-count" style="font-size:12px;color:var(--text-secondary)"></span>
           </div>
           <div class="table-wrap">
-            <table><thead><tr><th>Evento</th><th>Data</th><th>Recursos</th><th>Local</th><th>Ministérios</th><th>Inscritos</th><th></th></tr></thead>
+            <table><thead><tr><th>Evento</th><th>Data</th><th>Recursos</th><th>Local</th><th>Ministérios</th><th>Inscritos</th><th>Presença</th><th></th></tr></thead>
             <tbody id="ev-tbody-mes"></tbody></table>
           </div>
           <div class="ev-cards-mobile" id="ev-cards-mes"></div>
@@ -343,7 +360,7 @@
           </div>
           <div id="ev-passados-body" style="display:none;margin-top:12px">
             <div class="table-wrap">
-              <table><thead><tr><th>Evento</th><th>Data</th><th>Recursos</th><th>Local</th><th>Ministérios</th><th>Inscritos</th><th></th></tr></thead>
+              <table><thead><tr><th>Evento</th><th>Data</th><th>Recursos</th><th>Local</th><th>Ministérios</th><th>Inscritos</th><th>Presença</th><th></th></tr></thead>
               <tbody id="ev-tbody-passados"></tbody></table>
             </div>
           </div>
@@ -359,7 +376,7 @@
           </div>
           <div id="ev-futuros-body" style="display:none;margin-top:12px">
             <div class="table-wrap">
-              <table><thead><tr><th>Evento</th><th>Data</th><th>Recursos</th><th>Local</th><th>Ministérios</th><th>Inscritos</th><th></th></tr></thead>
+              <table><thead><tr><th>Evento</th><th>Data</th><th>Recursos</th><th>Local</th><th>Ministérios</th><th>Inscritos</th><th>Presença</th><th></th></tr></thead>
               <tbody id="ev-tbody-futuros"></tbody></table>
             </div>
           </div>
@@ -586,6 +603,14 @@ Bateria: Pedro..." style="min-height:80px"></textarea></div>
       <label>Convidar voluntários</label>
       <p style="font-size:11px;color:var(--text-secondary);margin-bottom:6px">Os selecionados receberão um convite para aceitar ou recusar.</p>
       <div id="ev-convidar-lista" style="max-height:180px;overflow-y:auto;border:0.5px solid var(--border);border-radius:var(--radius);padding:4px"></div>
+    </div>
+    <div id="ev-presenca-secao" style="display:none">
+      <hr style="margin:0 0 16px 0">
+      <p style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:10px;text-transform:uppercase;letter-spacing:.3px">Presença (após o evento)</p>
+      <div class="grid-2" style="gap:12px">
+        <div class="form-group"><label>Presencial</label><input id="ev-presencial" type="number" min="0" placeholder="0"></div>
+        <div class="form-group"><label>YouTube</label><input id="ev-youtube" type="number" min="0" placeholder="0"></div>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="closeModal('modal-ev')">Cancelar</button>

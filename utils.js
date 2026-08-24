@@ -24,6 +24,14 @@ function openModal(id, modoEdicao) {
       setTimeout(()=>atualizarDiasEvento(), 50);
       populateChips('ev-ministerios-chips');
       renderConvidarLista([]);
+      const presencaSecao = document.getElementById('ev-presenca-secao');
+      if (nivelPodeRegistrarPresenca(getNivelAtivo())) {
+        presencaSecao.style.display = '';
+        document.getElementById('ev-presencial').value = '';
+        document.getElementById('ev-youtube').value = '';
+      } else {
+        presencaSecao.style.display = 'none';
+      }
     }
   }
   document.getElementById(id).classList.add('open');
