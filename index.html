@@ -557,24 +557,14 @@
 
     <hr style="margin:16px 0">
     <p style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:10px;text-transform:uppercase;letter-spacing:.3px">Estrutura e local</p>
-    <div class="grid-2" style="gap:12px">
-      <div class="form-group">
-        <label>Local *</label>
-        <select id="ev-local">
-          <option value="">— Nenhum local definido —</option>
-          <option value="salao_principal">Salão Principal</option>
-          <option value="multiuso">Multiuso</option>
-          <option value="quadra">Quadra</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Turno</label>
-        <select id="ev-turno">
-          <option value="">— Nenhum —</option>
-          <option value="manha">Culto Manhã</option>
-          <option value="noite">Culto Noite</option>
-        </select>
-      </div>
+    <div class="form-group">
+      <label>Local *</label>
+      <select id="ev-local">
+        <option value="">— Nenhum local definido —</option>
+        <option value="salao_principal">Salão Principal</option>
+        <option value="multiuso">Multiuso</option>
+        <option value="quadra">Quadra</option>
+      </select>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
       <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:0.5px solid var(--border-md);border-radius:var(--radius);cursor:pointer;flex:1;min-width:140px">
@@ -614,24 +604,17 @@ Bateria: Pedro..." style="min-height:80px"></textarea></div>
       <p style="font-size:11px;color:var(--text-secondary);margin-bottom:6px">Os selecionados receberão um convite para aceitar ou recusar.</p>
       <div id="ev-convidar-lista" style="max-height:180px;overflow-y:auto;border:0.5px solid var(--border);border-radius:var(--radius);padding:4px"></div>
     </div>
+    <div id="ev-presenca-secao" style="display:none">
+      <hr style="margin:0 0 16px 0">
+      <p style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:10px;text-transform:uppercase;letter-spacing:.3px">Presença (após o evento)</p>
+      <div class="grid-2" style="gap:12px">
+        <div class="form-group"><label>Presencial</label><input id="ev-presencial" type="number" min="0" placeholder="0"></div>
+        <div class="form-group"><label>YouTube</label><input id="ev-youtube" type="number" min="0" placeholder="0"></div>
+      </div>
+    </div>
     <div class="modal-footer">
       <button class="btn" onclick="closeModal('modal-ev')">Cancelar</button>
       <button class="btn primary" onclick="saveEvento()" id="btn-save-ev">Salvar</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-backdrop" id="modal-presenca">
-  <div class="modal" style="max-width:400px">
-    <h2 id="modal-presenca-title">Registrar presença</h2>
-    <p style="font-size:12px;color:var(--text-secondary);margin-top:4px">Quantidade de pessoas ao fim do evento.</p>
-    <div class="grid-2" style="gap:12px;margin-top:14px">
-      <div class="form-group" style="margin-bottom:0"><label>Presencial</label><input id="presenca-presencial" type="number" min="0" placeholder="0"></div>
-      <div class="form-group" style="margin-bottom:0"><label>YouTube</label><input id="presenca-youtube" type="number" min="0" placeholder="0"></div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn" onclick="closeModal('modal-presenca')">Cancelar</button>
-      <button class="btn primary" onclick="salvarPresenca()" id="btn-save-presenca">Salvar</button>
     </div>
   </div>
 </div>
