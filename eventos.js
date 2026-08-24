@@ -65,11 +65,16 @@ function buildArquivoHtml(url, nome, tipo) {
   </div>`;
 }
 
+function textoPresenca(e) {
+  return (e.presencial==null && e.youtube==null) ? '—' : `${e.presencial ?? 0} · ${e.youtube ?? 0}`;
+}
+
 function buildEvRow(e) {
   const nav = getNivelAtivo();
   const podeCriar = perm(nav,'pode_criar_eventos');
   const podeEditar = perm(nav,'pode_editar_eventos');
   const podeExcluir = perm(nav,'pode_excluir_eventos');
+  const podePresenca = nivelPodeRegistrarPresenca(nav);
   const dIni = new Date((e.data_inicio||e.data)+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
   const dFim = e.data_fim && e.data_fim!==(e.data_inicio||e.data) ? ' — '+new Date(e.data_fim+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}) : '';
   const badges = [
@@ -77,7 +82,8 @@ function buildEvRow(e) {
     e.som?'<span style="font-size:10px;background:var(--blue-bg);color:var(--blue-text);padding:1px 5px;border-radius:3px">SOM</span>':''
   ].filter(Boolean).join(' ')||'—';
   const mins = (e.ministerios||[]).map(id=>{const m=ministerios.find(m=>m.id===id);return m?`<span class="tag ${m.cor}">${m.nome}</span>`:''}).join('');
-  const btns = (podeEditar||podeExcluir) ? `<div style="display:flex;gap:4px">
+  const btns = (podeEditar||podeExcluir||podePresenca) ? `<div style="display:flex;gap:4px">
+    ${podePresenca?`<button class="btn sm" title="Registrar presença" onclick="abrirPresencaEvento('${e.id}')"><i class="ti ti-users"></i></button>`:''}
     ${podeEditar?`<button class="btn sm" onclick="editEvento('${e.id}')"><i class="ti ti-edit"></i></button>`:''}
     ${podeExcluir?`<button class="btn sm danger" onclick="deleteEv('${e.id}')"><i class="ti ti-trash"></i></button>`:''}
   </div>` : '';
@@ -88,6 +94,7 @@ function buildEvRow(e) {
     <td style="color:var(--text-secondary)">${e.local?LOCAIS[e.local]||e.local:'—'}</td>
     <td>${mins}</td>
     <td>${(e.inscritos||[]).length}</td>
+    <td style="color:var(--text-secondary);white-space:nowrap" title="Presencial · YouTube">${textoPresenca(e)}</td>
     <td>${btns}</td>
   </tr>`;
 }
@@ -97,6 +104,7 @@ function buildEvCard(e) {
   const nav = getNivelAtivo();
   const podeEditar = perm(nav,'pode_editar_eventos');
   const podeCriar = perm(nav,'pode_criar_eventos');
+  const podePresenca = nivelPodeRegistrarPresenca(nav);
   const ini = e.data_inicio||e.data;
   const fim = e.data_fim||ini;
   const dIni = new Date(ini+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'});
@@ -110,7 +118,8 @@ function buildEvCard(e) {
     e.local?`<span style="font-size:10px;background:var(--bg-secondary);color:var(--text-secondary);padding:1px 6px;border-radius:3px">${LOCAIS[e.local]||e.local}</span>`:'',
     inscrito?`<span style="font-size:10px;background:var(--success-bg);color:var(--success-text);padding:1px 6px;border-radius:3px">✓ Inscrito</span>`:'',
   ].filter(Boolean).join('');
-  const btns = (podeEditar||podeCriar) ? `<div style="display:flex;gap:6px">
+  const btns = (podeEditar||podeCriar||podePresenca) ? `<div style="display:flex;gap:6px;flex-wrap:wrap">
+    ${podePresenca?`<button class="btn sm" onclick="abrirPresencaEvento('${e.id}')"><i class="ti ti-users"></i>Presença</button>`:''}
     ${podeEditar?`<button class="btn sm" onclick="editEvento('${e.id}')"><i class="ti ti-edit"></i>Editar</button>`:''}
     ${podeCriar?`<button class="btn sm danger" onclick="deleteEv('${e.id}')"><i class="ti ti-trash"></i></button>`:''}
   </div>` : '';
@@ -123,7 +132,7 @@ function buildEvCard(e) {
     <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">${badges}</div>
     <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:10px">${mins}</div>
     <div class="ev-card-footer">
-      <span style="font-size:12px;color:var(--text-secondary)"><i class="ti ti-users" style="font-size:12px"></i> ${(e.inscritos||[]).length} inscritos</span>
+      <span style="font-size:12px;color:var(--text-secondary)"><i class="ti ti-users" style="font-size:12px"></i> ${(e.inscritos||[]).length} inscritos${(e.presencial!=null||e.youtube!=null)?` · Presença: ${textoPresenca(e)}`:''}</span>
       ${btns}
     </div>
   </div>`;
@@ -138,6 +147,7 @@ function toggleSecaoEv(tipo) {
 }
 
 function renderEventos() {
+  renderRelatorioPresenca();
   const now = new Date();
   const mesAtual = now.getMonth();
   const anoAtual = now.getFullYear();
@@ -198,6 +208,7 @@ function editEvento(id) {
   document.getElementById('ev-live').checked = !!e.live;
   document.getElementById('ev-som').checked = !!e.som;
   document.getElementById('ev-local').value = e.local||'';
+  document.getElementById('ev-turno').value = e.turno||'';
   atualizarDiasEvento();
   // Restore saved day schedules
 
@@ -287,7 +298,7 @@ async function saveEvento() {
         const up = await uploadArquivoEvento(arquivoFile, editId);
         arquivo_url = up.url; arquivo_nome = up.nome; arquivo_tipo = up.tipo;
       }
-      const dados = {nome,data:data_inicio,data_inicio,data_fim:data_fim||null,hora,dias_horarios,descricao:document.getElementById('ev-desc').value.trim(),banda,live:document.getElementById('ev-live').checked,som:document.getElementById('ev-som').checked,local:document.getElementById('ev-local').value,ministerios:mins,convites,arquivo_url,arquivo_nome,arquivo_tipo};
+      const dados = {nome,data:data_inicio,data_inicio,data_fim:data_fim||null,hora,dias_horarios,descricao:document.getElementById('ev-desc').value.trim(),banda,live:document.getElementById('ev-live').checked,som:document.getElementById('ev-som').checked,local:document.getElementById('ev-local').value,turno:document.getElementById('ev-turno').value||null,ministerios:mins,convites,arquivo_url,arquivo_nome,arquivo_tipo};
       await sb(`eventos?id=eq.${editId}`,{method:'PATCH',body:JSON.stringify(dados)});
       if (e) Object.assign(e,dados);
       // Criar notificações
@@ -315,7 +326,7 @@ async function saveEvento() {
         // Upload after we have the ID — upload with temp name then update
         new_arquivo_url = '_pending_'; // will update after insert
       }
-      const dados = {nome,data:data_inicio,data_inicio,data_fim:data_fim||null,hora,dias_horarios,descricao:document.getElementById('ev-desc').value.trim(),banda,live:document.getElementById('ev-live').checked,som:document.getElementById('ev-som').checked,local:document.getElementById('ev-local').value,ministerios:mins,inscritos:[],convites,arquivo_url:null,arquivo_nome:null,arquivo_tipo:null};
+      const dados = {nome,data:data_inicio,data_inicio,data_fim:data_fim||null,hora,dias_horarios,descricao:document.getElementById('ev-desc').value.trim(),banda,live:document.getElementById('ev-live').checked,som:document.getElementById('ev-som').checked,local:document.getElementById('ev-local').value,turno:document.getElementById('ev-turno').value||null,ministerios:mins,inscritos:[],convites,arquivo_url:null,arquivo_nome:null,arquivo_tipo:null};
       const rows = await sb('eventos',{method:'POST',body:JSON.stringify(dados)});
       if (rows && rows[0]) {
         const novoEv = {...rows[0],ministerios:mins,inscritos:[],convites};
@@ -421,6 +432,7 @@ function preencherCulto(tipo) {
 
   document.getElementById('ev-nome').value = cfg.nome;
   document.getElementById('ev-local').value = 'salao_principal';
+  document.getElementById('ev-turno').value = tipo;
 
   // Se não tem data, usar hoje
   const dataInput = document.getElementById('ev-data-inicio');
@@ -472,4 +484,78 @@ function criarEventoNaData(ds) {
       atualizarDiasEvento();
     }
   }, 60);
+}
+
+// ===== PRESENÇA DOS EVENTOS =====
+function abrirPresencaEvento(id) {
+  const e = eventos.find(e=>e.id===id); if (!e) return;
+  document.getElementById('modal-presenca-title').textContent = `Registrar presença — ${e.nome}`;
+  document.getElementById('modal-presenca').dataset.evId = id;
+  document.getElementById('presenca-presencial').value = e.presencial ?? '';
+  document.getElementById('presenca-youtube').value = e.youtube ?? '';
+  openModal('modal-presenca');
+}
+
+async function salvarPresenca() {
+  const id = document.getElementById('modal-presenca').dataset.evId;
+  const e = eventos.find(e=>e.id===id); if (!e) return;
+  const presencialVal = document.getElementById('presenca-presencial').value;
+  const youtubeVal = document.getElementById('presenca-youtube').value;
+  const dados = {
+    presencial: presencialVal===''?null:Math.max(0,parseInt(presencialVal,10)||0),
+    youtube: youtubeVal===''?null:Math.max(0,parseInt(youtubeVal,10)||0)
+  };
+  const btn = document.getElementById('btn-save-presenca');
+  btn.innerHTML = '<span class="spin"></span>'; btn.disabled = true;
+  try {
+    await sb(`eventos?id=eq.${id}`,{method:'PATCH',body:JSON.stringify(dados)});
+    Object.assign(e, dados);
+    closeModal('modal-presenca');
+    atualizarTodasAsViews();
+  } catch(err) { alert('Erro: '+err.message); }
+  btn.innerHTML = 'Salvar'; btn.disabled = false;
+}
+
+function renderRelatorioPresenca() {
+  const iniEl = document.getElementById('presenca-data-ini');
+  const fimEl = document.getElementById('presenca-data-fim');
+  const resultEl = document.getElementById('presenca-resultado');
+  if (!iniEl || !fimEl || !resultEl) return;
+  if (!iniEl.value || !fimEl.value) {
+    const hoje = new Date();
+    const ini = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+    iniEl.value = ini.toISOString().split('T')[0];
+    fimEl.value = hoje.toISOString().split('T')[0];
+  }
+  const dataIni = new Date(iniEl.value+'T00:00:00');
+  const dataFim = new Date(fimEl.value+'T23:59:59');
+  if (dataIni > dataFim) { resultEl.innerHTML = '<p style="font-size:12px;color:var(--danger-text)">A data de início não pode ser depois da data de fim.</p>'; return; }
+  const turno = document.getElementById('presenca-turno')?.value || '';
+
+  const noPeriodo = eventos.filter(e => {
+    const d = new Date((e.data_inicio||e.data)+'T00:00:00');
+    if (d < dataIni || d > dataFim) return false;
+    if (turno && e.turno !== turno) return false;
+    return true;
+  });
+  const comRegistro = noPeriodo.filter(e => e.presencial!=null || e.youtube!=null);
+  const totalPresencial = comRegistro.reduce((s,e)=>s+(e.presencial||0),0);
+  const totalYoutube = comRegistro.reduce((s,e)=>s+(e.youtube||0),0);
+
+  resultEl.innerHTML = `
+    <div class="grid-3" style="gap:12px">
+      <div style="background:var(--bg-tertiary);border-radius:var(--radius);padding:14px;text-align:center">
+        <h3 style="font-size:22px;font-weight:600">${totalPresencial}</h3>
+        <p style="font-size:11px;color:var(--text-secondary);margin-top:2px">Presencial</p>
+      </div>
+      <div style="background:var(--coral-bg);border-radius:var(--radius);padding:14px;text-align:center">
+        <h3 style="font-size:22px;font-weight:600;color:var(--coral-text)">${totalYoutube}</h3>
+        <p style="font-size:11px;color:var(--coral-text);margin-top:2px">YouTube</p>
+      </div>
+      <div style="background:var(--purple-bg);border-radius:var(--radius);padding:14px;text-align:center">
+        <h3 style="font-size:22px;font-weight:600;color:var(--purple-text)">${totalPresencial+totalYoutube}</h3>
+        <p style="font-size:11px;color:var(--purple-text);margin-top:2px">Total</p>
+      </div>
+    </div>
+    <p style="font-size:11px;color:var(--text-tertiary);margin-top:10px">${comRegistro.length} de ${noPeriodo.length} evento(s) no período com presença registrada</p>`;
 }

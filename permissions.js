@@ -94,6 +94,12 @@ function nivelPodeGerenciarVoluntarios(nivel) {
   return n.pode_cadastrar_voluntarios || n.pode_editar_voluntarios || n.pode_remover_voluntarios;
 }
 
+// Só líder, pastor e admin (não líder de banda nem voluntário) podem registrar presença dos eventos
+function nivelPodeRegistrarPresenca(nivel) {
+  if (nivelIsAdmin(nivel)) return true;
+  return !!getNivelObj(nivel).pode_criar_eventos;
+}
+
 function nivelPodeVerTotalVoluntarios(nivel) {
   // Admin sempre vê
   if (nivelIsAdmin(nivel)) return true;

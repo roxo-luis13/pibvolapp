@@ -20,6 +20,7 @@ function openModal(id, modoEdicao) {
       document.getElementById('ev-live').checked=false;
       document.getElementById('ev-som').checked=false;
       document.getElementById('ev-local').value='';
+      document.getElementById('ev-turno').value='';
       document.getElementById('ev-dias-container').innerHTML='';
       setTimeout(()=>atualizarDiasEvento(), 50);
       populateChips('ev-ministerios-chips');
