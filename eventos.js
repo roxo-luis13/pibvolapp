@@ -69,6 +69,14 @@ function textoPresenca(e) {
   return (e.presencial==null && e.youtube==null) ? '—' : `${e.presencial ?? 0} · ${e.youtube ?? 0}`;
 }
 
+function buildPresencaHtml(e) {
+  if (e.presencial==null && e.youtube==null) return '';
+  return `<div style="display:flex;gap:24px;background:var(--bg-secondary);border-radius:var(--radius);padding:10px 14px;margin-bottom:10px">
+    <div><p style="font-size:10px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.3px">Presencial</p><p style="font-size:16px;font-weight:600;margin-top:2px">${e.presencial ?? '—'}</p></div>
+    <div><p style="font-size:10px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.3px">YouTube</p><p style="font-size:16px;font-weight:600;margin-top:2px">${e.youtube ?? '—'}</p></div>
+  </div>`;
+}
+
 function buildEvRow(e) {
   const nav = getNivelAtivo();
   const podeCriar = perm(nav,'pode_criar_eventos');

@@ -178,6 +178,7 @@ function showEventDetail(evId) {
     </div>` : ''}
     ${ev.arquivo_url ? buildArquivoHtml(ev.arquivo_url, ev.arquivo_nome, ev.arquivo_tipo) : ''}
     ${ev.banda&&podVerBanda()?`<div style="background:var(--amber-bg);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px"><p style="font-size:11px;font-weight:500;color:var(--amber-text);margin-bottom:3px"><i class="ti ti-music"></i> FORMAÇÃO DA BANDA</p><p style="font-size:13px;white-space:pre-wrap">${ev.banda}</p></div>`:''}
+    ${buildPresencaHtml(ev)}
     <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px">${minsTag}</div>
     <div style="background:var(--bg-secondary);border-radius:var(--radius);padding:12px">${buildVolsPorMin(ev)}</div>
     ${(perm(getNivelAtivo(),'pode_editar_eventos')||perm(getNivelAtivo(),'pode_criar_eventos')) ? `
