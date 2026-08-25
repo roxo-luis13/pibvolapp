@@ -133,16 +133,22 @@ async function responderConvite(notifId, evId, resposta) {
     let inscritos = [...(ev.inscritos||[])];
     let precisaEscolherEquipe = false;
     if (resposta==='aceito') {
-      const minsDoEvento = (ev.ministerios||[]).filter(mid=>(currentProfile.ministerios||[]).includes(mid));
       if (!inscritos.find(i=>i.volId===currentProfile.id)) {
-        if (minsDoEvento.length===1) {
-          inscritos.push({volId:currentProfile.id,minId:minsDoEvento[0]});
-          await notificarLiderConfirmacao(ev, minsDoEvento[0]);
-        } else if (minsDoEvento.length>1) {
-          precisaEscolherEquipe = true; // pertence a mais de uma equipe do evento — não escolher por ele
+        if (convite.minId) {
+          // Quem convidou já disse em qual ministério ele está sendo chamado
+          inscritos.push({volId:currentProfile.id,minId:convite.minId});
+          await notificarLiderConfirmacao(ev, convite.minId);
         } else {
-          // Chamado avulso: não pertence a nenhum dos ministérios convocados deste evento
-          inscritos.push({volId:currentProfile.id,minId:null});
+          const minsDoEvento = (ev.ministerios||[]).filter(mid=>(currentProfile.ministerios||[]).includes(mid));
+          if (minsDoEvento.length===1) {
+            inscritos.push({volId:currentProfile.id,minId:minsDoEvento[0]});
+            await notificarLiderConfirmacao(ev, minsDoEvento[0]);
+          } else if (minsDoEvento.length>1) {
+            precisaEscolherEquipe = true; // convite antigo, sem ministério definido — não escolher por ele
+          } else {
+            // Chamado avulso: não pertence a nenhum dos ministérios convocados deste evento
+            inscritos.push({volId:currentProfile.id,minId:null});
+          }
         }
       }
     } else { inscritos = inscritos.filter(i=>i.volId!==currentProfile.id); }
@@ -210,10 +216,16 @@ function renderConvidarLista(convitesAtuais) {
   const cardVol = (v) => {
     const jaConvidado = convitesAtuais.find(c=>c.volId===v.id);
     const status = jaConvidado?.status||null;
+    const minsDoVol = v.ministerios||[];
+    // Voluntário em mais de um ministério: quem convida precisa dizer em qual ele está sendo chamado
+    const seletorMin = minsDoVol.length > 1 ? `<select data-vol-min-select="${v.id}" onclick="event.stopPropagation()" title="Em qual ministério ele está sendo chamado?" style="font-size:11px;padding:4px 6px;border:0.5px solid var(--border-md);border-radius:6px;background:var(--bg-primary);color:var(--text-primary);flex-shrink:0;max-width:120px">
+      ${minsDoVol.map(mid=>{const m=ministerios.find(m=>m.id===mid);return m?`<option value="${mid}" ${mid===jaConvidado?.minId?'selected':''}>${m.nome}</option>`:''}).join('')}
+    </select>` : '';
     return `<label style="display:flex;align-items:center;gap:10px;padding:8px;border-radius:var(--radius);cursor:pointer" onmouseover="this.style.background='var(--bg-secondary)'" onmouseout="this.style.background='transparent'">
       <input type="checkbox" value="${v.id}" ${jaConvidado?'checked':''} style="width:15px;height:15px;accent-color:#7F77DD;flex-shrink:0">
       <div class="avatar ${v.nivel}" style="width:28px;height:28px;font-size:10px;flex-shrink:0">${ini(v.nome)}</div>
       <div style="flex:1;min-width:0"><p style="font-size:13px;font-weight:500">${v.nome}</p><p style="font-size:11px;color:var(--text-secondary)">${(v.ministerios||[]).map(id=>{const m=ministerios.find(m=>m.id===id);return m?m.nome:''}).filter(Boolean).join(', ')||'Sem ministério'}</p></div>
+      ${seletorMin}
       ${status?`<span style="font-size:10px;padding:2px 7px;border-radius:4px;font-weight:500;background:${status==='aceito'?'var(--success-bg)':status==='recusado'?'var(--danger-bg)':'var(--warning-bg)'};color:${status==='aceito'?'var(--success-text)':status==='recusado'?'var(--danger-text)':'var(--warning-text)'}">${status==='aceito'?'Aceitou':status==='recusado'?'Recusou':'Pendente'}</span>`:''}
     </label>`
   };
