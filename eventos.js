@@ -293,14 +293,17 @@ async function saveEvento() {
     presencial: document.getElementById('ev-presencial').value===''?null:Math.max(0,parseInt(document.getElementById('ev-presencial').value,10)||0),
     youtube: document.getElementById('ev-youtube').value===''?null:Math.max(0,parseInt(document.getElementById('ev-youtube').value,10)||0)
   } : {};
-  const convidadosNovos = [...document.querySelectorAll('#ev-convidar-lista input:checked')].map(c=>c.value);
+  const convidadosNovos = [...document.querySelectorAll('#ev-convidar-lista input:checked')].map(c => {
+    const seletor = document.querySelector(`[data-vol-min-select="${c.value}"]`);
+    return {volId:c.value, minId: seletor ? seletor.value : null};
+  });
   const btn = document.getElementById('btn-save-ev');
   btn.innerHTML = '<span class="spin"></span>'; btn.disabled = true;
   try {
     if (editId) {
       const e = eventos.find(e=>e.id===editId);
       const convites = [...(e.convites||[])];
-      const novosConvites = convidadosNovos.filter(vid=>!convites.find(c=>c.volId===vid)).map(vid=>({volId:vid,status:'pendente'}));
+      const novosConvites = convidadosNovos.filter(o=>!convites.find(c=>c.volId===o.volId)).map(o=>({volId:o.volId,status:'pendente',minId:o.minId||null}));
       convites.push(...novosConvites);
       // Handle file upload/remove on edit
       let arquivo_url = e.arquivo_url || null;
@@ -337,7 +340,7 @@ async function saveEvento() {
         }
       }
     } else {
-      const convites = convidadosNovos.map(vid=>({volId:vid,status:'pendente'}));
+      const convites = convidadosNovos.map(o=>({volId:o.volId,status:'pendente',minId:o.minId||null}));
       let new_arquivo_url = null, new_arquivo_nome = null, new_arquivo_tipo = null;
       if (arquivoFile) {
         // Upload after we have the ID — upload with temp name then update

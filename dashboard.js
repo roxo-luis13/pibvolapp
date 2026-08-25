@@ -176,7 +176,9 @@ function buildVolsPorMin(ev) {
       if (c.status !== 'pendente') return false;
       const v = voluntarios.find(v=>v.id===c.volId);
       if (!v) return false;
-      // Verificar se o voluntário pertence a este ministério
+      // Convite com ministério definido por quem convidou: só aparece nele
+      if (c.minId) return c.minId === mid;
+      // Convite antigo, sem ministério definido: mostra em todos os que ele pertence
       return (v.ministerios||[]).includes(mid);
     });
     const rows = inscritos.map(i => { const v = voluntarios.find(v=>v.id===i.volId); return v ? buildLinhaVolConfirmado(v) : ''; }).join('');
@@ -199,6 +201,7 @@ function buildVolsPorMin(ev) {
     if (c.status !== 'pendente') return false;
     const v = voluntarios.find(v=>v.id===c.volId);
     if (!v) return false;
+    if (c.minId) return !minIds.includes(c.minId);
     return !(v.ministerios||[]).some(mid=>minIds.includes(mid));
   });
   if (inscritosAvulsos.length || pendentesAvulsos.length) {

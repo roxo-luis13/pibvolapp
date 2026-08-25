@@ -377,17 +377,24 @@ async function responderConviteEvento(notifId, evId, resposta) {
         convite.status = resposta;
         let precisaEscolherEquipe = false;
         if (resposta === 'aceito' && !(ev.inscritos||[]).find(i=>i.volId===currentProfile.id)) {
-          const minsDoEvento = (ev.ministerios||[]).filter(mid=>(currentProfile.ministerios||[]).includes(mid));
-          if (minsDoEvento.length===1) {
+          if (convite.minId) {
+            // Quem convidou já disse em qual ministério ele está sendo chamado
             ev.inscritos = ev.inscritos||[];
-            ev.inscritos.push({volId:currentProfile.id, minId:minsDoEvento[0]});
-            await notificarLiderConfirmacao(ev, minsDoEvento[0]);
-          } else if (minsDoEvento.length>1) {
-            precisaEscolherEquipe = true;
+            ev.inscritos.push({volId:currentProfile.id, minId:convite.minId});
+            await notificarLiderConfirmacao(ev, convite.minId);
           } else {
-            // Chamado avulso: não pertence a nenhum dos ministérios convocados deste evento
-            ev.inscritos = ev.inscritos||[];
-            ev.inscritos.push({volId:currentProfile.id, minId:null});
+            const minsDoEvento = (ev.ministerios||[]).filter(mid=>(currentProfile.ministerios||[]).includes(mid));
+            if (minsDoEvento.length===1) {
+              ev.inscritos = ev.inscritos||[];
+              ev.inscritos.push({volId:currentProfile.id, minId:minsDoEvento[0]});
+              await notificarLiderConfirmacao(ev, minsDoEvento[0]);
+            } else if (minsDoEvento.length>1) {
+              precisaEscolherEquipe = true;
+            } else {
+              // Chamado avulso: não pertence a nenhum dos ministérios convocados deste evento
+              ev.inscritos = ev.inscritos||[];
+              ev.inscritos.push({volId:currentProfile.id, minId:null});
+            }
           }
         }
         await sb(`eventos?id=eq.${evId}`, {method:'PATCH', body:JSON.stringify({convites:ev.convites, inscritos:ev.inscritos})});
