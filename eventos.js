@@ -297,12 +297,19 @@ async function saveEvento() {
     const seletor = document.querySelector(`[data-vol-min-select="${c.value}"]`);
     return {volId:c.value, minId: seletor ? seletor.value : null};
   });
+  // Todos os voluntários exibidos na lista de convite (marcados ou não) — usado para saber
+  // quem foi desmarcado. Voluntários fora do alcance de quem edita nem aparecem aqui, então
+  // seus convites/inscrições não são mexidos.
+  const volIdsListados = [...document.querySelectorAll('#ev-convidar-lista input[type="checkbox"]')].map(i=>i.value);
   const btn = document.getElementById('btn-save-ev');
   btn.innerHTML = '<span class="spin"></span>'; btn.disabled = true;
   try {
     if (editId) {
       const e = eventos.find(e=>e.id===editId);
-      const convites = [...(e.convites||[])];
+      const idsMarcados = new Set(convidadosNovos.map(o=>o.volId));
+      const idsRemovidos = volIdsListados.filter(id => !idsMarcados.has(id));
+      const convites = (e.convites||[]).filter(c => !idsRemovidos.includes(c.volId));
+      const inscritos = (e.inscritos||[]).filter(i => !idsRemovidos.includes(i.volId));
       const novosConvites = convidadosNovos.filter(o=>!convites.find(c=>c.volId===o.volId)).map(o=>({volId:o.volId,status:'pendente',minId:o.minId||null}));
       convites.push(...novosConvites);
       // Handle file upload/remove on edit
@@ -318,7 +325,7 @@ async function saveEvento() {
         const up = await uploadArquivoEvento(arquivoFile, editId);
         arquivo_url = up.url; arquivo_nome = up.nome; arquivo_tipo = up.tipo;
       }
-      const dados = {nome,data:data_inicio,data_inicio,data_fim:data_fim||null,hora,dias_horarios,descricao:document.getElementById('ev-desc').value.trim(),banda,live:document.getElementById('ev-live').checked,som:document.getElementById('ev-som').checked,local:document.getElementById('ev-local').value,...presencaDados,ministerios:mins,convites,arquivo_url,arquivo_nome,arquivo_tipo};
+      const dados = {nome,data:data_inicio,data_inicio,data_fim:data_fim||null,hora,dias_horarios,descricao:document.getElementById('ev-desc').value.trim(),banda,live:document.getElementById('ev-live').checked,som:document.getElementById('ev-som').checked,local:document.getElementById('ev-local').value,...presencaDados,ministerios:mins,convites,inscritos,arquivo_url,arquivo_nome,arquivo_tipo};
       await sb(`eventos?id=eq.${editId}`,{method:'PATCH',body:JSON.stringify(dados)});
       if (e) Object.assign(e,dados);
       // Criar notificações
