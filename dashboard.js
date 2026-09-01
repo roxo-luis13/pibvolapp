@@ -158,15 +158,21 @@ function buildLinhaVolConfirmado(v) {
   </div>`;
 }
 
-function buildLinhaVolPendente(v) {
-  return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;opacity:.7">
+function buildLinhaVolPendente(v, evId, mid, podeGerenciar) {
+  const acoes = podeGerenciar ? `<div style="display:flex;gap:4px;flex-shrink:0">
+    <button type="button" title="Confirmar presença" onclick="event.stopPropagation();liderResponderConvite('${evId}','${v.id}',${mid?`'${mid}'`:'null'},'aceito')" style="background:var(--success-bg);color:var(--success-text);border:none;border-radius:5px;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer"><i class="ti ti-check" style="font-size:12px"></i></button>
+    <button type="button" title="Registrar recusa" onclick="event.stopPropagation();liderResponderConvite('${evId}','${v.id}',${mid?`'${mid}'`:'null'},'recusado')" style="background:var(--danger-bg);color:var(--danger-text);border:none;border-radius:5px;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer"><i class="ti ti-x" style="font-size:12px"></i></button>
+  </div>` : '';
+  return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;opacity:.85">
     <div class="avatar voluntario" style="width:24px;height:24px;font-size:9px;flex-shrink:0">${ini(v.nome)}</div>
     <span style="font-size:12px;flex:1">${v.nome}</span>
-    <span style="font-size:10px;background:var(--warning-bg);color:var(--warning-text);padding:1px 6px;border-radius:3px">⏳ Pendente</span>
+    <span style="font-size:10px;background:var(--warning-bg);color:var(--warning-text);padding:1px 6px;border-radius:3px;white-space:nowrap">⏳ Pendente</span>
+    ${acoes}
   </div>`;
 }
 
 function buildVolsPorMin(ev) {
+  const podeGerenciar = perm(getNivelAtivo(), 'pode_editar_eventos');
   const minIds = ev.ministerios||[];
   const blocos = minIds.map(mid => {
     const m = ministerios.find(m=>m.id===mid); if (!m) return '';
@@ -182,7 +188,7 @@ function buildVolsPorMin(ev) {
       return (v.ministerios||[]).includes(mid);
     });
     const rows = inscritos.map(i => { const v = voluntarios.find(v=>v.id===i.volId); return v ? buildLinhaVolConfirmado(v) : ''; }).join('');
-    const rowsPend = pendentes.map(c => { const v = voluntarios.find(v=>v.id===c.volId); return v ? buildLinhaVolPendente(v) : ''; }).join('');
+    const rowsPend = pendentes.map(c => { const v = voluntarios.find(v=>v.id===c.volId); return v ? buildLinhaVolPendente(v, ev.id, mid, podeGerenciar) : ''; }).join('');
     const totalLabel = `${inscritos.length} confirmado(s)${pendentes.length>0?' · '+pendentes.length+' pendente(s)':''}`;
     return `<div style="margin-bottom:12px">
       <div style="display:flex;align-items:center;gap:6px;background:var(--bg-secondary);border-radius:var(--radius);padding:7px 10px;margin-bottom:4px">
@@ -206,7 +212,7 @@ function buildVolsPorMin(ev) {
   });
   if (inscritosAvulsos.length || pendentesAvulsos.length) {
     const rows = inscritosAvulsos.map(i => { const v = voluntarios.find(v=>v.id===i.volId); return v ? buildLinhaVolConfirmado(v) : ''; }).join('');
-    const rowsPend = pendentesAvulsos.map(c => { const v = voluntarios.find(v=>v.id===c.volId); return v ? buildLinhaVolPendente(v) : ''; }).join('');
+    const rowsPend = pendentesAvulsos.map(c => { const v = voluntarios.find(v=>v.id===c.volId); return v ? buildLinhaVolPendente(v, ev.id, c.minId||null, podeGerenciar) : ''; }).join('');
     const totalLabel = `${inscritosAvulsos.length} confirmado(s)${pendentesAvulsos.length>0?' · '+pendentesAvulsos.length+' pendente(s)':''}`;
     blocos.push(`<div style="margin-bottom:12px">
       <div style="display:flex;align-items:center;gap:6px;background:var(--bg-secondary);border-radius:var(--radius);padding:7px 10px;margin-bottom:4px">
@@ -219,6 +225,33 @@ function buildVolsPorMin(ev) {
   }
 
   return blocos.join('');
+}
+
+// Admin, pastor, líder e líder de banda podem confirmar (ou recusar) a presença
+// de um voluntário chamado, sem depender dele responder o convite pelo app.
+async function liderResponderConvite(evId, volId, minId, resposta) {
+  if (!perm(getNivelAtivo(), 'pode_editar_eventos')) return;
+  const ev = eventos.find(e=>e.id===evId); if (!ev) return;
+  const convites = [...(ev.convites||[])];
+  const convite = convites.find(c=>c.volId===volId);
+  if (!convite) return;
+  convite.status = resposta;
+  let inscritos = [...(ev.inscritos||[])];
+  if (resposta === 'aceito') {
+    if (!inscritos.find(i=>i.volId===volId)) inscritos.push({volId, minId: minId||null});
+  } else {
+    inscritos = inscritos.filter(i=>i.volId!==volId);
+  }
+  await sb(`eventos?id=eq.${evId}`, {method:'PATCH', body:JSON.stringify({convites, inscritos})});
+  ev.convites = convites; ev.inscritos = inscritos;
+  atualizarTodasAsViews();
+  const modalDash = document.getElementById('modal-dash-evento');
+  if (modalDash && modalDash.classList.contains('open') && modalDash.dataset.evId === evId) abrirDetalheEvDash(evId);
+  const modalInscricao = document.getElementById('modal-inscricao');
+  const listaInscricao = document.getElementById('inscricao-lista');
+  if (modalInscricao && modalInscricao.classList.contains('open') && listaInscricao && selectedEvento && selectedEvento.id === evId) {
+    listaInscricao.innerHTML = buildVolsPorMin(ev) || '<p style="font-size:13px;color:var(--text-secondary)">Nenhum ministério neste evento.</p>';
+  }
 }
 
 
