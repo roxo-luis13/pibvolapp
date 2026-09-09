@@ -733,10 +733,29 @@ Bateria: Pedro..." style="min-height:80px"></textarea></div>
   </div>
 </div>
 
+<div id="assistente-fab" style="display:none" onclick="toggleAssistente()" title="Pergunte ao assistente"><i class="ti ti-robot"></i></div>
+<div id="assistente-painel" style="display:none">
+  <div class="assistente-header">
+    <div style="display:flex;align-items:center;gap:8px">
+      <i class="ti ti-robot" style="font-size:17px;color:var(--purple-text)"></i>
+      <p style="font-size:14px;font-weight:600">Assistente</p>
+    </div>
+    <button type="button" class="assistente-fechar" onclick="fecharAssistente()"><i class="ti ti-x"></i></button>
+  </div>
+  <div id="assistente-mensagens" class="assistente-mensagens">
+    <div class="assistente-msg bot">Oi! Pode perguntar sobre seus ministérios, eventos e escalas. Respondo só com o que já está no app.</div>
+  </div>
+  <div class="assistente-input-row">
+    <input id="assistente-input" type="text" placeholder="Pergunte algo..." maxlength="400" onkeydown="if(event.key==='Enter')enviarPerguntaAssistente()">
+    <button type="button" id="assistente-btn-enviar" onclick="enviarPerguntaAssistente()"><i class="ti ti-send"></i></button>
+  </div>
+</div>
+
 <script src="db.js"></script>
 <script src="state.js"></script>
 <script src="permissions.js"></script>
 <script src="utils.js"></script>
+<script src="assistente.js"></script>
 <script src="sidebar.js"></script>
 <script src="navigate.js"></script>
 <script src="auth.js"></script>
