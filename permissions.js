@@ -144,4 +144,9 @@ function showScreen(s) {
   document.getElementById('loading-screen').style.display = s==='loading'?'flex':'none';
   document.getElementById('login-screen').style.display = s==='login'?'flex':'none';
   document.getElementById('main-app').classList.toggle('visible', s==='app');
+  const fab = document.getElementById('assistente-fab');
+  if (fab) {
+    fab.style.display = s==='app' ? 'flex' : 'none';
+    if (s!=='app') fecharAssistente();
+  }
 }
