@@ -422,3 +422,8 @@ hr{border:none;border-top:0.5px solid var(--border);margin:14px 0}
   #assistente-painel{right:12px;left:12px;width:auto;bottom:78px;height:min(460px,calc(100vh - 110px))}
   #assistente-fab{right:16px;bottom:16px}
 }
+/* Dá folga no fim do conteúdo pra o botão flutuante do assistente nunca cobrir
+   o último card da tela ao rolar até o fim (mobile, onde tudo é empilhado). */
+@media(max-width:768px){
+  .content{padding-bottom:88px}
+}
