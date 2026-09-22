@@ -258,6 +258,7 @@ function editEvento(id) {
         if (fim) fim.value = h.fim||'';
       });
     }
+    atualizarDisponibilidadeLocal();
   }, 60);
 }
 
@@ -286,6 +287,14 @@ async function saveEvento() {
   // Use first day time as main hora (backward compat)
   const hora = dias_horarios[data_inicio]?.inicio || '09:00';
   const editId = document.getElementById('ev-edit-id').value;
+  const local = document.getElementById('ev-local').value;
+  // Trava final: mesmo que o select já bloqueie locais ocupados, confere de novo aqui
+  // (defesa contra corrida entre duas pessoas editando eventos ao mesmo tempo)
+  const conflito = eventoConflitante(local, horariosDoObjeto(dias_horarios), editId || null);
+  if (conflito) {
+    alert(`O local escolhido já está reservado para "${conflito.nome}" nesse dia/horário. Escolha outro local.`);
+    return;
+  }
   const mins = getChips('ev-ministerios-chips');
   // Presença só é lida/enviada se o usuário tem permissão (a seção fica oculta pra quem não tem,
   // e os campos ficariam vazios — não podemos apagar dados existentes por engano)
@@ -325,7 +334,7 @@ async function saveEvento() {
         const up = await uploadArquivoEvento(arquivoFile, editId);
         arquivo_url = up.url; arquivo_nome = up.nome; arquivo_tipo = up.tipo;
       }
-      const dados = {nome,data:data_inicio,data_inicio,data_fim:data_fim||null,hora,dias_horarios,descricao:document.getElementById('ev-desc').value.trim(),banda,live:document.getElementById('ev-live').checked,som:document.getElementById('ev-som').checked,local:document.getElementById('ev-local').value,...presencaDados,ministerios:mins,convites,inscritos,arquivo_url,arquivo_nome,arquivo_tipo};
+      const dados = {nome,data:data_inicio,data_inicio,data_fim:data_fim||null,hora,dias_horarios,descricao:document.getElementById('ev-desc').value.trim(),banda,live:document.getElementById('ev-live').checked,som:document.getElementById('ev-som').checked,local,...presencaDados,ministerios:mins,convites,inscritos,arquivo_url,arquivo_nome,arquivo_tipo};
       await sb(`eventos?id=eq.${editId}`,{method:'PATCH',body:JSON.stringify(dados)});
       if (e) Object.assign(e,dados);
       registrarLog('editar', 'evento', nome, `${currentProfile.nome} editou o evento "${nome}"`);
@@ -354,7 +363,7 @@ async function saveEvento() {
         // Upload after we have the ID — upload with temp name then update
         new_arquivo_url = '_pending_'; // will update after insert
       }
-      const dados = {nome,data:data_inicio,data_inicio,data_fim:data_fim||null,hora,dias_horarios,descricao:document.getElementById('ev-desc').value.trim(),banda,live:document.getElementById('ev-live').checked,som:document.getElementById('ev-som').checked,local:document.getElementById('ev-local').value,...presencaDados,ministerios:mins,inscritos:[],convites,arquivo_url:null,arquivo_nome:null,arquivo_tipo:null};
+      const dados = {nome,data:data_inicio,data_inicio,data_fim:data_fim||null,hora,dias_horarios,descricao:document.getElementById('ev-desc').value.trim(),banda,live:document.getElementById('ev-live').checked,som:document.getElementById('ev-som').checked,local,...presencaDados,ministerios:mins,inscritos:[],convites,arquivo_url:null,arquivo_nome:null,arquivo_tipo:null};
       const rows = await sb('eventos',{method:'POST',body:JSON.stringify(dados)});
       if (rows && rows[0]) {
         const novoEv = {...rows[0],ministerios:mins,inscritos:[],convites};
@@ -391,6 +400,74 @@ async function deleteEv(id) {
 // ===== DIAS DO EVENTO =====
 const LOCAIS = {salao_principal:'Salão Principal', multiuso:'Multiuso', quadra:'Quadra'};
 
+// ===== CONFLITO DE LOCAL =====
+// Converte um objeto {data: {inicio,fim}} numa lista plana [{data,inicio,fim}]
+function horariosDoObjeto(diasHorarios) {
+  return Object.entries(diasHorarios||{}).map(([data,h]) => ({data, inicio:h.inicio||'00:00', fim:h.fim||'23:59'}));
+}
+
+// Dias/horários ocupados por um evento já salvo (usa dias_horarios se houver, senão a data/hora únicas)
+function eventoDiasHorarios(ev) {
+  if (ev.dias_horarios && Object.keys(ev.dias_horarios).length) return horariosDoObjeto(ev.dias_horarios);
+  const data = ev.data_inicio || ev.data;
+  if (!data) return [];
+  return [{data, inicio: ev.hora||'00:00', fim:'23:59'}];
+}
+
+function horariosSobrepoem(aIni, aFim, bIni, bFim) {
+  return aIni < bFim && bIni < aFim;
+}
+
+// Retorna o primeiro evento que já usa esse local em algum dos dias/horários propostos (excluindo o próprio, se estiver editando)
+function eventoConflitante(local, diasPropostos, excluirId) {
+  if (!local || !diasPropostos.length) return null;
+  for (const ev of eventos) {
+    if (ev.id === excluirId) continue;
+    if (ev.local !== local) continue;
+    const diasEv = eventoDiasHorarios(ev);
+    for (const dp of diasPropostos) {
+      for (const de of diasEv) {
+        if (dp.data === de.data && horariosSobrepoem(dp.inicio, dp.fim, de.inicio, de.fim)) return ev;
+      }
+    }
+  }
+  return null;
+}
+
+function lerDiasPropostosDoForm() {
+  const dias_horarios = {};
+  document.querySelectorAll('[data-dia-input]').forEach(el => {
+    const dt = el.dataset.diaInput;
+    if (!dias_horarios[dt]) dias_horarios[dt] = {};
+    if (el.id.startsWith('hora-ini-')) dias_horarios[dt].inicio = el.value;
+    if (el.id.startsWith('hora-fim-')) dias_horarios[dt].fim = el.value;
+  });
+  return horariosDoObjeto(dias_horarios);
+}
+
+// Trava (desabilita) no select de local qualquer local já ocupado nos dias/horários atuais do formulário
+function atualizarDisponibilidadeLocal() {
+  const sel = document.getElementById('ev-local');
+  if (!sel) return;
+  const editId = document.getElementById('ev-edit-id').value || null;
+  const diasPropostos = lerDiasPropostosDoForm();
+  const aviso = document.getElementById('ev-local-aviso');
+  let conflitoDoSelecionado = null;
+  [...sel.options].forEach(opt => {
+    if (!opt.value) return;
+    const conflito = eventoConflitante(opt.value, diasPropostos, editId);
+    opt.disabled = !!conflito;
+    opt.textContent = conflito ? `${LOCAIS[opt.value]} — ocupado (${conflito.nome})` : LOCAIS[opt.value];
+    if (conflito && sel.value === opt.value) conflitoDoSelecionado = conflito;
+  });
+  if (conflitoDoSelecionado) {
+    sel.value = '';
+    if (aviso) { aviso.style.display = 'block'; aviso.textContent = `O local escolhido já está reservado para "${conflitoDoSelecionado.nome}" nesse dia/horário. Escolha outro.`; }
+  } else if (aviso) {
+    aviso.style.display = 'none';
+  }
+}
+
 function atualizarDiasEvento() {
   const inicioEl = document.getElementById('ev-data-inicio');
   const fimEl = document.getElementById('ev-data-fim');
@@ -398,7 +475,7 @@ function atualizarDiasEvento() {
   if (!inicioEl || !fimEl || !container) return;
   const inicio = inicioEl.value;
   const fim = fimEl.value;
-  if (!inicio) { container.innerHTML=''; return; }
+  if (!inicio) { container.innerHTML=''; atualizarDisponibilidadeLocal(); return; }
 
   // Preserve existing values
   const existentes = {};
@@ -412,23 +489,23 @@ function atualizarDiasEvento() {
   const dias = [];
   const d = new Date(inicio + 'T12:00:00');
   const dFim = fim ? new Date(fim + 'T12:00:00') : new Date(inicio + 'T12:00:00');
-  if (dFim < d) { container.innerHTML = '<p style="font-size:12px;color:var(--danger-text);padding:6px 0">A data de término não pode ser anterior à data de início.</p>'; return; }
+  if (dFim < d) { container.innerHTML = '<p style="font-size:12px;color:var(--danger-text);padding:6px 0">A data de término não pode ser anterior à data de início.</p>'; atualizarDisponibilidadeLocal(); return; }
   while (d <= dFim) { dias.push(d.toISOString().split('T')[0]); d.setDate(d.getDate()+1); }
 
   if (dias.length === 1) {
     const dt = dias[0];
     container.innerHTML = `<div class="grid-2" style="gap:12px;margin-top:10px">
-      <div class="form-group" style="margin-bottom:0"><label>Horário de início</label><input type="time" id="hora-ini-${dt}" data-dia-input="${dt}" value="${existentes[dt]?.inicio||'09:00'}"></div>
-      <div class="form-group" style="margin-bottom:0"><label>Horário de término</label><input type="time" id="hora-fim-${dt}" data-dia-input="${dt}" value="${existentes[dt]?.fim||'12:00'}"></div>
+      <div class="form-group" style="margin-bottom:0"><label>Horário de início</label><input type="time" id="hora-ini-${dt}" data-dia-input="${dt}" value="${existentes[dt]?.inicio||'09:00'}" onchange="atualizarDisponibilidadeLocal()"></div>
+      <div class="form-group" style="margin-bottom:0"><label>Horário de término</label><input type="time" id="hora-fim-${dt}" data-dia-input="${dt}" value="${existentes[dt]?.fim||'12:00'}" onchange="atualizarDisponibilidadeLocal()"></div>
     </div>`;
   } else {
     const rows = dias.map(dt => {
       const label = new Date(dt+'T12:00:00').toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'});
       return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border)">
         <span style="font-size:12px;font-weight:500;min-width:90px;color:var(--text-secondary)">${label}</span>
-        <input type="time" id="hora-ini-${dt}" data-dia-input="${dt}" value="${existentes[dt]?.inicio||'09:00'}" style="flex:1;padding:6px 10px;border:0.5px solid var(--border-md);border-radius:var(--radius);font-size:13px;background:var(--bg-primary);color:var(--text-primary)">
+        <input type="time" id="hora-ini-${dt}" data-dia-input="${dt}" value="${existentes[dt]?.inicio||'09:00'}" onchange="atualizarDisponibilidadeLocal()" style="flex:1;padding:6px 10px;border:0.5px solid var(--border-md);border-radius:var(--radius);font-size:13px;background:var(--bg-primary);color:var(--text-primary)">
         <span style="font-size:12px;color:var(--text-tertiary)">até</span>
-        <input type="time" id="hora-fim-${dt}" data-dia-input="${dt}" value="${existentes[dt]?.fim||'22:00'}" style="flex:1;padding:6px 10px;border:0.5px solid var(--border-md);border-radius:var(--radius);font-size:13px;background:var(--bg-primary);color:var(--text-primary)">
+        <input type="time" id="hora-fim-${dt}" data-dia-input="${dt}" value="${existentes[dt]?.fim||'22:00'}" onchange="atualizarDisponibilidadeLocal()" style="flex:1;padding:6px 10px;border:0.5px solid var(--border-md);border-radius:var(--radius);font-size:13px;background:var(--bg-primary);color:var(--text-primary)">
       </div>`;
     }).join('');
     container.innerHTML = `<div style="margin-top:10px;background:var(--bg-secondary);border-radius:var(--radius);padding:10px 14px">
@@ -436,6 +513,7 @@ function atualizarDiasEvento() {
       ${rows}
     </div>`;
   }
+  atualizarDisponibilidadeLocal();
 }
 
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
@@ -462,8 +540,6 @@ function preencherCulto(tipo) {
   if (!cfg) return;
 
   document.getElementById('ev-nome').value = cfg.nome;
-  document.getElementById('ev-local').value = 'salao_principal';
-  document.getElementById('ev-turno').value = tipo;
 
   // Se não tem data, usar hoje
   const dataInput = document.getElementById('ev-data-inicio');
@@ -479,6 +555,10 @@ function preencherCulto(tipo) {
   setTimeout(() => {
     document.querySelectorAll('[id^="hora-ini-"]').forEach(el => el.value = cfg.inicio);
     document.querySelectorAll('[id^="hora-fim-"]').forEach(el => el.value = cfg.fim);
+    // Só agora, com os horários certos, tenta selecionar o Salão Principal
+    // (se já estiver ocupado nesse dia/horário, a checagem abaixo desmarca e avisa)
+    document.getElementById('ev-local').value = 'salao_principal';
+    atualizarDisponibilidadeLocal();
   }, 60);
 }
 
