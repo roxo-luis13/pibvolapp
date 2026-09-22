@@ -328,6 +328,7 @@ async function saveEvento() {
       const dados = {nome,data:data_inicio,data_inicio,data_fim:data_fim||null,hora,dias_horarios,descricao:document.getElementById('ev-desc').value.trim(),banda,live:document.getElementById('ev-live').checked,som:document.getElementById('ev-som').checked,local:document.getElementById('ev-local').value,...presencaDados,ministerios:mins,convites,inscritos,arquivo_url,arquivo_nome,arquivo_tipo};
       await sb(`eventos?id=eq.${editId}`,{method:'PATCH',body:JSON.stringify(dados)});
       if (e) Object.assign(e,dados);
+      registrarLog('editar', 'evento', nome, `${currentProfile.nome} editou o evento "${nome}"`);
       // Criar notificações
       // Convites novos
       for (const c of novosConvites) {
@@ -358,6 +359,7 @@ async function saveEvento() {
       if (rows && rows[0]) {
         const novoEv = {...rows[0],ministerios:mins,inscritos:[],convites};
         eventos.push(novoEv);
+        registrarLog('criar', 'evento', nome, `${currentProfile.nome} criou o evento "${nome}"`);
         // Convites
       for (const c of convites) {
           await sb('notificacoes',{method:'POST',prefer:'return=minimal',body:JSON.stringify({vol_id:c.volId,tipo:'convite',ev_id:rows[0].id,ev_nome:nome,ev_data:data_inicio,ev_hora:hora,mensagem:'Você foi convidado para servir neste evento.'})});
@@ -378,8 +380,10 @@ async function saveEvento() {
 
 async function deleteEv(id) {
   if (!confirm('Remover evento?')) return;
+  const nomeEv = eventos.find(e=>e.id===id)?.nome || '';
   await sb(`eventos?id=eq.${id}`,{method:'DELETE'});
   eventos = eventos.filter(e=>e.id!==id);
+  registrarLog('excluir', 'evento', nomeEv, `${currentProfile.nome} excluiu o evento "${nomeEv}"`);
   renderEventos(); renderDashboard();
 }
 

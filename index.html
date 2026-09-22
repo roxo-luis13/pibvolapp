@@ -69,6 +69,7 @@
       <div class="nav-item" id="nav-voluntarios" onclick="navigate('voluntarios');closeSidebarMobile()"><i class="ti ti-user-check"></i><span class="nav-item-text">Voluntários</span><span class="nav-tooltip">Voluntários</span></div>
       <div class="nav-item" id="nav-eventos" onclick="navigate('eventos');closeSidebarMobile()"><i class="ti ti-calendar-event"></i><span class="nav-item-text">Eventos</span><span class="nav-tooltip">Eventos</span></div>
       <div class="nav-item" id="nav-niveis" onclick="navigate('niveis');closeSidebarMobile()"><i class="ti ti-shield-lock"></i><span class="nav-item-text">Níveis de acesso</span><span class="nav-tooltip">Níveis de acesso</span></div>
+      <div class="nav-item" id="nav-logs" onclick="navigate('logs');closeSidebarMobile()"><i class="ti ti-history"></i><span class="nav-item-text">Log de atividade</span><span class="nav-tooltip">Log de atividade</span></div>
       <div class="nav-section">Conta</div>
       <div class="nav-item" onclick="navigate('perfil');closeSidebarMobile()"><i class="ti ti-user"></i><span class="nav-item-text">Meu perfil</span><span class="nav-tooltip">Meu perfil</span></div>
       <div class="nav-item" onclick="doLogout()"><i class="ti ti-logout"></i><span class="nav-item-text">Sair</span><span class="nav-tooltip">Sair</span></div>
@@ -385,6 +386,34 @@
 
       <div class="section" id="section-niveis">
         <div class="grid-3" id="niveis-grid"></div>
+      </div>
+
+      <div class="section" id="section-logs">
+        <div class="card">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:12px">
+            <div>
+              <h3 style="font-size:14px;font-weight:500">Log de atividade</h3>
+              <p style="font-size:12px;color:var(--text-tertiary);margin-top:3px">Registro de tudo que é criado, editado ou excluído no app. Visível só para admin.</p>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+              <label style="display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--text-secondary)">De<input id="logs-data-ini" type="date" onchange="renderLogs()" style="padding:6px 9px;border:0.5px solid var(--border-md);border-radius:var(--radius);font-size:12px;background:var(--bg-primary);color:var(--text-primary);font-family:inherit"></label>
+              <label style="display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--text-secondary)">Até<input id="logs-data-fim" type="date" onchange="renderLogs()" style="padding:6px 9px;border:0.5px solid var(--border-md);border-radius:var(--radius);font-size:12px;background:var(--bg-primary);color:var(--text-primary);font-family:inherit"></label>
+              <select id="logs-entidade" onchange="renderLogs()" style="padding:7px 9px;border:0.5px solid var(--border-md);border-radius:var(--radius);font-size:12px;background:var(--bg-primary);color:var(--text-primary);font-family:inherit">
+                <option value="">Todos os tipos</option>
+                <option value="evento">Eventos</option>
+                <option value="ministerio">Ministérios</option>
+                <option value="grupo_ministerio">Grupos de ministério</option>
+                <option value="voluntario">Voluntários</option>
+                <option value="nivel">Níveis de acesso</option>
+                <option value="convite">Convites</option>
+                <option value="inscricao">Inscrições</option>
+                <option value="perfil">Perfil</option>
+                <option value="sessao">Sessão</option>
+              </select>
+            </div>
+          </div>
+          <div id="logs-lista"></div>
+        </div>
       </div>
 
       <div class="section" id="section-perfil">
@@ -767,5 +796,6 @@ Bateria: Pedro..." style="min-height:80px"></textarea></div>
 <script src="eventos.js"></script>
 <script src="perfil.js"></script>
 <script src="notificacoes.js"></script>
+<script src="logs.js"></script>
 </body>
 </html>

@@ -178,9 +178,11 @@ async function saveNivel() {
     if (editId) {
       await sb(`niveis_acesso?id=eq.${editId}`, {method:'PATCH', body:JSON.stringify(dados)});
       const n = niveisAcesso.find(n=>n.id===editId); if (n) Object.assign(n,dados);
+      registrarLog('editar', 'nivel', nome, `${currentProfile.nome} editou o nível de acesso "${nome}"`);
     } else {
       const rows = await sb('niveis_acesso', {method:'POST', body:JSON.stringify(dados)});
       if (rows && rows[0]) niveisAcesso.push(rows[0]);
+      registrarLog('criar', 'nivel', nome, `${currentProfile.nome} criou o nível de acesso "${nome}"`);
     }
     closeModal('modal-nivel');
     renderNiveis();
@@ -214,6 +216,7 @@ Atenção: ${emUso.length} voluntário(s) usam este nível. Eles serão alterado
       await sb(`voluntarios?id=eq.${v.id}`, {method:'PATCH', body:JSON.stringify({nivel:'voluntario'})});
       v.nivel = 'voluntario';
     }
+    registrarLog('excluir', 'nivel', n.nome, `${currentProfile.nome} excluiu o nível de acesso "${n.nome}"`);
     niveisAcesso = niveisAcesso.filter(x=>x.id!==id);
     renderNiveis();
     atualizarSelectNiveis();

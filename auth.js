@@ -107,6 +107,7 @@ async function doLogin() {
     checkMobileLayout();
     ativarNotificacoesPush();
     navigate('dashboard');
+    registrarLog('login', 'sessao', currentProfile.nome, `${currentProfile.nome} entrou no app`);
   } catch(e) {
     err.textContent = 'Erro ao entrar: ' + e.message; err.style.display = 'block';
   }
@@ -162,6 +163,7 @@ async function saveNewPassword() {
     checkMobileLayout();
     ativarNotificacoesPush();
     navigate('dashboard');
+    registrarLog('login', 'sessao', currentProfile.nome, `${currentProfile.nome} entrou no app pela primeira vez`);
 
   } catch(e) {
     mostraErroPrimeiroAcesso('Erro ao salvar senha: ' + e.message);
