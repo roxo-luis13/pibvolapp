@@ -588,12 +588,13 @@
     <p style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:10px;text-transform:uppercase;letter-spacing:.3px">Estrutura e local</p>
     <div class="form-group">
       <label>Local *</label>
-      <select id="ev-local">
+      <select id="ev-local" onchange="atualizarDisponibilidadeLocal()">
         <option value="">— Nenhum local definido —</option>
         <option value="salao_principal">Salão Principal</option>
         <option value="multiuso">Multiuso</option>
         <option value="quadra">Quadra</option>
       </select>
+      <p id="ev-local-aviso" style="display:none;font-size:12px;color:var(--danger-text);margin-top:6px"></p>
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
       <label style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:0.5px solid var(--border-md);border-radius:var(--radius);cursor:pointer;flex:1;min-width:140px">
