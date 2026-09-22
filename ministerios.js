@@ -169,6 +169,8 @@ async function removeVolFromMin(volId, minId) {
   const mins = (v.ministerios||[]).filter(x=>x!==minId);
   await sb(`voluntarios?id=eq.${volId}`, {method:'PATCH',body:JSON.stringify({ministerios:mins})});
   v.ministerios = mins;
+  const nomeMin = ministerios.find(m=>m.id===minId)?.nome || '';
+  registrarLog('remover_membro', 'ministerio', nomeMin, `${currentProfile.nome} removeu ${v.nome} do ministério "${nomeMin}"`);
   renderDetalhe(minId);
 }
 
@@ -189,12 +191,14 @@ function openAddVolMin(minId) {
 async function saveAddVolMin() {
   const minId = document.getElementById('add-vol-min-lista').dataset.minId;
   const checked = [...document.querySelectorAll('#add-vol-min-lista input:checked')].map(c=>c.value);
+  const nomeMin = ministerios.find(m=>m.id===minId)?.nome || '';
   for (const vid of checked) {
     const v = voluntarios.find(v=>v.id===vid);
     if (v && !(v.ministerios||[]).includes(minId)) {
       const mins = [...(v.ministerios||[]),minId];
       await sb(`voluntarios?id=eq.${vid}`,{method:'PATCH',body:JSON.stringify({ministerios:mins})});
       v.ministerios = mins;
+      registrarLog('adicionar_membro', 'ministerio', nomeMin, `${currentProfile.nome} adicionou ${v.nome} ao ministério "${nomeMin}"`);
     }
   }
   closeModal('modal-add-vol-min');
@@ -254,9 +258,11 @@ async function saveGrupo() {
     if (editId) {
       await sb(`grupos_ministerios?id=eq.${editId}`, {method:'PATCH', body:JSON.stringify(dados)});
       const g = gruposMinisterios.find(g=>g.id===editId); if (g) Object.assign(g,dados);
+      registrarLog('editar', 'grupo_ministerio', nome, `${currentProfile.nome} editou o grupo de ministérios "${nome}"`);
     } else {
       const rows = await sb('grupos_ministerios', {method:'POST', body:JSON.stringify(dados)});
       if (rows && rows[0]) gruposMinisterios.push(rows[0]);
+      registrarLog('criar', 'grupo_ministerio', nome, `${currentProfile.nome} criou o grupo de ministérios "${nome}"`);
     }
     closeModal('modal-grupo');
     renderMinisterios();
@@ -275,6 +281,7 @@ Os ministérios não serão excluídos, apenas desvinculados do grupo.`)) return
     }
     await sb(`grupos_ministerios?id=eq.${id}`, {method:'DELETE', prefer:'return=minimal'});
     gruposMinisterios = gruposMinisterios.filter(g=>g.id!==id);
+    registrarLog('excluir', 'grupo_ministerio', g.nome, `${currentProfile.nome} excluiu o grupo de ministérios "${g.nome}"`);
     renderMinisterios();
   } catch(e) { alert('Erro: '+e.message); }
 }
@@ -324,9 +331,11 @@ async function saveMinisterio() {
   if (editId) {
     await sb(`ministerios?id=eq.${editId}`,{method:'PATCH',body:JSON.stringify(dados)});
     const m = ministerios.find(m=>m.id===editId); if (m) Object.assign(m,dados);
+    registrarLog('editar', 'ministerio', nome, `${currentProfile.nome} editou o ministério "${nome}"`);
   } else {
     const rows = await sb('ministerios',{method:'POST',body:JSON.stringify(dados)});
     if (rows && rows[0]) ministerios.push({...rows[0],ministerios:[],inscritos:[],convites:[]});
+    registrarLog('criar', 'ministerio', nome, `${currentProfile.nome} criou o ministério "${nome}"`);
   }
   closeModal('modal-min'); renderMinisterios(); renderDashboard();
 }
@@ -336,6 +345,7 @@ async function deleteMinisterio(id, goBack) {
   if (!confirm(`Excluir o ministério "${m.nome}"?\nAs vinculações serão removidas.`)) return;
   await sb(`ministerios?id=eq.${id}`,{method:'DELETE'});
   ministerios = ministerios.filter(x=>x.id!==id);
+  registrarLog('excluir', 'ministerio', m.nome, `${currentProfile.nome} excluiu o ministério "${m.nome}"`);
   for (const v of voluntarios.filter(v=>(v.ministerios||[]).includes(id))) {
     const mins = v.ministerios.filter(x=>x!==id);
     await sb(`voluntarios?id=eq.${v.id}`,{method:'PATCH',body:JSON.stringify({ministerios:mins})});

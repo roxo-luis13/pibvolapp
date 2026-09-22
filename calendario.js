@@ -249,7 +249,12 @@ async function toggleInscricao() {
   }
   await sb(`eventos?id=eq.${ev.id}`, {method:'PATCH',body:JSON.stringify({inscritos})});
   ev.inscritos = inscritos;
-  if (minIdConfirmado) await notificarLiderConfirmacao(ev, minIdConfirmado);
+  if (minIdConfirmado) {
+    await notificarLiderConfirmacao(ev, minIdConfirmado);
+    registrarLog('inscrever', 'inscricao', ev.nome, `${currentProfile.nome} se inscreveu no evento "${ev.nome}"`);
+  } else {
+    registrarLog('cancelar_inscricao', 'inscricao', ev.nome, `${currentProfile.nome} cancelou a inscrição no evento "${ev.nome}"`);
+  }
   closeModal('modal-inscricao');
   showEventDetail(ev.id);
   renderCalendario();
@@ -398,6 +403,7 @@ async function responderConviteEvento(notifId, evId, resposta) {
           }
         }
         await sb(`eventos?id=eq.${evId}`, {method:'PATCH', body:JSON.stringify({convites:ev.convites, inscritos:ev.inscritos})});
+        registrarLog(resposta==='aceito'?'aceitar':'recusar', 'convite', ev.nome, `${currentProfile.nome} ${resposta==='aceito'?'aceitou':'recusou'} o convite para o evento "${ev.nome}"`);
         if (precisaEscolherEquipe) {
           alert('Você faz parte de mais de uma equipe neste evento. Escolha em qual equipe vai servir abaixo.');
         }

@@ -154,6 +154,7 @@ async function responderConvite(notifId, evId, resposta) {
     } else { inscritos = inscritos.filter(i=>i.volId!==currentProfile.id); }
     await sb(`eventos?id=eq.${evId}`,{method:'PATCH',body:JSON.stringify({convites,inscritos})});
     ev.convites = convites; ev.inscritos = inscritos;
+    registrarLog(resposta==='aceito'?'aceitar':'recusar', 'convite', ev.nome, `${currentProfile.nome} ${resposta==='aceito'?'aceitou':'recusou'} o convite para o evento "${ev.nome}"`);
     if (precisaEscolherEquipe) {
       alert('Você faz parte de mais de uma equipe neste evento. Abra o evento no Calendário para escolher em qual equipe vai servir.');
     }

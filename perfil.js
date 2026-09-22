@@ -33,6 +33,7 @@ async function savePerfil() {
   await sb(`voluntarios?id=eq.${currentProfile.id}`,{method:'PATCH',body:JSON.stringify({nome,tel})});
   currentProfile.nome = nome; currentProfile.tel = tel;
   const v = voluntarios.find(v=>v.id===currentProfile.id); if (v) { v.nome=nome; v.tel=tel; }
+  registrarLog('editar', 'perfil', nome, `${nome} atualizou o próprio perfil`);
   updateSidebar();
   const msg = document.getElementById('perfil-msg');
   msg.className = 'alert'; msg.style.display='block'; msg.style.background='var(--success-bg)'; msg.style.color='var(--success-text)'; msg.textContent = 'Perfil atualizado com sucesso!';
@@ -63,6 +64,7 @@ async function alterarSenha() {
       throw new Error(errData.message || `Erro ${res.status}`);
     }
     currentProfile.senha_hash = hash;
+    registrarLog('alterar_senha', 'perfil', currentProfile.nome, `${currentProfile.nome} alterou a própria senha`);
     msg.className = 'alert'; msg.style.background='var(--success-bg)'; msg.style.color='var(--success-text)'; msg.textContent='Senha alterada com sucesso!';
     document.getElementById('senha-nova').value = ''; document.getElementById('senha-conf').value = '';
     setTimeout(()=>msg.style.display='none',3000);
@@ -76,6 +78,7 @@ async function saveMinisteriosPerfil() {
   await sb(`voluntarios?id=eq.${currentProfile.id}`,{method:'PATCH',body:JSON.stringify({ministerios:checked})});
   currentProfile.ministerios = checked;
   const v = voluntarios.find(v=>v.id===currentProfile.id); if (v) v.ministerios = checked;
+  registrarLog('editar', 'perfil', currentProfile.nome, `${currentProfile.nome} atualizou seus ministérios`);
   renderPerfil();
   const btn = document.querySelector('[onclick="saveMinisteriosPerfil()"]');
   if (btn) { const o=btn.innerHTML; btn.innerHTML='<i class="ti ti-check"></i>Salvo!'; btn.disabled=true; setTimeout(()=>{btn.innerHTML=o;btn.disabled=false;},2000); }

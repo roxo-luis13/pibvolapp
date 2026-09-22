@@ -244,6 +244,8 @@ async function liderResponderConvite(evId, volId, minId, resposta) {
   }
   await sb(`eventos?id=eq.${evId}`, {method:'PATCH', body:JSON.stringify({convites, inscritos})});
   ev.convites = convites; ev.inscritos = inscritos;
+  const nomeVol = voluntarios.find(v=>v.id===volId)?.nome || '';
+  registrarLog(resposta==='aceito'?'confirmar_presenca':'recusar', 'convite', ev.nome, `${currentProfile.nome} ${resposta==='aceito'?'confirmou':'recusou'} a presença de ${nomeVol} no evento "${ev.nome}"`);
   atualizarTodasAsViews();
   const modalDash = document.getElementById('modal-dash-evento');
   if (modalDash && modalDash.classList.contains('open') && modalDash.dataset.evId === evId) abrirDetalheEvDash(evId);
