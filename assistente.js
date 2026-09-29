@@ -29,6 +29,10 @@ function toggleAssistente() {
   else abrirAssistente();
 }
 
+// Histórico da conversa (só texto, sem o contexto/JSON embutido), pra IA conseguir
+// entender perguntas de acompanhamento tipo "e no mês passado?". Vive só na aba atual.
+let historicoAssistente = [];
+
 function assistenteAddMsg(texto, tipo) {
   const wrap = document.getElementById('assistente-mensagens');
   if (!wrap) return null;
@@ -60,14 +64,17 @@ async function enviarPerguntaAssistente() {
         'Authorization': 'Bearer ' + (session?.access_token || SUPA_KEY),
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ pergunta })
+      body: JSON.stringify({ pergunta, historico: historicoAssistente.slice(-8) })
     });
     const data = await resp.json().catch(() => ({}));
     if (loadingEl) loadingEl.remove();
     if (!resp.ok) {
       assistenteAddMsg(data.error || 'Não consegui responder agora. Tente novamente.', 'erro');
     } else {
-      assistenteAddMsg(data.resposta || 'Não consegui gerar uma resposta.', 'bot');
+      const resposta = data.resposta || 'Não consegui gerar uma resposta.';
+      assistenteAddMsg(resposta, 'bot');
+      historicoAssistente.push({ role: 'user', texto: pergunta }, { role: 'assistant', texto: resposta });
+      if (historicoAssistente.length > 20) historicoAssistente = historicoAssistente.slice(-20);
     }
   } catch (e) {
     if (loadingEl) loadingEl.remove();
