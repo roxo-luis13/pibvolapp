@@ -401,6 +401,8 @@ async function responderConviteEvento(notifId, evId, resposta) {
               ev.inscritos.push({volId:currentProfile.id, minId:null});
             }
           }
+        } else if (resposta !== 'aceito' && convite.minId) {
+          await notificarLiderConfirmacao(ev, convite.minId, 'recusado');
         }
         await sb(`eventos?id=eq.${evId}`, {method:'PATCH', body:JSON.stringify({convites:ev.convites, inscritos:ev.inscritos})});
         registrarLog(resposta==='aceito'?'aceitar':'recusar', 'convite', ev.nome, `${currentProfile.nome} ${resposta==='aceito'?'aceitou':'recusou'} o convite para o evento "${ev.nome}"`);

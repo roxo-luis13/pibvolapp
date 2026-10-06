@@ -67,6 +67,7 @@ function renderNotificacoes() {
       lider_evento: {icon:'ti-bell-ringing',   bg:'var(--amber-bg)',  color:'var(--amber-text)',  titulo:'Mobilize sua equipe'},
       update_evento:{icon:'ti-refresh',         bg:'var(--blue-bg)',   color:'var(--blue-text)',   titulo:'Evento atualizado'},
       voluntario_confirmado:{icon:'ti-user-check', bg:'var(--success-bg)', color:'var(--success-text)', titulo:'Confirmação de escala'},
+      voluntario_recusou:{icon:'ti-user-x', bg:'var(--danger-bg)', color:'var(--danger-text)', titulo:'Recusa de convite'},
       lembrete_resposta_2sem:{icon:'ti-clock-exclamation', bg:'var(--amber-bg)', color:'var(--amber-text)', titulo:'Responda ao convite'},
       lembrete_resposta_1sem:{icon:'ti-clock-exclamation', bg:'var(--amber-bg)', color:'var(--amber-text)', titulo:'Responda ao convite'},
       lembrete_2dias:{icon:'ti-calendar-time', bg:'var(--blue-bg)', color:'var(--blue-text)', titulo:'Evento em breve'},
@@ -106,18 +107,20 @@ function renderNotificacoes() {
   }).join('');
 }
 
-async function notificarLiderConfirmacao(ev, minId) {
+async function notificarLiderConfirmacao(ev, minId, resposta = 'aceito') {
   const m = ministerios.find(m => m.id === minId);
   if (!m || !m.lider_id || m.lider_id === currentProfile.id) return;
   try {
     await sb('notificacoes',{method:'POST',prefer:'return=minimal',body:JSON.stringify({
       vol_id: m.lider_id,
-      tipo: 'voluntario_confirmado',
+      tipo: resposta === 'aceito' ? 'voluntario_confirmado' : 'voluntario_recusou',
       ev_id: ev.id,
       ev_nome: ev.nome,
       ev_data: ev.data_inicio||ev.data,
       ev_hora: ev.hora,
-      mensagem: `${currentProfile.nome} confirmou presença no ministério ${m.nome}.`
+      mensagem: resposta === 'aceito'
+        ? `${currentProfile.nome} confirmou presença no ministério ${m.nome}.`
+        : `${currentProfile.nome} recusou o convite no ministério ${m.nome}.`
     })});
   } catch(e) {}
 }
@@ -151,7 +154,10 @@ async function responderConvite(notifId, evId, resposta) {
           }
         }
       }
-    } else { inscritos = inscritos.filter(i=>i.volId!==currentProfile.id); }
+    } else {
+      inscritos = inscritos.filter(i=>i.volId!==currentProfile.id);
+      if (convite.minId) await notificarLiderConfirmacao(ev, convite.minId, 'recusado');
+    }
     await sb(`eventos?id=eq.${evId}`,{method:'PATCH',body:JSON.stringify({convites,inscritos})});
     ev.convites = convites; ev.inscritos = inscritos;
     registrarLog(resposta==='aceito'?'aceitar':'recusar', 'convite', ev.nome, `${currentProfile.nome} ${resposta==='aceito'?'aceitou':'recusou'} o convite para o evento "${ev.nome}"`);
