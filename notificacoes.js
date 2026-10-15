@@ -125,45 +125,54 @@ async function notificarLiderConfirmacao(ev, minId, resposta = 'aceito') {
   } catch(e) {}
 }
 
+// Responder convite e se inscrever em vaga aberta passam por RPCs no banco
+// (responder_convite_evento / alternar_inscricao_evento) em vez de um PATCH direto
+// em "eventos": a política de UPDATE dessa tabela exige pode_editar_eventos (só
+// admin/líder), então um voluntário comum respondendo ao próprio convite tomava
+// 200 OK do PostgREST mas 0 linhas eram alteradas pelo RLS — nada era salvo de
+// fato, mesmo a tela mostrando sucesso. As RPCs rodam como SECURITY DEFINER e só
+// tocam na entrada do próprio usuário dentro de convites/inscritos.
+async function executarRespostaConvite(ev, convite, resposta) {
+  let minIdFinal = null, adicionarInscrito = false, precisaEscolherEquipe = false;
+  if (resposta === 'aceito') {
+    const jaInscrito = (ev.inscritos||[]).find(i=>i.volId===currentProfile.id);
+    if (!jaInscrito) {
+      if (convite.minId) {
+        // Quem convidou já disse em qual ministério ele está sendo chamado
+        minIdFinal = convite.minId; adicionarInscrito = true;
+      } else {
+        const minsDoEvento = (ev.ministerios||[]).filter(mid=>(currentProfile.ministerios||[]).includes(mid));
+        if (minsDoEvento.length===1) {
+          minIdFinal = minsDoEvento[0]; adicionarInscrito = true;
+        } else if (minsDoEvento.length>1) {
+          precisaEscolherEquipe = true; // convite antigo, sem ministério definido — não escolher por ele
+        } else {
+          // Chamado avulso: não pertence a nenhum dos ministérios convocados deste evento
+          adicionarInscrito = true;
+        }
+      }
+    }
+  }
+  const resultado = await sb('rpc/responder_convite_evento', {method:'POST', body: JSON.stringify({
+    p_evento_id: ev.id, p_resposta: resposta, p_min_id: minIdFinal, p_adicionar_inscrito: adicionarInscrito
+  })});
+  ev.convites = resultado.convites; ev.inscritos = resultado.inscritos;
+  if (resposta === 'aceito' && minIdFinal) await notificarLiderConfirmacao(ev, minIdFinal);
+  else if (resposta !== 'aceito' && convite.minId) await notificarLiderConfirmacao(ev, convite.minId, 'recusado');
+  registrarLog(resposta==='aceito'?'aceitar':'recusar', 'convite', ev.nome, `${currentProfile.nome} ${resposta==='aceito'?'aceitou':'recusou'} o convite para o evento "${ev.nome}"`);
+  if (precisaEscolherEquipe) {
+    alert('Você faz parte de mais de uma equipe neste evento. Abra o evento no Calendário para escolher em qual equipe vai servir.');
+  }
+}
+
 async function responderConvite(notifId, evId, resposta) {
   await sb(`notificacoes?id=eq.${notifId}`,{method:'PATCH',body:JSON.stringify({lida:true})});
   const n = notificacoes.find(n=>n.id===notifId); if (n) n.lida=true;
   const ev = eventos.find(e=>e.id===evId); if (!ev) return;
-  const convites = [...(ev.convites||[])];
-  const convite = convites.find(c=>c.volId===currentProfile.id);
+  const convite = (ev.convites||[]).find(c=>c.volId===currentProfile.id);
   if (convite) {
-    convite.status = resposta;
-    let inscritos = [...(ev.inscritos||[])];
-    let precisaEscolherEquipe = false;
-    if (resposta==='aceito') {
-      if (!inscritos.find(i=>i.volId===currentProfile.id)) {
-        if (convite.minId) {
-          // Quem convidou já disse em qual ministério ele está sendo chamado
-          inscritos.push({volId:currentProfile.id,minId:convite.minId});
-          await notificarLiderConfirmacao(ev, convite.minId);
-        } else {
-          const minsDoEvento = (ev.ministerios||[]).filter(mid=>(currentProfile.ministerios||[]).includes(mid));
-          if (minsDoEvento.length===1) {
-            inscritos.push({volId:currentProfile.id,minId:minsDoEvento[0]});
-            await notificarLiderConfirmacao(ev, minsDoEvento[0]);
-          } else if (minsDoEvento.length>1) {
-            precisaEscolherEquipe = true; // convite antigo, sem ministério definido — não escolher por ele
-          } else {
-            // Chamado avulso: não pertence a nenhum dos ministérios convocados deste evento
-            inscritos.push({volId:currentProfile.id,minId:null});
-          }
-        }
-      }
-    } else {
-      inscritos = inscritos.filter(i=>i.volId!==currentProfile.id);
-      if (convite.minId) await notificarLiderConfirmacao(ev, convite.minId, 'recusado');
-    }
-    await sb(`eventos?id=eq.${evId}`,{method:'PATCH',body:JSON.stringify({convites,inscritos})});
-    ev.convites = convites; ev.inscritos = inscritos;
-    registrarLog(resposta==='aceito'?'aceitar':'recusar', 'convite', ev.nome, `${currentProfile.nome} ${resposta==='aceito'?'aceitou':'recusou'} o convite para o evento "${ev.nome}"`);
-    if (precisaEscolherEquipe) {
-      alert('Você faz parte de mais de uma equipe neste evento. Abra o evento no Calendário para escolher em qual equipe vai servir.');
-    }
+    try { await executarRespostaConvite(ev, convite, resposta); }
+    catch (e) { alert('Erro ao responder o convite: ' + e.message); return; }
   }
   atualizarTodasAsViews();
 }
