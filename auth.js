@@ -58,6 +58,34 @@ async function loadAllData() {
   atualizarSelectNiveis();
 }
 
+// ===== ATUALIZAÇÃO AUTOMÁTICA =====
+// O app carrega os dados uma vez no login e só reage a ações feitas pelo próprio
+// usuário. Quando outra pessoa muda algo (ex: um voluntário aceita um convite em
+// outro aparelho), quem já está com o app aberto só via isso dando refresh manual.
+// Busca eventos/notificações de novo quando a aba volta a ficar visível/em foco,
+// e a cada 1 minuto enquanto estiver visível.
+let ultimoRefetch = 0;
+async function refetchDadosVivos() {
+  if (!currentProfile || !session) return;
+  const agora = Date.now();
+  if (agora - ultimoRefetch < 5000) return;
+  ultimoRefetch = agora;
+  try {
+    const [e, n] = await Promise.all([
+      sb('eventos?select=*&order=data'),
+      sb(`notificacoes?vol_id=eq.${currentProfile.id}&select=*&order=criado_em.desc`)
+    ]);
+    if (e) eventos = e.map(r => ({...r, ministerios: r.ministerios||[], inscritos: r.inscritos||[], convites: r.convites||[]}));
+    if (n) notificacoes = n;
+    atualizarTodasAsViews();
+  } catch (err) { console.error('Falha ao atualizar dados automaticamente:', err); }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') refetchDadosVivos();
+});
+window.addEventListener('focus', () => refetchDadosVivos());
+setInterval(() => { if (document.visibilityState === 'visible') refetchDadosVivos(); }, 60000);
+
 function showFirstAccess() {
   showScreen('login');
   document.getElementById('login-form-area').style.display = 'none';
