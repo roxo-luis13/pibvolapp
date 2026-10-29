@@ -125,7 +125,7 @@ function abrirDetalheEvDash(evId) {
   const volsPorMin = buildVolsPorMin(ev);
   document.getElementById('modal-dash-evento-content').innerHTML = `
     <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px">
-      <div><h2 style="font-size:16px;font-weight:500;margin-bottom:4px">${ev.nome}${ev.live?' <span style="font-size:10px;background:var(--coral-bg);color:var(--coral-text);padding:2px 7px;border-radius:4px">LIVE</span>':''}${ev.som?' <span style="font-size:10px;background:var(--blue-bg);color:var(--blue-text);padding:2px 7px;border-radius:4px">SOM</span>':''}</h2><p style="font-size:13px;color:var(--text-secondary)">${ds} · ${ev.hora||''}</p></div>
+      <div><h2 style="font-size:16px;font-weight:500;margin-bottom:4px">${ev.nome}${ev.live?' <span style="font-size:10px;background:var(--coral-bg);color:var(--coral-text);padding:2px 7px;border-radius:4px">LIVE</span>':''}${ev.som?' <span style="font-size:10px;background:var(--blue-bg);color:var(--blue-text);padding:2px 7px;border-radius:4px">SOM</span>':''}</h2><p style="font-size:13px;color:var(--text-secondary)">${ds} · ${ev.hora||''}</p>${ev.responsavel?`<p style="font-size:12px;color:var(--text-secondary);margin-top:2px"><i class="ti ti-user" style="font-size:12px;margin-right:3px"></i>Responsável: ${ev.responsavel}</p>`:''}</div>
       <span style="font-size:11px;font-weight:500;padding:4px 10px;border-radius:var(--radius);background:${diff<=1?'var(--coral-bg)':'var(--purple-bg)'};color:${diff<=1?'var(--coral-text)':'var(--purple-text)'};white-space:nowrap;margin-left:10px">${diffTxt}</span>
     </div>
     ${ev.descricao?`<div style="margin-bottom:14px">

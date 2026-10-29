@@ -16,7 +16,7 @@ function openModal(id, modoEdicao) {
       const hoje = new Date().toISOString().split('T')[0];
       document.getElementById('ev-data-inicio').value=hoje;
       document.getElementById('ev-data-fim').value='';
-      ['ev-nome','ev-desc','ev-banda'].forEach(f=>document.getElementById(f).value='');
+      ['ev-nome','ev-desc','ev-banda','ev-responsavel'].forEach(f=>document.getElementById(f).value='');
       document.getElementById('ev-live').checked=false;
       document.getElementById('ev-som').checked=false;
       document.getElementById('ev-local').value='';
