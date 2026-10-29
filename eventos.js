@@ -209,6 +209,7 @@ function editEvento(id) {
   document.getElementById('ev-data-fim').value = e.data_fim||'';
   document.getElementById('ev-desc').value = e.descricao||'';
   document.getElementById('ev-banda').value = e.banda||'';
+  document.getElementById('ev-responsavel').value = e.responsavel||'';
   document.getElementById('ev-live').checked = !!e.live;
   document.getElementById('ev-som').checked = !!e.som;
   document.getElementById('ev-local').value = e.local||'';
@@ -270,6 +271,7 @@ async function saveEvento() {
   const arquivoRemover = arquivoInput?.dataset.remover === '1';
   const data_fim = document.getElementById('ev-data-fim').value;
   const banda = document.getElementById('ev-banda').value.trim();
+  const responsavel = document.getElementById('ev-responsavel').value.trim();
   if (!nome||!data_inicio) { alert('Nome e data de início são obrigatórios.'); return; }
   if (!banda) { alert('A formação da banda é obrigatória.'); return; }
   // Se o container de dias estiver vazio, renderizar agora
@@ -334,7 +336,7 @@ async function saveEvento() {
         const up = await uploadArquivoEvento(arquivoFile, editId);
         arquivo_url = up.url; arquivo_nome = up.nome; arquivo_tipo = up.tipo;
       }
-      const dados = {nome,data:data_inicio,data_inicio,data_fim:data_fim||null,hora,dias_horarios,descricao:document.getElementById('ev-desc').value.trim(),banda,live:document.getElementById('ev-live').checked,som:document.getElementById('ev-som').checked,local,...presencaDados,ministerios:mins,convites,inscritos,arquivo_url,arquivo_nome,arquivo_tipo};
+      const dados = {nome,data:data_inicio,data_inicio,data_fim:data_fim||null,hora,dias_horarios,descricao:document.getElementById('ev-desc').value.trim(),banda,responsavel:responsavel||null,live:document.getElementById('ev-live').checked,som:document.getElementById('ev-som').checked,local,...presencaDados,ministerios:mins,convites,inscritos,arquivo_url,arquivo_nome,arquivo_tipo};
       await sb(`eventos?id=eq.${editId}`,{method:'PATCH',body:JSON.stringify(dados)});
       if (e) Object.assign(e,dados);
       registrarLog('editar', 'evento', nome, `${currentProfile.nome} editou o evento "${nome}"`);
@@ -363,7 +365,7 @@ async function saveEvento() {
         // Upload after we have the ID — upload with temp name then update
         new_arquivo_url = '_pending_'; // will update after insert
       }
-      const dados = {nome,data:data_inicio,data_inicio,data_fim:data_fim||null,hora,dias_horarios,descricao:document.getElementById('ev-desc').value.trim(),banda,live:document.getElementById('ev-live').checked,som:document.getElementById('ev-som').checked,local,...presencaDados,ministerios:mins,inscritos:[],convites,arquivo_url:null,arquivo_nome:null,arquivo_tipo:null};
+      const dados = {nome,data:data_inicio,data_inicio,data_fim:data_fim||null,hora,dias_horarios,descricao:document.getElementById('ev-desc').value.trim(),banda,responsavel:responsavel||null,live:document.getElementById('ev-live').checked,som:document.getElementById('ev-som').checked,local,...presencaDados,ministerios:mins,inscritos:[],convites,arquivo_url:null,arquivo_nome:null,arquivo_tipo:null};
       const rows = await sb('eventos',{method:'POST',body:JSON.stringify(dados)});
       if (rows && rows[0]) {
         const novoEv = {...rows[0],ministerios:mins,inscritos:[],convites};

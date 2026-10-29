@@ -168,6 +168,7 @@ function showEventDetail(evId) {
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap"><h3 style="font-size:15px;font-weight:500">${ev.nome}</h3>${badges}</div>
         <p style="font-size:13px;color:var(--text-secondary);margin-bottom:2px">${dataDisplay}</p>
         ${horarioDisplay}
+        ${ev.responsavel?`<p style="font-size:12px;color:var(--text-secondary);margin-top:2px"><i class="ti ti-user" style="font-size:12px;margin-right:3px"></i>Responsável: ${ev.responsavel}</p>`:''}
       </div>
       ${inscrito?`<span class="badge voluntario" style="white-space:nowrap">✓ ${minInscritoObj?minInscritoObj.nome:'Inscrito'}</span>`:''}
     </div>
