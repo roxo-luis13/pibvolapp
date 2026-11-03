@@ -409,6 +409,7 @@
                 <option value="inscricao">Inscrições</option>
                 <option value="perfil">Perfil</option>
                 <option value="sessao">Sessão</option>
+                <option value="alerta">Alertas</option>
               </select>
             </div>
           </div>
@@ -774,10 +775,10 @@ Bateria: Pedro..." style="min-height:80px"></textarea></div>
     <button type="button" class="assistente-fechar" onclick="fecharAssistente()"><i class="ti ti-x"></i></button>
   </div>
   <div id="assistente-mensagens" class="assistente-mensagens">
-    <div class="assistente-msg bot">Oi! Pode perguntar sobre seus ministérios, eventos e escalas. Respondo só com o que já está no app.</div>
+    <div class="assistente-msg bot">Oi! Pode perguntar sobre seus ministérios, eventos e escalas, pedir pra eu criar ou editar um evento, ou avisar alguém. Toda ação só é feita depois que você confirmar.</div>
   </div>
   <div class="assistente-input-row">
-    <input id="assistente-input" type="text" placeholder="Pergunte algo..." maxlength="400" onkeydown="if(event.key==='Enter')enviarPerguntaAssistente()">
+    <input id="assistente-input" type="text" placeholder="Pergunte algo..." maxlength="600" onkeydown="if(event.key==='Enter')enviarPerguntaAssistente()">
     <button type="button" id="assistente-btn-enviar" onclick="enviarPerguntaAssistente()"><i class="ti ti-send"></i></button>
   </div>
 </div>
