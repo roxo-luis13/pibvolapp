@@ -89,6 +89,7 @@ async function assistenteConfirmarAcao(id) {
   try {
     if (acao.tipo === 'criar_evento') await assistenteCriarEvento(acao.dados);
     else if (acao.tipo === 'editar_evento') await assistenteEditarEvento(acao.dados);
+    else if (acao.tipo === 'convidar_voluntarios') await assistenteConvidarVoluntarios(acao.dados);
     else if (acao.tipo === 'alerta') await assistenteEnviarAlerta(acao.dados);
     else throw new Error('Tipo de ação desconhecido.');
     assistenteFecharCartao(id, '✅ Feito!');
@@ -181,6 +182,35 @@ async function assistenteEditarEvento(dados) {
   await sb(`eventos?id=eq.${ev.id}`, { method: 'PATCH', body: JSON.stringify(patch) });
   Object.assign(ev, patch);
   registrarLog('editar', 'evento', ev.nome, `${currentProfile.nome} editou o evento "${ev.nome}" via assistente de IA`);
+  atualizarTodasAsViews();
+}
+
+async function assistenteConvidarVoluntarios(dados) {
+  if (!perm(getNivelAtivo(), 'pode_editar_eventos')) throw new Error('Você não tem permissão pra convidar voluntários.');
+  const ev = eventos.find(e => e.id === dados.evento_id);
+  if (!ev) throw new Error('Não encontrei esse evento (talvez tenha sido alterado). Tente de novo.');
+
+  const jaConvidadosIds = new Set((ev.convites || []).map(c => c.volId));
+  const novos = (dados.convidados || []).filter(c => !jaConvidadosIds.has(c.volId));
+  if (!novos.length) return; // todo mundo já estava convidado — nada a fazer
+
+  const convites = [...(ev.convites || []), ...novos.map(c => ({ volId: c.volId, status: 'pendente', minId: c.minId || null }))];
+  const ministeriosEv = [...(ev.ministerios || [])];
+  if (dados.ministerio_a_adicionar && !ministeriosEv.includes(dados.ministerio_a_adicionar)) {
+    ministeriosEv.push(dados.ministerio_a_adicionar);
+  }
+
+  await sb(`eventos?id=eq.${ev.id}`, { method: 'PATCH', body: JSON.stringify({ convites, ministerios: ministeriosEv }) });
+  ev.convites = convites; ev.ministerios = ministeriosEv;
+
+  for (const c of novos) {
+    await sb('notificacoes', { method: 'POST', prefer: 'return=minimal', body: JSON.stringify({
+      vol_id: c.volId, tipo: 'convite', ev_id: ev.id, ev_nome: ev.nome,
+      ev_data: ev.data_inicio || ev.data, ev_hora: ev.hora, mensagem: 'Você foi convidado para servir neste evento.'
+    }) });
+  }
+
+  registrarLog('editar', 'evento', ev.nome, `${currentProfile.nome} convidou ${novos.map(c => c.nome).join(', ')} pro evento "${ev.nome}" via assistente de IA`);
   atualizarTodasAsViews();
 }
 
