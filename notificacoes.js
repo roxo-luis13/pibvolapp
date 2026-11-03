@@ -72,10 +72,13 @@ function renderNotificacoes() {
       lembrete_resposta_1sem:{icon:'ti-clock-exclamation', bg:'var(--amber-bg)', color:'var(--amber-text)', titulo:'Responda ao convite'},
       lembrete_2dias:{icon:'ti-calendar-time', bg:'var(--blue-bg)', color:'var(--blue-text)', titulo:'Evento em breve'},
       lembrete_30min:{icon:'ti-alarm', bg:'var(--coral-bg)', color:'var(--coral-text)', titulo:'Começa em 30 minutos'},
+      alerta_pessoal:{icon:'ti-bell-exclamation', bg:'var(--coral-bg)', color:'var(--coral-text)', titulo:'Alerta'},
     }[tipo] || {icon:'ti-bell', bg:'var(--purple-bg)', color:'var(--purple-text)', titulo:'Notificação'};
 
     let acoes = '';
-    if (tipo === 'convite' || tipo === 'lembrete_resposta_2sem' || tipo === 'lembrete_resposta_1sem') {
+    if (tipo === 'alerta_pessoal') {
+      acoes = '';
+    } else if (tipo === 'convite' || tipo === 'lembrete_resposta_2sem' || tipo === 'lembrete_resposta_1sem') {
       const convite = ev?.convites?.find(c=>c.volId===currentProfile.id);
       const status = convite?.status||'pendente';
       acoes = status==='pendente'
@@ -96,8 +99,8 @@ function renderNotificacoes() {
           <i class="ti ${cfg.icon}" style="color:${cfg.color};font-size:16px"></i>
         </div>
         <div style="flex:1;min-width:0">
-          <p style="font-size:13px;font-weight:500;margin-bottom:2px">${cfg.titulo}: ${n.ev_nome||'Evento'}</p>
-          <p style="font-size:11px;color:var(--text-secondary)">${ds}${n.ev_hora?' · '+n.ev_hora:''}</p>
+          <p style="font-size:13px;font-weight:500;margin-bottom:2px">${cfg.titulo}${n.ev_nome?': '+n.ev_nome:''}</p>
+          ${n.ev_data?`<p style="font-size:11px;color:var(--text-secondary)">${ds}${n.ev_hora?' · '+n.ev_hora:''}</p>`:''}
           ${n.mensagem?`<p style="font-size:12px;color:var(--text-secondary);margin-top:3px;font-style:italic">${n.mensagem}</p>`:''}
         </div>
         ${!n.lida?`<div style="width:8px;height:8px;border-radius:50%;background:var(--coral-text);flex-shrink:0;margin-top:4px"></div>`:''}
@@ -107,22 +110,16 @@ function renderNotificacoes() {
   }).join('');
 }
 
+// Via RPC: um INSERT direto em "notificacoes" exige pode_criar_eventos/pode_editar_eventos
+// (política da tabela), então um voluntário comum confirmando/recusando o próprio convite
+// tinha esse aviso pro líder bloqueado em silêncio pelo RLS — o líder nunca recebia nada.
+// A RPC roda como SECURITY DEFINER e resolve o líder/mensagem a partir do próprio evento.
 async function notificarLiderConfirmacao(ev, minId, resposta = 'aceito') {
-  const m = ministerios.find(m => m.id === minId);
-  if (!m || !m.lider_id || m.lider_id === currentProfile.id) return;
   try {
-    await sb('notificacoes',{method:'POST',prefer:'return=minimal',body:JSON.stringify({
-      vol_id: m.lider_id,
-      tipo: resposta === 'aceito' ? 'voluntario_confirmado' : 'voluntario_recusou',
-      ev_id: ev.id,
-      ev_nome: ev.nome,
-      ev_data: ev.data_inicio||ev.data,
-      ev_hora: ev.hora,
-      mensagem: resposta === 'aceito'
-        ? `${currentProfile.nome} confirmou presença no ministério ${m.nome}.`
-        : `${currentProfile.nome} recusou o convite no ministério ${m.nome}.`
+    await sb('rpc/notificar_lider_resposta', {method:'POST', body: JSON.stringify({
+      p_evento_id: ev.id, p_min_id: minId, p_resposta: resposta
     })});
-  } catch(e) {}
+  } catch(e) { console.error('Falha ao notificar líder:', e); }
 }
 
 // Responder convite e se inscrever em vaga aberta passam por RPCs no banco

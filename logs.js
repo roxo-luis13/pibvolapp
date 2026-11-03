@@ -30,6 +30,7 @@ const ICONES_LOG = {
   inscricao: 'ti-clipboard-check',
   perfil: 'ti-id',
   sessao: 'ti-login-2',
+  alerta: 'ti-bell-exclamation',
 };
 
 let logsAtividade = [];
