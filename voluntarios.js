@@ -277,11 +277,15 @@ function beEventosNoPeriodo(dataIni, dataFim) {
   });
 }
 
+// Participação = estar em "inscritos" do evento. Cobre tanto quem aceitou um convite
+// quanto quem se inscreveu sozinho numa vaga aberta — os dois casos entram em inscritos
+// (ver responder_convite_evento/alternar_inscricao_evento no banco). Olhar só "convites
+// aceitos" como antes ignorava quem nunca recebeu convite formal, subestimando bastante
+// a participação real de quem mais se inscreve por conta própria.
 function beParticipacaoVoluntario(volId, eventosPeriodo) {
   let aceitos = 0;
   eventosPeriodo.forEach(e => {
-    const c = (e.convites||[]).find(c=>c.volId===volId);
-    if (c && c.status==='aceito') aceitos++;
+    if ((e.inscritos||[]).some(i=>i.volId===volId)) aceitos++;
   });
   const total = eventosPeriodo.length;
   return {aceitos, total, pct: total ? (aceitos/total*100) : 0};
@@ -301,10 +305,7 @@ function beCultosCombinados(volId, eventosPeriodo) {
   const domingos = [];
   [...porData.entries()].sort((a,b)=>a[0].localeCompare(b[0])).forEach(([dataStr, evs]) => {
     if (evs.length < 2) return;
-    const aceitosDia = evs.filter(e => {
-      const c = (e.convites||[]).find(c=>c.volId===volId);
-      return c && c.status==='aceito';
-    }).length;
+    const aceitosDia = evs.filter(e => (e.inscritos||[]).some(i=>i.volId===volId)).length;
     if (aceitosDia === 0) return;
     domingos.push({data: dataStr, completo: aceitosDia === evs.length});
   });
