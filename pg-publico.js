@@ -5,6 +5,7 @@ const PGPUB_CENTRO = { lat: -22.9099, lng: -47.0626 }; // Campinas/SP
 let pgsPublicos = [];
 let pgPublicoDiaAtivo = 'Todos';
 let pgPublicoMap = null, pgPublicoMarkers = null, pgPublicoCarregado = false;
+let pgPublicoMinhaLoc = null, pgPublicoMeuMarker = null;
 
 async function abrirAreaPgPublica() {
   montarChipsDia();
@@ -38,7 +39,63 @@ function pgPublicoSetView(view) {
 }
 
 function pgPublicoBadgeTexto(v) { return v === 'aberto' ? 'Vagas abertas' : v === 'quase' ? 'Quase lotado' : 'Lotado'; }
-function pgPublicoCorVaga(v) { return v === 'aberto' ? '#2F7DE1' : v === 'quase' ? '#FFC93C' : '#E4362B'; }
+function pgPublicoCorVaga(v) { return v === 'aberto' ? '#7FADC7' : v === 'quase' ? '#E3BB4D' : '#CC6B46'; }
+
+function pgPublicoDistanciaKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function pgPublicoStatusBusca(msg, classe) {
+  const el = document.getElementById('pgpub-busca-status');
+  el.textContent = msg;
+  el.className = 'pgpub-busca-status' + (classe ? ' ' + classe : '');
+}
+
+// Busca client-side e temporária: o endereço digitado só vira coordenadas pra desenhar um
+// pino de comparação no mapa; nada disso é salvo em lugar nenhum, some ao sair da página.
+async function buscarMeuEnderecoPg() {
+  const input = document.getElementById('pgpub-busca-input');
+  const valor = input.value.trim();
+  if (!valor) { pgPublicoStatusBusca('', ''); return; }
+
+  pgPublicoStatusBusca('Procurando...', '');
+  try {
+    const query = valor.includes(',') ? valor : `${valor}, Campinas - SP, Brasil`;
+    const { lat, lng, nome } = await pgGeocodificarEndereco(query);
+    pgPublicoMinhaLoc = { lat, lng };
+
+    if (pgPublicoMeuMarker) pgPublicoMap.removeLayer(pgPublicoMeuMarker);
+    pgPublicoMeuMarker = L.marker([lat, lng], {
+      icon: L.divIcon({
+        className: '',
+        html: '<div class="pgpub-meu-pin"><div class="pgpub-meu-dot"></div><div class="pgpub-meu-label">Você está aqui</div></div>',
+        iconSize: [1, 1], iconAnchor: [0, 0]
+      }),
+      zIndexOffset: 1000
+    }).addTo(pgPublicoMap);
+    pgPublicoMap.setView([lat, lng], 13);
+    pgPublicoSetView('mapa');
+
+    document.getElementById('pgpub-busca-limpar').style.display = 'flex';
+    pgPublicoStatusBusca('📍 ' + nome, 'ok');
+    renderPgsPublico();
+  } catch (e) {
+    pgPublicoStatusBusca('Não encontramos esse endereço. Tente outro bairro ou CEP.', 'erro');
+  }
+}
+
+function limparMinhaLocalizacaoPg() {
+  pgPublicoMinhaLoc = null;
+  if (pgPublicoMeuMarker && pgPublicoMap) { pgPublicoMap.removeLayer(pgPublicoMeuMarker); pgPublicoMeuMarker = null; }
+  document.getElementById('pgpub-busca-input').value = '';
+  document.getElementById('pgpub-busca-limpar').style.display = 'none';
+  pgPublicoStatusBusca('', '');
+  renderPgsPublico();
+}
 
 function renderPgsPublico() {
   if (!pgPublicoCarregado) return;
@@ -86,11 +143,20 @@ function renderPgPublicoMapa(lista) {
 function renderPgPublicoLista(lista) {
   const el = document.getElementById('pgpub-listview');
   if (!lista.length) { el.innerHTML = '<p style="font-size:13px;color:var(--pg-muted-2);text-align:center;padding:20px">Nenhum PG encontrado para esse dia.</p>'; return; }
-  el.innerHTML = lista.map(p => `
+
+  let itens = lista;
+  if (pgPublicoMinhaLoc) {
+    itens = lista.map(p => ({
+      ...p,
+      _dist: (p.lat != null && p.lng != null) ? pgPublicoDistanciaKm(pgPublicoMinhaLoc.lat, pgPublicoMinhaLoc.lng, p.lat, p.lng) : null
+    })).sort((a, b) => (a._dist ?? Infinity) - (b._dist ?? Infinity));
+  }
+
+  el.innerHTML = itens.map(p => `
     <div class="pgpub-card" onclick="abrirDetalhePg('${p.id}')">
       <div>
         <h3>${p.nome}</h3>
-        <p>${p.bairro || '—'} · ${p.dia_semana || '—'}${p.horario ? ' às ' + p.horario.slice(0,5) : ''}${p.tema ? ' · ' + p.tema : ''}</p>
+        <p>${p.bairro || '—'} · ${p.dia_semana || '—'}${p.horario ? ' às ' + p.horario.slice(0,5) : ''}${p.tema ? ' · ' + p.tema : ''}${p._dist != null ? ' · ~' + p._dist.toFixed(1) + 'km de você' : ''}</p>
       </div>
       <span class="pgpub-badge ${p.vaga}">${pgPublicoBadgeTexto(p.vaga)}</span>
     </div>`).join('');

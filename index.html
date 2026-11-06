@@ -45,19 +45,6 @@
 
 <div id="pg-screen">
   <div class="pgpub-app">
-    <div class="pgpub-hero">
-      <div class="pgpub-hero-top">
-        <span class="pgpub-hero-heart">♥</span>
-        <p class="pgpub-hero-nome">Primeira Igreja Batista de Campinas</p>
-      </div>
-      <p class="pgpub-hero-missao">Fazer <span class="hl hl-terra">discípulos</span> de Jesus de todas as <span class="hl hl-gold">gerações</span> para amar e servir a <span class="hl hl-blue">cidade</span>.</p>
-      <div class="pgpub-valores">
-        <div class="pgpub-valor"><i class="ti ti-heart-handshake"></i><span>Acolhimento</span></div>
-        <div class="pgpub-valor"><i class="ti ti-book-2"></i><span>Discipulado</span></div>
-        <div class="pgpub-valor"><i class="ti ti-compass"></i><span>Missionalidade</span></div>
-        <div class="pgpub-valor"><i class="ti ti-scale"></i><span>Justiça</span></div>
-      </div>
-    </div>
     <header class="pgpub-header">
       <button type="button" class="pgpub-voltar" onclick="showScreen('gate')" title="Voltar"><i class="ti ti-arrow-left"></i></button>
       <div class="pgpub-header-main">
@@ -72,6 +59,13 @@
         </div>
       </div>
     </header>
+    <div class="pgpub-busca">
+      <i class="ti ti-map-pin" style="color:var(--pg-gold)"></i>
+      <input type="text" id="pgpub-busca-input" placeholder="Seu endereço, bairro ou CEP" onkeydown="if(event.key==='Enter')buscarMeuEnderecoPg()">
+      <button type="button" onclick="buscarMeuEnderecoPg()">Buscar</button>
+      <button type="button" id="pgpub-busca-limpar" onclick="limparMinhaLocalizacaoPg()" style="display:none" title="Remover"><i class="ti ti-x"></i></button>
+    </div>
+    <p id="pgpub-busca-status" class="pgpub-busca-status"></p>
     <main class="pgpub-main">
       <div class="pgpub-mapview" id="pgpub-mapview">
         <p class="pgpub-map-caption">Os pontos são aproximados — o endereço exato é combinado com o anfitrião após o contato.</p>
@@ -79,6 +73,19 @@
       <div class="pgpub-listview" id="pgpub-listview" style="display:none"></div>
       <div class="pgpub-empty" id="pgpub-empty" style="display:none"><i class="ti ti-tent"></i>Nenhum Pequeno Grupo cadastrado ainda. Volte em breve!</div>
     </main>
+    <div class="pgpub-hero">
+      <div class="pgpub-hero-top">
+        <span class="pgpub-hero-heart">♥</span>
+        <p class="pgpub-hero-nome">Primeira Igreja Batista de Campinas</p>
+      </div>
+      <p class="pgpub-hero-missao">Fazer <span class="hl hl-terra">discípulos</span> de Jesus de todas as <span class="hl hl-gold">gerações</span> para amar e servir a <span class="hl hl-blue">cidade</span>.</p>
+      <div class="pgpub-valores">
+        <div class="pgpub-valor"><i class="ti ti-heart-handshake"></i><span>Acolhimento</span></div>
+        <div class="pgpub-valor"><i class="ti ti-book-2"></i><span>Discipulado</span></div>
+        <div class="pgpub-valor"><i class="ti ti-compass"></i><span>Missionalidade</span></div>
+        <div class="pgpub-valor"><i class="ti ti-scale"></i><span>Justiça</span></div>
+      </div>
+    </div>
   </div>
 
   <div class="pgpub-overlay" id="pgpub-overlay" onclick="fecharDetalhePg()"></div>
