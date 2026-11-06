@@ -20,8 +20,41 @@
   <p>Carregando Igreja App...</p>
 </div>
 
+<div id="gate-screen">
+  <div class="login-box" style="max-width:420px">
+    <div class="login-logo">
+      <img src="logo.svg" alt="" class="brand-mark">
+      <h1>Igreja App</h1>
+      <p>PIBC</p>
+    </div>
+    <div class="gate-options">
+      <button type="button" class="btn primary gate-btn" onclick="showScreen('login')">
+        <i class="ti ti-user-check"></i>
+        <div><strong>Sou voluntário</strong><span>Acessar minha área de serviço</span></div>
+      </button>
+      <button type="button" class="btn gate-btn" onclick="showScreen('pg')">
+        <i class="ti ti-users-group"></i>
+        <div><strong>Pequenos Grupos</strong><span>Área aberta para todos</span></div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div id="pg-screen">
+  <div class="login-box" style="max-width:480px;text-align:center">
+    <button type="button" class="btn sm" onclick="showScreen('gate')" style="margin-bottom:18px"><i class="ti ti-arrow-left"></i>Voltar</button>
+    <div class="login-logo">
+      <img src="logo.svg" alt="" class="brand-mark">
+      <h1>Pequenos Grupos</h1>
+      <p>Em construção — novidades em breve!</p>
+    </div>
+    <div id="pg-content"></div>
+  </div>
+</div>
+
 <div id="login-screen">
   <div class="login-box">
+    <button type="button" class="btn sm" onclick="showScreen('gate')" style="margin-bottom:16px"><i class="ti ti-arrow-left"></i>Voltar</button>
     <div class="login-logo">
       <img src="logo.svg" alt="" class="brand-mark">
       <h1>Igreja App</h1>

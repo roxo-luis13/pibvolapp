@@ -142,7 +142,9 @@ const canAccess = mId => {
 
 function showScreen(s) {
   document.getElementById('loading-screen').style.display = s==='loading'?'flex':'none';
+  document.getElementById('gate-screen').style.display = s==='gate'?'flex':'none';
   document.getElementById('login-screen').style.display = s==='login'?'flex':'none';
+  document.getElementById('pg-screen').style.display = s==='pg'?'flex':'none';
   document.getElementById('main-app').classList.toggle('visible', s==='app');
   const fab = document.getElementById('assistente-fab');
   if (fab) {

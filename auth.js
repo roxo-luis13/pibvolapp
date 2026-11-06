@@ -14,7 +14,7 @@ async function init() {
     } catch(e) {}
     localStorage.removeItem('igreja_session');
   }
-  showScreen('login');
+  showScreen('gate');
 }
 
 async function loadProfile(userId) {
@@ -234,7 +234,7 @@ function doLogout() {
   document.getElementById('login-senha').value = '';
   const btn = document.getElementById('btn-login');
   btn.innerHTML = '<i class="ti ti-login"></i>Entrar'; btn.disabled = false;
-  showScreen('login');
+  showScreen('gate');
 }
 
 // SHA-256 simples para senhas
