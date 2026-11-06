@@ -748,10 +748,7 @@ Bateria: Pedro..." style="min-height:80px"></textarea></div>
     <h2 id="modal-pg-title">Criar Pequeno Grupo</h2>
     <input type="hidden" id="pg-edit-id" value="">
     <div class="form-group"><label>Nome do PG *</label><input id="pg-nome" type="text" placeholder="ex: Casa do Zaqueu"></div>
-    <div class="grid-2" style="gap:12px">
-      <div class="form-group"><label>Anfitrião(s)</label><input id="pg-anfitriao" type="text" placeholder="ex: João e Marcia"></div>
-      <div class="form-group"><label>Bairro</label><input id="pg-bairro" type="text" placeholder="ex: Taquaral" onblur="localizarPg()"></div>
-    </div>
+    <div class="form-group"><label>Anfitrião(s)</label><input id="pg-anfitriao" type="text" placeholder="ex: João e Marcia"></div>
     <div class="grid-2" style="gap:12px">
       <div class="form-group"><label>Dia da semana</label>
         <select id="pg-dia"><option value="Dom">Domingo</option><option value="Seg">Segunda</option><option value="Ter">Terça</option><option value="Qua">Quarta</option><option value="Qui">Quinta</option><option value="Sex">Sexta</option><option value="Sáb">Sábado</option></select>
@@ -774,10 +771,15 @@ Bateria: Pedro..." style="min-height:80px"></textarea></div>
     </div>
     <div class="form-group">
       <label>Localização aproximada</label>
-      <p style="font-size:11px;color:var(--text-secondary);margin-bottom:6px">Informe o bairro (acima) ou o CEP — localizamos automaticamente e marcamos uma área de 5km ao redor, sem revelar o endereço exato.</p>
-      <div class="grid-2" style="gap:12px;align-items:flex-end">
-        <div class="form-group" style="margin-bottom:0"><label>CEP</label><input id="pg-cep" type="text" placeholder="13025-320" onblur="localizarPg()"></div>
-        <button type="button" class="btn sm" onclick="localizarPg()" style="margin-bottom:14px"><i class="ti ti-map-pin-search"></i>Localizar</button>
+      <p style="font-size:11px;color:var(--text-secondary);margin-bottom:6px">Escolha como localizar o grupo — localizamos automaticamente e marcamos uma área de 5km ao redor, sem revelar o endereço exato.</p>
+      <div class="chips" style="margin:0 0 10px">
+        <div class="chip selected" id="pg-modo-bairro" onclick="pgSetModoLocal('bairro')">Por bairro</div>
+        <div class="chip" id="pg-modo-cep" onclick="pgSetModoLocal('cep')">Por CEP</div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:flex-end">
+        <div id="pg-bairro-wrap" style="flex:1"><div class="form-group" style="margin-bottom:0"><label>Bairro</label><input id="pg-bairro" type="text" placeholder="ex: Taquaral" onblur="localizarPg()"></div></div>
+        <div id="pg-cep-wrap" style="flex:1;display:none"><div class="form-group" style="margin-bottom:0"><label>CEP</label><input id="pg-cep" type="text" placeholder="13025-320" onblur="localizarPg()"></div></div>
+        <button type="button" class="btn sm" onclick="localizarPg()" style="margin-bottom:14px;flex-shrink:0"><i class="ti ti-map-pin-search"></i>Localizar</button>
       </div>
       <p id="pg-local-status" class="pg-local-status"></p>
       <div id="pg-mapa-picker" style="height:220px;border-radius:var(--radius);overflow:hidden;border:0.5px solid var(--border)"></div>

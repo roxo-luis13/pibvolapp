@@ -89,22 +89,39 @@ async function pgGeocodificarEndereco(query) {
   return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), nome: data[0].display_name };
 }
 
+let pgModoLocal = 'bairro';
+
+function pgSetModoLocal(modo) {
+  pgModoLocal = modo;
+  document.getElementById('pg-modo-bairro').classList.toggle('selected', modo === 'bairro');
+  document.getElementById('pg-modo-cep').classList.toggle('selected', modo === 'cep');
+  document.getElementById('pg-bairro-wrap').style.display = modo === 'bairro' ? '' : 'none';
+  document.getElementById('pg-cep-wrap').style.display = modo === 'cep' ? '' : 'none';
+  localizarPg();
+}
+
+function limparCirculoPg() {
+  if (pgPickerCirculo && pgPickerMap) { pgPickerMap.removeLayer(pgPickerCirculo); pgPickerCirculo = null; }
+  document.getElementById('pg-lat').value = '';
+  document.getElementById('pg-lng').value = '';
+}
+
 async function localizarPg() {
-  const cep = document.getElementById('pg-cep').value.trim();
-  const bairro = document.getElementById('pg-bairro').value.trim();
-  if (!cep && !bairro) { pgDefinirStatusLocal('', ''); return; }
+  const valor = pgModoLocal === 'cep'
+    ? document.getElementById('pg-cep').value.trim()
+    : document.getElementById('pg-bairro').value.trim();
+  if (!valor) { pgDefinirStatusLocal('', ''); limparCirculoPg(); return; }
 
   pgDefinirStatusLocal('Localizando...', '');
   try {
-    const query = cep.replace(/\D/g, '').length === 8
-      ? await pgGeocodificarPorCep(cep)
-      : (bairro.includes(',') ? bairro : `${bairro}, Campinas - SP, Brasil`);
+    const query = pgModoLocal === 'cep'
+      ? await pgGeocodificarPorCep(valor)
+      : (valor.includes(',') ? valor : `${valor}, Campinas - SP, Brasil`);
     const { lat, lng, nome } = await pgGeocodificarEndereco(query);
     desenharCirculoPg(lat, lng);
     pgDefinirStatusLocal('📍 ' + nome, 'ok');
   } catch (e) {
-    document.getElementById('pg-lat').value = '';
-    document.getElementById('pg-lng').value = '';
+    limparCirculoPg();
     pgDefinirStatusLocal('Não foi possível localizar: ' + e.message, 'erro');
   }
 }
@@ -118,6 +135,7 @@ function openModalPg() {
   document.getElementById('pg-frequencia').value = 'Semanal';
   document.getElementById('pg-vaga').value = 'aberto';
   pgDefinirStatusLocal('', '');
+  pgSetModoLocal('bairro');
   openModal('modal-pg');
   setTimeout(() => initPgPickerMap(null, null), 50);
 }
@@ -139,6 +157,11 @@ function editPg(id) {
   document.getElementById('pg-whatsapp').value = p.whatsapp || '';
   document.getElementById('pg-participantes').value = p.participantes || '';
   document.getElementById('pg-vaga').value = p.vaga || 'aberto';
+  pgModoLocal = p.cep ? 'cep' : 'bairro';
+  document.getElementById('pg-modo-bairro').classList.toggle('selected', pgModoLocal === 'bairro');
+  document.getElementById('pg-modo-cep').classList.toggle('selected', pgModoLocal === 'cep');
+  document.getElementById('pg-bairro-wrap').style.display = pgModoLocal === 'bairro' ? '' : 'none';
+  document.getElementById('pg-cep-wrap').style.display = pgModoLocal === 'cep' ? '' : 'none';
   pgDefinirStatusLocal(p.lat && p.lng ? '📍 Localização já definida' : '', p.lat && p.lng ? 'ok' : '');
   openModal('modal-pg', true);
   setTimeout(() => initPgPickerMap(p.lat, p.lng), 50);
