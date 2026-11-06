@@ -235,6 +235,20 @@ hr{border:none;border-top:0.5px solid var(--border);margin:14px 0}
 @media(min-width:769px){
   .vol-cards-mobile{display:none}
 }
+
+/* ===== PEQUENOS GRUPOS (admin) MOBILE ===== */
+@media(max-width:768px){
+  #section-pgs .table-wrap{display:none}
+  .pg-admin-cards-mobile{display:block}
+}
+@media(min-width:769px){
+  .pg-admin-cards-mobile{display:none}
+}
+.pg-admin-card{background:var(--bg-primary);border:0.5px solid var(--border);border-radius:var(--radius-lg);padding:14px;margin-bottom:10px}
+.pg-admin-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
+.pg-admin-card-nome{font-size:14px;font-weight:500}
+.pg-admin-card-meta{font-size:12px;color:var(--text-secondary);margin-bottom:10px}
+.pg-admin-card-footer{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .vol-card{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:0.5px solid var(--border)}
 .vol-card:last-child{border-bottom:none}
 .vol-card-info{flex:1;min-width:0}
@@ -451,9 +465,9 @@ hr{border:none;border-top:0.5px solid var(--border);margin:14px 0}
   --pg-terracotta:#CC6B46;--pg-terracotta-dark:#A6502F;
   --pg-blue:#7FADC7;--pg-blue-dark:#5485A0;--pg-rose:#D98FA0;
   --pg-muted:#B9AE9B;
-  font-family:'Work Sans',sans-serif;color:var(--pg-cream);background:var(--pg-chalk);min-height:100vh;
+  font-family:'Work Sans',sans-serif;color:var(--pg-cream);background:var(--pg-chalk);min-height:100vh;min-height:100dvh;
 }
-.pgpub-app{max-width:1000px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+.pgpub-app{max-width:1000px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column}
 
 .pgpub-hero{padding:22px 20px;text-align:center;border-top:1px solid var(--pg-chalk-3);margin-top:8px}
 .pgpub-hero-top{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px}
@@ -506,7 +520,7 @@ hr{border:none;border-top:0.5px solid var(--border);margin:14px 0}
 .pgpub-viewtoggle button{font-family:'Work Sans',sans-serif;font-size:13px;font-weight:700;padding:6px 14px;border-radius:100px;border:none;background:transparent;color:var(--pg-muted);cursor:pointer}
 .pgpub-viewtoggle button.active{background:var(--pg-blue);color:var(--pg-chalk)}
 .pgpub-main{position:relative;flex:1}
-.pgpub-mapview{position:relative;height:calc(100vh - 210px);min-height:380px;background:var(--pg-chalk-2)}
+.pgpub-mapview{position:relative;height:calc(100vh - 230px);height:calc(100dvh - 230px);min-height:340px;background:var(--pg-chalk-2)}
 .pgpub-map-caption{position:absolute;left:16px;bottom:14px;z-index:401;font-family:'Work Sans',sans-serif;font-size:10.5px;font-weight:600;color:var(--pg-cream);background:rgba(39,35,32,.85);padding:6px 10px;border-radius:10px;max-width:260px;line-height:1.5;pointer-events:none}
 .pgpub-listview{padding:18px 20px 32px;display:grid;gap:12px}
 .pgpub-empty{padding:48px 20px;text-align:center;color:var(--pg-muted);font-size:13px}
@@ -559,7 +573,7 @@ hr{border:none;border-top:0.5px solid var(--border);margin:14px 0}
   .pgpub-busca{padding:9px 14px;gap:8px}
   .pgpub-busca button{padding:8px 12px}
   .pgpub-busca-status{padding:0 14px 8px}
-  .pgpub-mapview{height:calc(100vh - 175px)}
+  .pgpub-mapview{height:calc(100vh - 195px);height:calc(100dvh - 195px)}
   .pgpub-map-caption{font-size:10px;padding:5px 9px;max-width:200px}
   .pgpub-listview{padding:14px 14px 28px}
   .pgpub-card{padding:13px 14px}

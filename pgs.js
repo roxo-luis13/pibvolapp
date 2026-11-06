@@ -27,6 +27,25 @@ function renderPgs() {
       <td>${btns}</td>
     </tr>`;
   }).join('');
+
+  const cardsMobile = document.getElementById('pgs-cards-mobile');
+  if (cardsMobile) {
+    cardsMobile.innerHTML = pgs.map(p => `
+      <div class="pg-admin-card">
+        <div class="pg-admin-card-top">
+          <div class="pg-admin-card-nome">${p.nome}</div>
+          <span class="badge ${badgeVagaClasse(p.vaga)}">${badgeVagaTexto(p.vaga)}</span>
+        </div>
+        <div class="pg-admin-card-meta">${p.dia_semana || '—'}${p.horario ? ' às ' + p.horario.slice(0,5) : ''} · ${p.bairro || '—'}${p.tema ? ' · ' + p.tema : ''} · ${p.ativo ? 'Ativo' : 'Inativo'}</div>
+        <div class="pg-admin-card-footer">
+          <span></span>
+          <div style="display:flex;gap:6px">
+            ${canEdit ? `<button class="btn sm" onclick="editPg('${p.id}')"><i class="ti ti-edit"></i>Editar</button>` : ''}
+            ${canExcluir ? `<button class="btn sm danger" onclick="deletePg('${p.id}')"><i class="ti ti-trash"></i>Excluir</button>` : ''}
+          </div>
+        </div>
+      </div>`).join('');
+  }
 }
 
 // ===== MODAL CRIAR/EDITAR - localização aproximada (círculo de 5km) =====
