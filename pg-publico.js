@@ -37,13 +37,6 @@ function pgPublicoSetView(view) {
   if (view === 'mapa' && pgPublicoMap) setTimeout(() => pgPublicoMap.invalidateSize(), 50);
 }
 
-function pgPublicoHouseSvg() {
-  return `<svg width="28" height="32" viewBox="0 0 30 34" fill="none">
-    <path d="M15 2 L28 13 V31 H2 V13 Z" fill="#3A2F5C" stroke="#4A3E72" stroke-width="1"/>
-    <rect x="11" y="16" width="8" height="8" rx="1.5" fill="#F0A855"/>
-  </svg>`;
-}
-
 function pgPublicoBadgeTexto(v) { return v === 'aberto' ? 'Vagas abertas' : v === 'quase' ? 'Quase lotado' : 'Lotado'; }
 
 function renderPgsPublico() {
@@ -57,6 +50,8 @@ function renderPgsPublico() {
   renderPgPublicoLista(filtrados);
 }
 
+const PGPUB_RAIO_METROS = 5000;
+
 function renderPgPublicoMapa(lista) {
   if (!pgPublicoMap) {
     pgPublicoMap = L.map('pgpub-mapview').setView([PGPUB_CENTRO.lat, PGPUB_CENTRO.lng], 12);
@@ -67,17 +62,17 @@ function renderPgPublicoMapa(lista) {
   }
   pgPublicoMarkers.clearLayers();
 
-  const pontos = [];
   lista.forEach(p => {
     if (p.lat == null || p.lng == null) return;
-    const icon = L.divIcon({
-      className: '',
-      html: `<div class="pgpub-pin-wrap">${pgPublicoHouseSvg()}<div class="pgpub-pin-label">${p.nome}</div></div>`,
-      iconSize: [28, 32], iconAnchor: [14, 32]
-    });
-    const marker = L.marker([p.lat, p.lng], { icon }).addTo(pgPublicoMarkers);
-    marker.on('click', () => abrirDetalhePg(p.id));
-    pontos.push([p.lat, p.lng]);
+    const abrir = () => abrirDetalhePg(p.id);
+    const circulo = L.circle([p.lat, p.lng], {
+      radius: PGPUB_RAIO_METROS, color: '#F0A855', weight: 1.5, fillColor: '#F0A855', fillOpacity: 0.12
+    }).addTo(pgPublicoMarkers);
+    circulo.on('click', abrir);
+    const label = L.marker([p.lat, p.lng], {
+      icon: L.divIcon({ className: '', html: `<div class="pgpub-pin-label">${p.nome}</div>`, iconSize: [1, 1], iconAnchor: [0, 0] })
+    }).addTo(pgPublicoMarkers);
+    label.on('click', abrir);
   });
 
   setTimeout(() => pgPublicoMap.invalidateSize(), 50);

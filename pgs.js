@@ -29,8 +29,9 @@ function renderPgs() {
   }).join('');
 }
 
-// ===== MODAL CRIAR/EDITAR =====
-let pgPickerMap = null, pgPickerMarker = null;
+// ===== MODAL CRIAR/EDITAR - localização aproximada (círculo de 5km) =====
+const PG_RAIO_METROS = 5000;
+let pgPickerMap = null, pgPickerCirculo = null;
 
 function initPgPickerMap(lat, lng) {
   const el = document.getElementById('pg-mapa-picker');
@@ -38,42 +39,85 @@ function initPgPickerMap(lat, lng) {
   const centro = (lat && lng) ? [lat, lng] : [PG_CENTRO_PADRAO.lat, PG_CENTRO_PADRAO.lng];
 
   if (!pgPickerMap) {
-    pgPickerMap = L.map('pg-mapa-picker').setView(centro, 13);
+    pgPickerMap = L.map('pg-mapa-picker', { scrollWheelZoom: false }).setView(centro, 12);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors', maxZoom: 19
     }).addTo(pgPickerMap);
-    pgPickerMap.on('click', e => colocarPgMarker(e.latlng.lat, e.latlng.lng));
   } else {
-    pgPickerMap.setView(centro, 13);
+    pgPickerMap.setView(centro, 12);
   }
 
-  if (pgPickerMarker) { pgPickerMap.removeLayer(pgPickerMarker); pgPickerMarker = null; }
-  if (lat && lng) colocarPgMarker(lat, lng);
-  else { document.getElementById('pg-lat').value = ''; document.getElementById('pg-lng').value = ''; }
+  if (pgPickerCirculo) { pgPickerMap.removeLayer(pgPickerCirculo); pgPickerCirculo = null; }
+  if (lat && lng) desenharCirculoPg(lat, lng);
 
   setTimeout(() => pgPickerMap.invalidateSize(), 80);
 }
 
-function colocarPgMarker(lat, lng) {
-  if (pgPickerMarker) pgPickerMap.removeLayer(pgPickerMarker);
-  pgPickerMarker = L.marker([lat, lng], { draggable: true }).addTo(pgPickerMap);
-  pgPickerMarker.on('dragend', () => {
-    const pos = pgPickerMarker.getLatLng();
-    document.getElementById('pg-lat').value = pos.lat;
-    document.getElementById('pg-lng').value = pos.lng;
-  });
+function desenharCirculoPg(lat, lng) {
+  if (pgPickerCirculo) pgPickerMap.removeLayer(pgPickerCirculo);
+  pgPickerCirculo = L.circle([lat, lng], {
+    radius: PG_RAIO_METROS, color: '#7F77DD', weight: 1.5, fillColor: '#7F77DD', fillOpacity: 0.15
+  }).addTo(pgPickerMap);
+  pgPickerMap.fitBounds(pgPickerCirculo.getBounds(), { padding: [10, 10] });
   document.getElementById('pg-lat').value = lat;
   document.getElementById('pg-lng').value = lng;
+}
+
+function pgDefinirStatusLocal(msg, classe) {
+  const el = document.getElementById('pg-local-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'pg-local-status' + (classe ? ' ' + classe : '');
+}
+
+async function pgGeocodificarPorCep(cep) {
+  const limpo = cep.replace(/\D/g, '');
+  if (limpo.length !== 8) throw new Error('CEP inválido.');
+  const resp = await fetch(`https://viacep.com.br/ws/${limpo}/json/`);
+  const data = await resp.json();
+  if (!resp.ok || data.erro) throw new Error('CEP não encontrado.');
+  if (!document.getElementById('pg-bairro').value.trim() && data.bairro) {
+    document.getElementById('pg-bairro').value = data.bairro;
+  }
+  return `${data.bairro || ''}, ${data.localidade} - ${data.uf}, Brasil`;
+}
+
+async function pgGeocodificarEndereco(query) {
+  const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`);
+  const data = await resp.json();
+  if (!resp.ok || !data || !data.length) throw new Error('Não encontramos esse endereço.');
+  return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), nome: data[0].display_name };
+}
+
+async function localizarPg() {
+  const cep = document.getElementById('pg-cep').value.trim();
+  const bairro = document.getElementById('pg-bairro').value.trim();
+  if (!cep && !bairro) { pgDefinirStatusLocal('', ''); return; }
+
+  pgDefinirStatusLocal('Localizando...', '');
+  try {
+    const query = cep.replace(/\D/g, '').length === 8
+      ? await pgGeocodificarPorCep(cep)
+      : (bairro.includes(',') ? bairro : `${bairro}, Campinas - SP, Brasil`);
+    const { lat, lng, nome } = await pgGeocodificarEndereco(query);
+    desenharCirculoPg(lat, lng);
+    pgDefinirStatusLocal('📍 ' + nome, 'ok');
+  } catch (e) {
+    document.getElementById('pg-lat').value = '';
+    document.getElementById('pg-lng').value = '';
+    pgDefinirStatusLocal('Não foi possível localizar: ' + e.message, 'erro');
+  }
 }
 
 function openModalPg() {
   document.getElementById('modal-pg-title').textContent = 'Criar Pequeno Grupo';
   document.getElementById('pg-edit-id').value = '';
-  ['pg-nome','pg-anfitriao','pg-bairro','pg-tema','pg-desc','pg-whatsapp','pg-participantes'].forEach(f => document.getElementById(f).value = '');
+  ['pg-nome','pg-anfitriao','pg-bairro','pg-cep','pg-tema','pg-desc','pg-whatsapp','pg-participantes'].forEach(f => document.getElementById(f).value = '');
   document.getElementById('pg-dia').value = 'Ter';
   document.getElementById('pg-horario').value = '20:00';
   document.getElementById('pg-frequencia').value = 'Semanal';
   document.getElementById('pg-vaga').value = 'aberto';
+  pgDefinirStatusLocal('', '');
   openModal('modal-pg');
   setTimeout(() => initPgPickerMap(null, null), 50);
 }
@@ -86,6 +130,7 @@ function editPg(id) {
   document.getElementById('pg-nome').value = p.nome || '';
   document.getElementById('pg-anfitriao').value = p.anfitriao || '';
   document.getElementById('pg-bairro').value = p.bairro || '';
+  document.getElementById('pg-cep').value = p.cep || '';
   document.getElementById('pg-dia').value = p.dia_semana || 'Ter';
   document.getElementById('pg-horario').value = (p.horario || '20:00').slice(0,5);
   document.getElementById('pg-frequencia').value = p.frequencia || 'Semanal';
@@ -94,6 +139,7 @@ function editPg(id) {
   document.getElementById('pg-whatsapp').value = p.whatsapp || '';
   document.getElementById('pg-participantes').value = p.participantes || '';
   document.getElementById('pg-vaga').value = p.vaga || 'aberto';
+  pgDefinirStatusLocal(p.lat && p.lng ? '📍 Localização já definida' : '', p.lat && p.lng ? 'ok' : '');
   openModal('modal-pg', true);
   setTimeout(() => initPgPickerMap(p.lat, p.lng), 50);
 }
@@ -103,12 +149,13 @@ async function savePg() {
   if (!nome) { alert('O nome do PG é obrigatório.'); return; }
   const lat = document.getElementById('pg-lat').value;
   const lng = document.getElementById('pg-lng').value;
-  if (!lat || !lng) { alert('Marque o local aproximado do PG no mapa.'); return; }
+  if (!lat || !lng) { alert('Informe o bairro ou o CEP e aguarde localizar no mapa antes de salvar.'); return; }
 
   const dados = {
     nome,
     anfitriao: document.getElementById('pg-anfitriao').value.trim(),
     bairro: document.getElementById('pg-bairro').value.trim(),
+    cep: document.getElementById('pg-cep').value.trim(),
     dia_semana: document.getElementById('pg-dia').value,
     horario: document.getElementById('pg-horario').value,
     frequencia: document.getElementById('pg-frequencia').value,

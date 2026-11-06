@@ -749,7 +749,7 @@ Bateria: Pedro..." style="min-height:80px"></textarea></div>
     <div class="form-group"><label>Nome do PG *</label><input id="pg-nome" type="text" placeholder="ex: Casa do Zaqueu"></div>
     <div class="grid-2" style="gap:12px">
       <div class="form-group"><label>Anfitrião(s)</label><input id="pg-anfitriao" type="text" placeholder="ex: João e Marcia"></div>
-      <div class="form-group"><label>Bairro</label><input id="pg-bairro" type="text" placeholder="ex: Taquaral"></div>
+      <div class="form-group"><label>Bairro</label><input id="pg-bairro" type="text" placeholder="ex: Taquaral" onblur="localizarPg()"></div>
     </div>
     <div class="grid-2" style="gap:12px">
       <div class="form-group"><label>Dia da semana</label>
@@ -772,8 +772,13 @@ Bateria: Pedro..." style="min-height:80px"></textarea></div>
       <select id="pg-vaga"><option value="aberto">Aberto</option><option value="quase">Quase lotado</option><option value="lotado">Lotado</option></select>
     </div>
     <div class="form-group">
-      <label>Local no mapa</label>
-      <p style="font-size:11px;color:var(--text-secondary);margin-bottom:6px">Clique no mapa pra marcar o ponto aproximado (não precisa ser o endereço exato).</p>
+      <label>Localização aproximada</label>
+      <p style="font-size:11px;color:var(--text-secondary);margin-bottom:6px">Informe o bairro (acima) ou o CEP — localizamos automaticamente e marcamos uma área de 5km ao redor, sem revelar o endereço exato.</p>
+      <div class="grid-2" style="gap:12px;align-items:flex-end">
+        <div class="form-group" style="margin-bottom:0"><label>CEP</label><input id="pg-cep" type="text" placeholder="13025-320" onblur="localizarPg()"></div>
+        <button type="button" class="btn sm" onclick="localizarPg()" style="margin-bottom:14px"><i class="ti ti-map-pin-search"></i>Localizar</button>
+      </div>
+      <p id="pg-local-status" class="pg-local-status"></p>
       <div id="pg-mapa-picker" style="height:220px;border-radius:var(--radius);overflow:hidden;border:0.5px solid var(--border)"></div>
       <input type="hidden" id="pg-lat" value=""><input type="hidden" id="pg-lng" value="">
     </div>
