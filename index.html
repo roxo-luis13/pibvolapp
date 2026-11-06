@@ -12,6 +12,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="PIBVolApp">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -41,14 +44,54 @@
 </div>
 
 <div id="pg-screen">
-  <div class="login-box" style="max-width:480px;text-align:center">
-    <button type="button" class="btn sm" onclick="showScreen('gate')" style="margin-bottom:18px"><i class="ti ti-arrow-left"></i>Voltar</button>
-    <div class="login-logo">
-      <img src="logo.svg" alt="" class="brand-mark">
-      <h1>Pequenos Grupos</h1>
-      <p>Em construção — novidades em breve!</p>
+  <div class="pgpub-app">
+    <header class="pgpub-header">
+      <button type="button" class="pgpub-voltar" onclick="showScreen('gate')" title="Voltar"><i class="ti ti-arrow-left"></i></button>
+      <div class="pgpub-header-main">
+        <p class="pgpub-eyebrow">PIBC · Pequenos Grupos</p>
+        <h1>Onde encontrar um PG</h1>
+      </div>
+      <div class="pgpub-controls">
+        <div class="pgpub-chips" id="pgpub-dia-chips"></div>
+        <div class="pgpub-viewtoggle">
+          <button type="button" id="pgpub-btn-mapa" class="active" onclick="pgPublicoSetView('mapa')">Mapa</button>
+          <button type="button" id="pgpub-btn-lista" onclick="pgPublicoSetView('lista')">Lista</button>
+        </div>
+      </div>
+    </header>
+    <main class="pgpub-main">
+      <div class="pgpub-mapview" id="pgpub-mapview">
+        <p class="pgpub-map-caption">Os pontos são aproximados — o endereço exato é combinado com o anfitrião após o contato.</p>
+      </div>
+      <div class="pgpub-listview" id="pgpub-listview" style="display:none"></div>
+      <div class="pgpub-empty" id="pgpub-empty" style="display:none"><i class="ti ti-tent"></i>Nenhum Pequeno Grupo cadastrado ainda. Volte em breve!</div>
+    </main>
+  </div>
+
+  <div class="pgpub-overlay" id="pgpub-overlay" onclick="fecharDetalhePg()"></div>
+  <div class="pgpub-detail" id="pgpub-detail">
+    <div class="pgpub-detail-top">
+      <button type="button" class="pgpub-detail-close" onclick="fecharDetalhePg()">&times;</button>
+      <p class="pgpub-eyebrow" id="pgpub-d-tema">tema</p>
+      <h2 id="pgpub-d-nome">Nome do PG</h2>
+      <p class="pgpub-d-host" id="pgpub-d-host">Recebe: Anfitrião</p>
     </div>
-    <div id="pg-content"></div>
+    <div class="pgpub-detail-body">
+      <div class="pgpub-info-row">
+        <div class="pgpub-ic"><i class="ti ti-map-pin"></i></div>
+        <div class="pgpub-txt"><strong id="pgpub-d-bairro">Bairro</strong><span>Endereço exato combinado após contato</span></div>
+      </div>
+      <div class="pgpub-info-row">
+        <div class="pgpub-ic"><i class="ti ti-clock"></i></div>
+        <div class="pgpub-txt"><strong id="pgpub-d-horario">Dia às horário</strong><span id="pgpub-d-freq">Semanal</span></div>
+      </div>
+      <div class="pgpub-info-row">
+        <div class="pgpub-ic"><i class="ti ti-users"></i></div>
+        <div class="pgpub-txt"><strong id="pgpub-d-part">0 pessoas</strong><span id="pgpub-d-vaga">Aberto</span></div>
+      </div>
+      <div class="pgpub-desc" id="pgpub-d-desc">Descrição do grupo.</div>
+      <a class="pgpub-cta" id="pgpub-d-cta" href="#" target="_blank" rel="noopener">Quero participar</a>
+    </div>
   </div>
 </div>
 
@@ -101,6 +144,7 @@
       <div class="nav-item" id="nav-ministerios" onclick="navigate('ministerios');closeSidebarMobile()"><i class="ti ti-users-group"></i><span class="nav-item-text">Ministérios</span><span class="nav-tooltip">Ministérios</span></div>
       <div class="nav-item" id="nav-voluntarios" onclick="navigate('voluntarios');closeSidebarMobile()"><i class="ti ti-user-check"></i><span class="nav-item-text">Voluntários</span><span class="nav-tooltip">Voluntários</span></div>
       <div class="nav-item" id="nav-eventos" onclick="navigate('eventos');closeSidebarMobile()"><i class="ti ti-calendar-event"></i><span class="nav-item-text">Eventos</span><span class="nav-tooltip">Eventos</span></div>
+      <div class="nav-item" id="nav-pgs" onclick="navigate('pgs');closeSidebarMobile()"><i class="ti ti-tent"></i><span class="nav-item-text">Pequenos Grupos</span><span class="nav-tooltip">Pequenos Grupos</span></div>
       <div class="nav-item" id="nav-niveis" onclick="navigate('niveis');closeSidebarMobile()"><i class="ti ti-shield-lock"></i><span class="nav-item-text">Níveis de acesso</span><span class="nav-tooltip">Níveis de acesso</span></div>
       <div class="nav-item" id="nav-logs" onclick="navigate('logs');closeSidebarMobile()"><i class="ti ti-history"></i><span class="nav-item-text">Log de atividade</span><span class="nav-tooltip">Log de atividade</span></div>
       <div class="nav-section">Conta</div>
@@ -417,6 +461,23 @@
         </div>
       </div>
 
+      <div class="section" id="section-pgs">
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+            <div>
+              <h3 style="font-size:14px;font-weight:500">Pequenos Grupos (PGs)</h3>
+              <p style="font-size:12px;color:var(--text-tertiary);margin-top:3px">Aparecem na área pública de PGs, sem precisar de login.</p>
+            </div>
+            <span id="pgs-count" style="font-size:12px;color:var(--text-secondary)"></span>
+          </div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Nome</th><th>Dia / Horário</th><th>Bairro</th><th>Tema</th><th>Vaga</th><th>Ativo</th><th></th></tr></thead>
+            <tbody id="pgs-tbody"></tbody></table>
+          </div>
+          <div id="pgs-empty" style="display:none" class="empty" style="padding:20px"><i class="ti ti-tent"></i>Nenhum Pequeno Grupo cadastrado ainda</div>
+        </div>
+      </div>
+
       <div class="section" id="section-niveis">
         <div class="grid-3" id="niveis-grid"></div>
       </div>
@@ -443,6 +504,7 @@
                 <option value="perfil">Perfil</option>
                 <option value="sessao">Sessão</option>
                 <option value="alerta">Alertas</option>
+                <option value="pg">Pequenos Grupos</option>
               </select>
             </div>
           </div>
@@ -680,6 +742,48 @@ Bateria: Pedro..." style="min-height:80px"></textarea></div>
   </div>
 </div>
 
+<div class="modal-backdrop" id="modal-pg">
+  <div class="modal" style="max-width:520px">
+    <h2 id="modal-pg-title">Criar Pequeno Grupo</h2>
+    <input type="hidden" id="pg-edit-id" value="">
+    <div class="form-group"><label>Nome do PG *</label><input id="pg-nome" type="text" placeholder="ex: Casa do Zaqueu"></div>
+    <div class="grid-2" style="gap:12px">
+      <div class="form-group"><label>Anfitrião(s)</label><input id="pg-anfitriao" type="text" placeholder="ex: João e Marcia"></div>
+      <div class="form-group"><label>Bairro</label><input id="pg-bairro" type="text" placeholder="ex: Taquaral"></div>
+    </div>
+    <div class="grid-2" style="gap:12px">
+      <div class="form-group"><label>Dia da semana</label>
+        <select id="pg-dia"><option value="Dom">Domingo</option><option value="Seg">Segunda</option><option value="Ter">Terça</option><option value="Qua">Quarta</option><option value="Qui">Quinta</option><option value="Sex">Sexta</option><option value="Sáb">Sábado</option></select>
+      </div>
+      <div class="form-group"><label>Horário</label><input id="pg-horario" type="time" value="20:00"></div>
+    </div>
+    <div class="grid-2" style="gap:12px">
+      <div class="form-group"><label>Frequência</label>
+        <select id="pg-frequencia"><option value="Semanal">Semanal</option><option value="Quinzenal">Quinzenal</option><option value="Mensal">Mensal</option></select>
+      </div>
+      <div class="form-group"><label>Tema / Público</label><input id="pg-tema" type="text" placeholder="ex: Casais, Jovens..."></div>
+    </div>
+    <div class="form-group"><label>Descrição</label><textarea id="pg-desc" placeholder="Descreva o grupo..." style="min-height:64px"></textarea></div>
+    <div class="grid-2" style="gap:12px">
+      <div class="form-group"><label>WhatsApp de contato</label><input id="pg-whatsapp" type="text" placeholder="5519999999999"></div>
+      <div class="form-group"><label>Participantes (aprox.)</label><input id="pg-participantes" type="number" min="0" placeholder="0"></div>
+    </div>
+    <div class="form-group"><label>Vagas</label>
+      <select id="pg-vaga"><option value="aberto">Aberto</option><option value="quase">Quase lotado</option><option value="lotado">Lotado</option></select>
+    </div>
+    <div class="form-group">
+      <label>Local no mapa</label>
+      <p style="font-size:11px;color:var(--text-secondary);margin-bottom:6px">Clique no mapa pra marcar o ponto aproximado (não precisa ser o endereço exato).</p>
+      <div id="pg-mapa-picker" style="height:220px;border-radius:var(--radius);overflow:hidden;border:0.5px solid var(--border)"></div>
+      <input type="hidden" id="pg-lat" value=""><input type="hidden" id="pg-lng" value="">
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-pg')">Cancelar</button>
+      <button class="btn primary" onclick="savePg()" id="btn-save-pg">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-backdrop" id="modal-inscricao">
   <div class="modal" style="max-width:520px">
     <h2 id="inscricao-titulo"></h2>
@@ -786,6 +890,24 @@ Bateria: Pedro..." style="min-height:80px"></textarea></div>
         </div>
       </div>
 
+      <div class="perm-grupo">
+        <p class="perm-grupo-titulo"><i class="ti ti-users-group"></i> Pequenos Grupos</p>
+        <div class="perm-grid-3">
+          <label class="perm-check">
+            <input type="checkbox" id="p-criar-pg" style="accent-color:#7F77DD">
+            <span>Criar</span>
+          </label>
+          <label class="perm-check">
+            <input type="checkbox" id="p-editar-pg" style="accent-color:#7F77DD">
+            <span>Editar</span>
+          </label>
+          <label class="perm-check">
+            <input type="checkbox" id="p-excluir-pg" style="accent-color:#7F77DD">
+            <span>Excluir</span>
+          </label>
+        </div>
+      </div>
+
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="closeModal('modal-nivel')">Cancelar</button>
@@ -812,6 +934,7 @@ Bateria: Pedro..." style="min-height:80px"></textarea></div>
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="db.js"></script>
 <script src="state.js"></script>
 <script src="permissions.js"></script>
@@ -826,6 +949,8 @@ Bateria: Pedro..." style="min-height:80px"></textarea></div>
 <script src="niveis.js"></script>
 <script src="voluntarios.js"></script>
 <script src="eventos.js"></script>
+<script src="pgs.js"></script>
+<script src="pg-publico.js"></script>
 <script src="perfil.js"></script>
 <script src="notificacoes.js"></script>
 <script src="logs.js"></script>

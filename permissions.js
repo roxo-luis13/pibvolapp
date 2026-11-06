@@ -11,32 +11,44 @@ function getNivelObj(nivel) {
     pode_criar_ministerios:true,  pode_editar_ministerios:true,  pode_excluir_ministerios:true,
     pode_cadastrar_voluntarios:true, pode_editar_voluntarios:true, pode_remover_voluntarios:true,
     pode_criar_eventos:true,  pode_editar_eventos:true,  pode_excluir_eventos:true,
-    pode_ver_todos_ministerios:true, pode_ver_total_voluntarios:true
+    pode_ver_todos_ministerios:true, pode_ver_total_voluntarios:true,
+    pode_criar_pgs:true, pode_editar_pgs:true, pode_excluir_pgs:true
   };
   if (nivel === 'pastor') return {
     pode_criar_ministerios:true,  pode_editar_ministerios:true,  pode_excluir_ministerios:false,
     pode_cadastrar_voluntarios:true, pode_editar_voluntarios:true, pode_remover_voluntarios:true,
     pode_criar_eventos:true,  pode_editar_eventos:true,  pode_excluir_eventos:true,
-    pode_ver_todos_ministerios:true, pode_ver_total_voluntarios:true
+    pode_ver_todos_ministerios:true, pode_ver_total_voluntarios:true,
+    pode_criar_pgs:false, pode_editar_pgs:false, pode_excluir_pgs:false
   };
   if (nivel === 'lider') return {
     pode_criar_ministerios:false, pode_editar_ministerios:true,  pode_excluir_ministerios:false,
     pode_cadastrar_voluntarios:true, pode_editar_voluntarios:true, pode_remover_voluntarios:false,
     pode_criar_eventos:true,  pode_editar_eventos:true,  pode_excluir_eventos:false,
-    pode_ver_todos_ministerios:false, pode_ver_total_voluntarios:false
+    pode_ver_todos_ministerios:false, pode_ver_total_voluntarios:false,
+    pode_criar_pgs:false, pode_editar_pgs:false, pode_excluir_pgs:false
   };
   if (nivel === 'lider_de_banda') return {
     pode_criar_ministerios:false, pode_editar_ministerios:false, pode_excluir_ministerios:false,
     pode_cadastrar_voluntarios:false, pode_editar_voluntarios:false, pode_remover_voluntarios:false,
     pode_criar_eventos:false, pode_editar_eventos:true,  pode_excluir_eventos:false,
-    pode_ver_todos_ministerios:false, pode_ver_total_voluntarios:false
+    pode_ver_todos_ministerios:false, pode_ver_total_voluntarios:false,
+    pode_criar_pgs:false, pode_editar_pgs:false, pode_excluir_pgs:false
+  };
+  if (nivel === 'lider_de_pg') return {
+    pode_criar_ministerios:false, pode_editar_ministerios:false, pode_excluir_ministerios:false,
+    pode_cadastrar_voluntarios:false, pode_editar_voluntarios:false, pode_remover_voluntarios:false,
+    pode_criar_eventos:false, pode_editar_eventos:false, pode_excluir_eventos:false,
+    pode_ver_todos_ministerios:false, pode_ver_total_voluntarios:false,
+    pode_criar_pgs:true, pode_editar_pgs:true, pode_excluir_pgs:true
   };
   // voluntario e qualquer outro sem registro
   return {
     pode_criar_ministerios:false, pode_editar_ministerios:false, pode_excluir_ministerios:false,
     pode_cadastrar_voluntarios:false, pode_editar_voluntarios:false, pode_remover_voluntarios:false,
     pode_criar_eventos:false, pode_editar_eventos:false, pode_excluir_eventos:false,
-    pode_ver_todos_ministerios:false, pode_ver_total_voluntarios:false
+    pode_ver_todos_ministerios:false, pode_ver_total_voluntarios:false,
+    pode_criar_pgs:false, pode_editar_pgs:false, pode_excluir_pgs:false
   };
 }
 
@@ -84,6 +96,11 @@ function nivelPodeGerenciarEventos(nivel) {
   return n.pode_criar_eventos || n.pode_editar_eventos || n.pode_excluir_eventos;
 }
 
+function nivelPodeGerenciarPgs(nivel) {
+  const n = getNivelObj(nivel);
+  return n.pode_criar_pgs || n.pode_editar_pgs || n.pode_excluir_pgs;
+}
+
 function nivelPodeGerenciarMinisterios(nivel) {
   const n = getNivelObj(nivel);
   return n.pode_criar_ministerios || n.pode_editar_ministerios || n.pode_excluir_ministerios;
@@ -112,7 +129,7 @@ function nivelPodeVerTotalVoluntarios(nivel) {
 function getNivelLabel(nivel) {
   const labels = {
     admin:'Administrador', pastor:'Pastor',
-    lider:'Líder', lider_de_banda:'Líder de Banda', voluntario:'Voluntário'
+    lider:'Líder', lider_de_banda:'Líder de Banda', lider_de_pg:'Líder de PG', voluntario:'Voluntário'
   };
   if (labels[nivel]) return labels[nivel];
   const n = niveisAcesso.find(n=>n.nome===nivel);
@@ -123,10 +140,10 @@ function getNivelClass(nivel) {
   // Classes CSS disponíveis: admin (amber), lider (blue), voluntario (green)
   if (nivel === 'admin') return 'admin';
   if (nivel === 'pastor') return 'admin';
-  if (nivel === 'lider' || nivel === 'lider_de_banda') return 'lider';
+  if (nivel === 'lider' || nivel === 'lider_de_banda' || nivel === 'lider_de_pg') return 'lider';
   return 'voluntario';
 }
-let ministerios = [], voluntarios = [], eventos = [], notificacoes = [];
+let ministerios = [], voluntarios = [], eventos = [], notificacoes = [], pgs = [];
 let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
 let selectedEvento = null, currentDetalheId = null, selectedDia = null;
 let sidebarCollapsed = false;
@@ -144,11 +161,12 @@ function showScreen(s) {
   document.getElementById('loading-screen').style.display = s==='loading'?'flex':'none';
   document.getElementById('gate-screen').style.display = s==='gate'?'flex':'none';
   document.getElementById('login-screen').style.display = s==='login'?'flex':'none';
-  document.getElementById('pg-screen').style.display = s==='pg'?'flex':'none';
+  document.getElementById('pg-screen').style.display = s==='pg'?'block':'none';
   document.getElementById('main-app').classList.toggle('visible', s==='app');
   const fab = document.getElementById('assistente-fab');
   if (fab) {
     fab.style.display = s==='app' ? 'flex' : 'none';
     if (s!=='app') fecharAssistente();
   }
+  if (s==='pg' && typeof abrirAreaPgPublica === 'function') abrirAreaPgPublica();
 }
