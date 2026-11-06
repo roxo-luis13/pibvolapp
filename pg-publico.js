@@ -38,6 +38,7 @@ function pgPublicoSetView(view) {
 }
 
 function pgPublicoBadgeTexto(v) { return v === 'aberto' ? 'Vagas abertas' : v === 'quase' ? 'Quase lotado' : 'Lotado'; }
+function pgPublicoCorVaga(v) { return v === 'aberto' ? '#2F7DE1' : v === 'quase' ? '#FFC93C' : '#E4362B'; }
 
 function renderPgsPublico() {
   if (!pgPublicoCarregado) return;
@@ -56,7 +57,7 @@ function renderPgPublicoMapa(lista) {
   if (!pgPublicoMap) {
     pgPublicoMap = L.map('pgpub-mapview').setView([PGPUB_CENTRO.lat, PGPUB_CENTRO.lng], 12);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors', maxZoom: 19, className: 'pgpub-tile-dark'
+      attribution: '&copy; OpenStreetMap contributors', maxZoom: 19, className: 'pgpub-tile-fun'
     }).addTo(pgPublicoMap);
     pgPublicoMarkers = L.layerGroup().addTo(pgPublicoMap);
   }
@@ -65,12 +66,13 @@ function renderPgPublicoMapa(lista) {
   lista.forEach(p => {
     if (p.lat == null || p.lng == null) return;
     const abrir = () => abrirDetalhePg(p.id);
+    const cor = pgPublicoCorVaga(p.vaga);
     const circulo = L.circle([p.lat, p.lng], {
-      radius: PGPUB_RAIO_METROS, color: '#F0A855', weight: 1.5, fillColor: '#F0A855', fillOpacity: 0.12
+      radius: PGPUB_RAIO_METROS, color: cor, weight: 1.5, fillColor: cor, fillOpacity: 0.15
     }).addTo(pgPublicoMarkers);
     circulo.on('click', abrir);
     const label = L.marker([p.lat, p.lng], {
-      icon: L.divIcon({ className: '', html: `<div class="pgpub-pin-label">${p.nome}</div>`, iconSize: [1, 1], iconAnchor: [0, 0] })
+      icon: L.divIcon({ className: '', html: `<div class="pgpub-pin-label ${p.vaga}">${p.nome}</div>`, iconSize: [1, 1], iconAnchor: [0, 0] })
     }).addTo(pgPublicoMarkers);
     label.on('click', abrir);
   });
