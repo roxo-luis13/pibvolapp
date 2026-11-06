@@ -7,7 +7,7 @@ function navigate(sec, extra) {
   document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
   const el = document.getElementById('section-' + sec);
   if (el) el.classList.add('active');
-  const titles = {dashboard:'Dashboard',calendario:'Calendário',ministerios:'Ministérios',voluntarios:'Voluntários',eventos:'Eventos',pgs:'Pequenos Grupos',niveis:'Níveis de acesso',logs:'Log de atividade',perfil:'Meu perfil','ministerio-detalhe':'Detalhes do ministério'};
+  const titles = {dashboard:'Dashboard',calendario:'Calendário',ministerios:'Ministérios',voluntarios:'Voluntários',eventos:'Eventos',pgs:'Gerenciar PGs',niveis:'Níveis de acesso',logs:'Log de atividade',perfil:'Meu perfil','ministerio-detalhe':'Detalhes do ministério'};
   document.getElementById('page-title').textContent = titles[sec] || '';
   const acts = document.getElementById('topbar-actions'); acts.innerHTML = '';
   const nav = getNivelAtivo();

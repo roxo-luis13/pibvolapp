@@ -7,6 +7,12 @@ let pgPublicoDiaAtivo = 'Todos';
 let pgPublicoMap = null, pgPublicoMarkers = null, pgPublicoCarregado = false;
 let pgPublicoMinhaLoc = null, pgPublicoMeuMarker = null;
 
+// Quem já está logado (ex: usou o atalho "Pequenos Grupos" no menu, sem precisar sair da conta)
+// volta pro app; só quem chegou pela tela inicial (sem sessão) volta pra lá.
+function voltarDaAreaPg() {
+  showScreen(currentProfile ? 'app' : 'gate');
+}
+
 async function abrirAreaPgPublica() {
   montarChipsDia();
   const empty = document.getElementById('pgpub-empty');

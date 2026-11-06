@@ -46,7 +46,7 @@
 <div id="pg-screen">
   <div class="pgpub-app">
     <header class="pgpub-header">
-      <button type="button" class="pgpub-voltar" onclick="showScreen('gate')" title="Voltar"><i class="ti ti-arrow-left"></i></button>
+      <button type="button" class="pgpub-voltar" onclick="voltarDaAreaPg()" title="Voltar"><i class="ti ti-arrow-left"></i></button>
       <div class="pgpub-header-main">
         <p class="pgpub-eyebrow">PIBC · Pequenos Grupos</p>
         <h1>Onde encontrar um PG</h1>
@@ -165,11 +165,12 @@
       <div class="nav-section">Geral</div>
       <div class="nav-item active" onclick="navigate('dashboard');closeSidebarMobile()"><i class="ti ti-dashboard"></i><span class="nav-item-text">Dashboard</span><span class="nav-tooltip">Dashboard</span></div>
       <div class="nav-item" onclick="navigate('calendario');closeSidebarMobile()"><i class="ti ti-calendar"></i><span class="nav-item-text">Calendário</span><span class="nav-tooltip">Calendário</span></div>
+      <div class="nav-item" onclick="showScreen('pg');closeSidebarMobile()"><i class="ti ti-map-pin"></i><span class="nav-item-text">Pequenos Grupos</span><span class="nav-tooltip">Pequenos Grupos</span></div>
       <div class="nav-section" id="admin-section">Administração</div>
       <div class="nav-item" id="nav-ministerios" onclick="navigate('ministerios');closeSidebarMobile()"><i class="ti ti-users-group"></i><span class="nav-item-text">Ministérios</span><span class="nav-tooltip">Ministérios</span></div>
       <div class="nav-item" id="nav-voluntarios" onclick="navigate('voluntarios');closeSidebarMobile()"><i class="ti ti-user-check"></i><span class="nav-item-text">Voluntários</span><span class="nav-tooltip">Voluntários</span></div>
       <div class="nav-item" id="nav-eventos" onclick="navigate('eventos');closeSidebarMobile()"><i class="ti ti-calendar-event"></i><span class="nav-item-text">Eventos</span><span class="nav-tooltip">Eventos</span></div>
-      <div class="nav-item" id="nav-pgs" onclick="navigate('pgs');closeSidebarMobile()"><i class="ti ti-tent"></i><span class="nav-item-text">Pequenos Grupos</span><span class="nav-tooltip">Pequenos Grupos</span></div>
+      <div class="nav-item" id="nav-pgs" onclick="navigate('pgs');closeSidebarMobile()"><i class="ti ti-tent"></i><span class="nav-item-text">Gerenciar PGs</span><span class="nav-tooltip">Gerenciar PGs</span></div>
       <div class="nav-item" id="nav-niveis" onclick="navigate('niveis');closeSidebarMobile()"><i class="ti ti-shield-lock"></i><span class="nav-item-text">Níveis de acesso</span><span class="nav-tooltip">Níveis de acesso</span></div>
       <div class="nav-item" id="nav-logs" onclick="navigate('logs');closeSidebarMobile()"><i class="ti ti-history"></i><span class="nav-item-text">Log de atividade</span><span class="nav-tooltip">Log de atividade</span></div>
       <div class="nav-section">Conta</div>
