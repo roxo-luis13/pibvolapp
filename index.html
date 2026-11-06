@@ -72,6 +72,7 @@
   <div class="pgpub-overlay" id="pgpub-overlay" onclick="fecharDetalhePg()"></div>
   <div class="pgpub-detail" id="pgpub-detail">
     <div class="pgpub-detail-top">
+      <div class="pgpub-detail-handle"></div>
       <button type="button" class="pgpub-detail-close" onclick="fecharDetalhePg()">&times;</button>
       <p class="pgpub-eyebrow" id="pgpub-d-tema">tema</p>
       <h2 id="pgpub-d-nome">Nome do PG</h2>
@@ -776,10 +777,10 @@ Bateria: Pedro..." style="min-height:80px"></textarea></div>
         <div class="chip selected" id="pg-modo-bairro" onclick="pgSetModoLocal('bairro')">Por bairro</div>
         <div class="chip" id="pg-modo-cep" onclick="pgSetModoLocal('cep')">Por CEP</div>
       </div>
-      <div style="display:flex;gap:12px;align-items:flex-end">
+      <div class="pg-local-row">
         <div id="pg-bairro-wrap" style="flex:1"><div class="form-group" style="margin-bottom:0"><label>Bairro</label><input id="pg-bairro" type="text" placeholder="ex: Taquaral" onblur="localizarPg()"></div></div>
         <div id="pg-cep-wrap" style="flex:1;display:none"><div class="form-group" style="margin-bottom:0"><label>CEP</label><input id="pg-cep" type="text" placeholder="13025-320" onblur="localizarPg()"></div></div>
-        <button type="button" class="btn sm" onclick="localizarPg()" style="margin-bottom:14px;flex-shrink:0"><i class="ti ti-map-pin-search"></i>Localizar</button>
+        <button type="button" class="btn sm" onclick="localizarPg()"><i class="ti ti-map-pin-search"></i>Localizar</button>
       </div>
       <p id="pg-local-status" class="pg-local-status"></p>
       <div id="pg-mapa-picker" style="height:220px;border-radius:var(--radius);overflow:hidden;border:0.5px solid var(--border)"></div>
