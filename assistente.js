@@ -128,12 +128,15 @@ function assistenteDiasHorarios(data_inicio, data_fim, hora_inicio, hora_fim) {
 async function assistenteCriarEvento(dados) {
   if (!perm(getNivelAtivo(), 'pode_criar_eventos')) throw new Error('Você não tem permissão pra criar eventos.');
   const dias_horarios = assistenteDiasHorarios(dados.data_inicio, dados.data_fim, dados.hora_inicio, dados.hora_fim);
-  const conflito = eventoConflitante(dados.local, horariosDoObjeto(dias_horarios), null);
-  if (conflito) throw new Error(`O local escolhido já está reservado para "${conflito.nome}" nesse dia/horário.`);
+  const locais = Array.isArray(dados.locais) ? dados.locais : [];
+  for (const loc of locais) {
+    const conflito = eventoConflitante([loc], horariosDoObjeto(dias_horarios), null);
+    if (conflito) throw new Error(`O local "${LOCAIS[loc]||loc}" já está reservado para "${conflito.nome}" nesse dia/horário.`);
+  }
   const payload = {
     nome: dados.nome, data: dados.data_inicio, data_inicio: dados.data_inicio, data_fim: dados.data_fim || null,
     hora: dados.hora_inicio, dias_horarios, descricao: dados.descricao || '', banda: dados.banda, responsavel: null,
-    live: !!dados.live, som: !!dados.som, local: dados.local || null,
+    live: !!dados.live, som: !!dados.som, locais,
     ministerios: [], inscritos: [], convites: [], arquivo_url: null, arquivo_nome: null, arquivo_tipo: null
   };
   const rows = await sb('eventos', { method: 'POST', body: JSON.stringify(payload) });
@@ -162,10 +165,12 @@ async function assistenteEditarEvento(dados) {
     ? assistenteDiasHorarios(mesclado.data_inicio, mesclado.data_fim, mesclado.hora_inicio, mesclado.hora_fim)
     : ev.dias_horarios;
 
-  if (precisaReconstruirDias) {
-    const localFinal = 'local' in dados ? dados.local : ev.local;
-    const conflito = eventoConflitante(localFinal, horariosDoObjeto(dias_horarios), ev.id);
-    if (conflito) throw new Error(`O local escolhido já está reservado para "${conflito.nome}" nesse dia/horário.`);
+  const locaisFinal = 'locais' in dados ? dados.locais : eventoLocaisEfetivos(ev);
+  if (precisaReconstruirDias || 'locais' in dados) {
+    for (const loc of locaisFinal) {
+      const conflito = eventoConflitante([loc], horariosDoObjeto(dias_horarios), ev.id);
+      if (conflito) throw new Error(`O local "${LOCAIS[loc]||loc}" já está reservado para "${conflito.nome}" nesse dia/horário.`);
+    }
   }
 
   const patch = {};
@@ -173,7 +178,7 @@ async function assistenteEditarEvento(dados) {
   if ('data_inicio' in dados) { patch.data = dados.data_inicio; patch.data_inicio = dados.data_inicio; }
   if ('data_fim' in dados) patch.data_fim = dados.data_fim || null;
   if (precisaReconstruirDias) { patch.dias_horarios = dias_horarios; patch.hora = mesclado.hora_inicio; }
-  if ('local' in dados) patch.local = dados.local;
+  if ('locais' in dados) patch.locais = dados.locais;
   if ('live' in dados) patch.live = dados.live;
   if ('som' in dados) patch.som = dados.som;
   if ('banda' in dados) patch.banda = dados.banda;

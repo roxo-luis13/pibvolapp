@@ -156,7 +156,8 @@ hr{border:none;border-top:0.5px solid var(--border);margin:14px 0}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
 .chip{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;border-radius:999px;font-size:12px;border:0.5px solid var(--border-md);cursor:pointer;color:var(--text-secondary);transition:all .15s;background:transparent}
 .chip.selected{background:var(--purple-bg);color:var(--purple-text);border-color:#AFA9EC}
-.chip:hover:not(.selected){background:var(--bg-secondary)}
+.chip:hover:not(.selected):not(.disabled){background:var(--bg-secondary)}
+.chip.disabled{opacity:.45;cursor:not-allowed;text-decoration:line-through}
 .progress-bar{height:5px;background:var(--bg-tertiary);border-radius:999px;overflow:hidden;margin-top:5px}
 .progress-bar div{height:100%;background:#7F77DD;border-radius:999px}
 .spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle}
