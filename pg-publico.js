@@ -54,10 +54,14 @@ function renderPgsPublico() {
 function renderPgPublicoMapa(lista) {
   if (!pgPublicoMap) {
     pgPublicoMap = L.map('pgpub-mapview').setView([PGPUB_CENTRO.lat, PGPUB_CENTRO.lng], 12);
-    // Base simplificada (sem nomes de rua/pontos de referência) - só dá uma noção da região,
-    // não um mapa detalhado o suficiente pra apontar exatamente onde é.
+    // Base simplificada (sem detalhe de ruas) + camada só com os nomes (bairro/cidade) por cima -
+    // dá uma noção da região e do bairro, sem virar um mapa detalhado o suficiente pra apontar
+    // exatamente onde é.
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
       attribution: '&copy; Esri', maxZoom: 16
+    }).addTo(pgPublicoMap);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 16
     }).addTo(pgPublicoMap);
     pgPublicoMarkers = L.layerGroup().addTo(pgPublicoMap);
   }
