@@ -99,6 +99,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   .pg-local-row{flex-wrap:wrap}
   .pg-local-row button{width:100%;justify-content:center;margin-bottom:0}
 }
+.pg-pessoas-lista{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.pg-pessoas-vazio{font-size:12px;color:var(--text-tertiary);margin-top:4px}
+.pg-pessoa-chip{display:flex;align-items:center;gap:6px;background:var(--bg-secondary);border:0.5px solid var(--border);border-radius:999px;padding:5px 6px 5px 12px;font-size:12px}
+.pg-pessoa-chip button{display:flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;border:none;background:transparent;color:var(--text-tertiary);cursor:pointer;flex-shrink:0}
+.pg-pessoa-chip button:hover{background:var(--danger-bg,rgba(220,38,38,.12));color:var(--danger-text)}
 .nav{flex:1;padding:8px 0}
 .nav-section{padding:8px 16px 4px;font-size:10px;font-weight:500;color:var(--text-tertiary);letter-spacing:.5px;text-transform:uppercase}
 .nav-item{display:flex;align-items:center;gap:10px;padding:8px 16px;font-size:13px;color:var(--text-secondary);cursor:pointer;border-left:2px solid transparent;transition:all .15s;position:relative}

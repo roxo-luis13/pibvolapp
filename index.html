@@ -811,6 +811,15 @@ Bateria: Pedro..." style="min-height:80px"></textarea></div>
       <div id="pg-mapa-picker" style="height:220px;border-radius:var(--radius);overflow:hidden;border:0.5px solid var(--border)"></div>
       <input type="hidden" id="pg-lat" value=""><input type="hidden" id="pg-lng" value="">
     </div>
+    <div class="form-group" id="pg-pessoas-wrap" style="display:none">
+      <label>Pessoas do grupo</label>
+      <p style="font-size:11px;color:var(--text-secondary);margin-bottom:6px">Só uma lista de nomes para o líder, pastor e admin acompanharem — não cria cadastro nem login para elas.</p>
+      <div class="pg-local-row">
+        <input type="text" id="pg-pessoa-nome" placeholder="Nome da pessoa" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarPessoaPg();}">
+        <button type="button" class="btn sm" onclick="adicionarPessoaPg()"><i class="ti ti-plus"></i>Adicionar</button>
+      </div>
+      <div id="pg-pessoas-lista" class="pg-pessoas-lista"></div>
+    </div>
     <div class="modal-footer">
       <button class="btn" onclick="closeModal('modal-pg')">Cancelar</button>
       <button class="btn primary" onclick="savePg()" id="btn-save-pg">Salvar</button>

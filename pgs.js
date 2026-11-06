@@ -155,6 +155,9 @@ function openModalPg() {
   document.getElementById('pg-vaga').value = 'aberto';
   pgDefinirStatusLocal('', '');
   pgSetModoLocal('bairro');
+  document.getElementById('pg-pessoas-wrap').style.display = 'none';
+  pgPessoasPgId = null;
+  pgPessoasAtual = [];
   openModal('modal-pg');
   setTimeout(() => initPgPickerMap(null, null), 50);
 }
@@ -182,8 +185,65 @@ function editPg(id) {
   document.getElementById('pg-bairro-wrap').style.display = pgModoLocal === 'bairro' ? '' : 'none';
   document.getElementById('pg-cep-wrap').style.display = pgModoLocal === 'cep' ? '' : 'none';
   pgDefinirStatusLocal(p.lat && p.lng ? '📍 Localização já definida' : '', p.lat && p.lng ? 'ok' : '');
+  document.getElementById('pg-pessoas-wrap').style.display = '';
+  pgPessoasPgId = id;
+  carregarPessoasPg(id);
   openModal('modal-pg', true);
   setTimeout(() => initPgPickerMap(p.lat, p.lng), 50);
+}
+
+// ===== Lista de pessoas do grupo (só nomes, sem cadastro) =====
+let pgPessoasAtual = [];
+let pgPessoasPgId = null;
+
+async function carregarPessoasPg(pgId) {
+  try {
+    pgPessoasAtual = (await sb(`pg_participantes?pg_id=eq.${pgId}&select=*&order=nome`)) || [];
+  } catch (e) {
+    console.error('Falha ao carregar pessoas do PG:', e);
+    pgPessoasAtual = [];
+  }
+  renderPessoasPg();
+}
+
+function renderPessoasPg() {
+  const el = document.getElementById('pg-pessoas-lista');
+  if (!el) return;
+  if (!pgPessoasAtual.length) {
+    el.innerHTML = '<p class="pg-pessoas-vazio">Nenhuma pessoa na lista ainda.</p>';
+    return;
+  }
+  el.innerHTML = pgPessoasAtual.map(p => `
+    <div class="pg-pessoa-chip">
+      <span>${p.nome}</span>
+      <button type="button" onclick="removerPessoaPg('${p.id}')" title="Remover"><i class="ti ti-x"></i></button>
+    </div>`).join('');
+}
+
+async function adicionarPessoaPg() {
+  const input = document.getElementById('pg-pessoa-nome');
+  const nome = input.value.trim();
+  if (!nome || !pgPessoasPgId) return;
+  try {
+    const rows = await sb('pg_participantes', { method: 'POST', body: JSON.stringify({ pg_id: pgPessoasPgId, nome }) });
+    if (rows && rows[0]) pgPessoasAtual.push(rows[0]);
+    pgPessoasAtual.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+    input.value = '';
+    renderPessoasPg();
+  } catch (e) {
+    alert('Não foi possível adicionar: ' + e.message);
+  }
+  input.focus();
+}
+
+async function removerPessoaPg(id) {
+  try {
+    await sb(`pg_participantes?id=eq.${id}`, { method: 'DELETE', prefer: 'return=minimal' });
+    pgPessoasAtual = pgPessoasAtual.filter(p => p.id !== id);
+    renderPessoasPg();
+  } catch (e) {
+    alert('Não foi possível remover: ' + e.message);
+  }
 }
 
 async function savePg() {

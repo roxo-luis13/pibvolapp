@@ -19,7 +19,7 @@ function getNivelObj(nivel) {
     pode_cadastrar_voluntarios:true, pode_editar_voluntarios:true, pode_remover_voluntarios:true,
     pode_criar_eventos:true,  pode_editar_eventos:true,  pode_excluir_eventos:true,
     pode_ver_todos_ministerios:true, pode_ver_total_voluntarios:true,
-    pode_criar_pgs:false, pode_editar_pgs:false, pode_excluir_pgs:false
+    pode_criar_pgs:true, pode_editar_pgs:true, pode_excluir_pgs:true
   };
   if (nivel === 'lider') return {
     pode_criar_ministerios:false, pode_editar_ministerios:true,  pode_excluir_ministerios:false,
