@@ -457,7 +457,11 @@ hr{border:none;border-top:0.5px solid var(--border);margin:14px 0}
 
 .pgpub-hero{padding:22px 20px;text-align:center;border-top:1px solid var(--pg-chalk-3);margin-top:8px}
 .pgpub-hero-top{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px}
-.pgpub-hero-heart{color:var(--pg-terracotta);font-size:15px}
+.pgpub-hero-logo{flex-shrink:0;overflow:visible}
+.pgpub-hero-logo g:nth-child(1) path{fill:var(--pg-gold)}
+.pgpub-hero-logo g:nth-child(2) path{fill:var(--pg-terracotta)}
+.pgpub-hero-logo g:nth-child(3) path{fill:var(--pg-blue)}
+.pgpub-hero-logo path{stroke:var(--pg-chalk);stroke-width:2;fill-opacity:.94}
 .pgpub-hero-nome{font-family:'Caveat',cursive;font-weight:700;font-size:19px;color:var(--pg-muted);margin:0}
 .pgpub-hero-missao{font-size:12.5px;line-height:1.6;color:var(--pg-muted);max-width:480px;margin:0 auto 14px}
 .pgpub-hero-missao .hl{font-family:'Caveat',cursive;font-weight:700;font-size:15px}
