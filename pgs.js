@@ -39,8 +39,8 @@ function initPgPickerMap(lat, lng) {
 
   if (!pgPickerMap) {
     pgPickerMap = L.map('pg-mapa-picker').setView(centro, 13);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 19
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors', maxZoom: 19
     }).addTo(pgPickerMap);
     pgPickerMap.on('click', e => colocarPgMarker(e.latlng.lat, e.latlng.lng));
   } else {

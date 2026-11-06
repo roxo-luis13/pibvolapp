@@ -60,8 +60,8 @@ function renderPgsPublico() {
 function renderPgPublicoMapa(lista) {
   if (!pgPublicoMap) {
     pgPublicoMap = L.map('pgpub-mapview').setView([PGPUB_CENTRO.lat, PGPUB_CENTRO.lng], 12);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 19
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors', maxZoom: 19, className: 'pgpub-tile-dark'
     }).addTo(pgPublicoMap);
     pgPublicoMarkers = L.layerGroup().addTo(pgPublicoMap);
   }

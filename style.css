@@ -460,6 +460,7 @@ hr{border:none;border-top:0.5px solid var(--border);margin:14px 0}
 .pgpub-viewtoggle button.active{background:var(--pg-ink);color:var(--pg-ember-soft)}
 .pgpub-main{position:relative;flex:1}
 .pgpub-mapview{position:relative;height:calc(100vh - 148px);min-height:420px;background:var(--pg-ink)}
+.pgpub-mapview .pgpub-tile-dark{filter:invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.9) saturate(0.6)}
 .pgpub-map-caption{position:absolute;left:16px;bottom:14px;z-index:401;font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:rgba(251,246,236,.55);max-width:260px;line-height:1.5;pointer-events:none}
 .pgpub-listview{padding:18px 20px 32px;display:grid;gap:12px}
 .pgpub-empty{padding:48px 20px;text-align:center;color:var(--pg-muted-2);font-size:13px}
