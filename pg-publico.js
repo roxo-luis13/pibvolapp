@@ -123,10 +123,20 @@ function renderPgPublicoMapa(lista) {
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
       attribution: '&copy; Esri', maxZoom: 16
     }).addTo(pgPublicoMap);
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+    const camadaRotulos = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
       maxZoom: 16
     }).addTo(pgPublicoMap);
     pgPublicoMarkers = L.layerGroup().addTo(pgPublicoMap);
+
+    // Rótulos do próprio mapa (rua/bairro) ajudam na visão geral, mas de perto eles colidem
+    // com a tarja de nome de cada PG. Some com eles quando o zoom aproxima o suficiente pra
+    // mostrar rótulo de rua - nesse ponto a tarja do PG já é a informação que importa.
+    const ZOOM_LIMITE_ROTULOS_MAPA = 14;
+    pgPublicoMap.on('zoomend', () => {
+      const dentroDoLimite = pgPublicoMap.getZoom() <= ZOOM_LIMITE_ROTULOS_MAPA;
+      if (dentroDoLimite && !pgPublicoMap.hasLayer(camadaRotulos)) camadaRotulos.addTo(pgPublicoMap);
+      if (!dentroDoLimite && pgPublicoMap.hasLayer(camadaRotulos)) pgPublicoMap.removeLayer(camadaRotulos);
+    });
   }
   pgPublicoMarkers.clearLayers();
 
