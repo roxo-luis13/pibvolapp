@@ -160,7 +160,7 @@ function showEventDetail(evId) {
   const badges = [
     ev.live?'<span style="font-size:10px;background:var(--coral-bg);color:var(--coral-text);padding:2px 7px;border-radius:4px"><i class="ti ti-radio" style="font-size:10px"></i> LIVE</span>':'',
     ev.som?'<span style="font-size:10px;background:var(--blue-bg);color:var(--blue-text);padding:2px 7px;border-radius:4px"><i class="ti ti-volume" style="font-size:10px"></i> SOM</span>':'',
-    ev.local?`<span style="font-size:10px;background:var(--bg-secondary);color:var(--text-secondary);padding:2px 7px;border-radius:4px"><i class="ti ti-map-pin" style="font-size:10px"></i> ${LOCAIS[ev.local]||ev.local}</span>`:'',
+    textoLocais(ev)?`<span style="font-size:10px;background:var(--bg-secondary);color:var(--text-secondary);padding:2px 7px;border-radius:4px"><i class="ti ti-map-pin" style="font-size:10px"></i> ${textoLocais(ev)}</span>`:'',
   ].filter(Boolean).join(' ');
   document.getElementById('cal-event-detail').innerHTML = `
     <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
@@ -345,7 +345,7 @@ function renderAgenda() {
         <div class="agenda-meta">
           <span>${d.toLocaleDateString('pt-BR',{month:'short'})}${dFimLabel}</span>
           ${hora ? `<span>· ${hora}</span>` : ''}
-          ${e.local ? `<span>· ${LOCAIS[e.local]||e.local}</span>` : ''}
+          ${textoLocais(e) ? `<span>· ${textoLocais(e)}</span>` : ''}
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px">${mins}${badges}</div>
       </div>

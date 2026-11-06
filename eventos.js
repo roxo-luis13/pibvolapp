@@ -97,7 +97,7 @@ function buildEvRow(e) {
     <td style="font-weight:500">${e.nome}</td>
     <td style="color:var(--text-secondary);white-space:nowrap">${dIni}${dFim}</td>
     <td>${badges}</td>
-    <td style="color:var(--text-secondary)">${e.local?LOCAIS[e.local]||e.local:'—'}</td>
+    <td style="color:var(--text-secondary)">${textoLocais(e)||'—'}</td>
     <td>${mins}</td>
     <td>${(e.inscritos||[]).length}</td>
     <td style="color:var(--text-secondary);white-space:nowrap" title="Presencial · YouTube">${textoPresenca(e)}</td>
@@ -120,7 +120,7 @@ function buildEvCard(e) {
   const badges = [
     e.live?`<span style="font-size:10px;background:var(--coral-bg);color:var(--coral-text);padding:1px 6px;border-radius:3px">LIVE</span>`:'',
     e.som?`<span style="font-size:10px;background:var(--blue-bg);color:var(--blue-text);padding:1px 6px;border-radius:3px">SOM</span>`:'',
-    e.local?`<span style="font-size:10px;background:var(--bg-secondary);color:var(--text-secondary);padding:1px 6px;border-radius:3px">${LOCAIS[e.local]||e.local}</span>`:'',
+    textoLocais(e)?`<span style="font-size:10px;background:var(--bg-secondary);color:var(--text-secondary);padding:1px 6px;border-radius:3px">${textoLocais(e)}</span>`:'',
     inscrito?`<span style="font-size:10px;background:var(--success-bg);color:var(--success-text);padding:1px 6px;border-radius:3px">✓ Inscrito</span>`:'',
   ].filter(Boolean).join('');
   const btns = (podeEditar||podeCriar) ? `<div style="display:flex;gap:6px;flex-wrap:wrap">
@@ -212,7 +212,7 @@ function editEvento(id) {
   document.getElementById('ev-responsavel').value = e.responsavel||'';
   document.getElementById('ev-live').checked = !!e.live;
   document.getElementById('ev-som').checked = !!e.som;
-  document.getElementById('ev-local').value = e.local||'';
+  populateLocaisChips(eventoLocaisEfetivos(e));
   const presencaSecao = document.getElementById('ev-presenca-secao');
   if (nivelPodeRegistrarPresenca(getNivelAtivo())) {
     presencaSecao.style.display = '';
@@ -289,13 +289,16 @@ async function saveEvento() {
   // Use first day time as main hora (backward compat)
   const hora = dias_horarios[data_inicio]?.inicio || '09:00';
   const editId = document.getElementById('ev-edit-id').value;
-  const local = document.getElementById('ev-local').value;
-  // Trava final: mesmo que o select já bloqueie locais ocupados, confere de novo aqui
-  // (defesa contra corrida entre duas pessoas editando eventos ao mesmo tempo)
-  const conflito = eventoConflitante(local, horariosDoObjeto(dias_horarios), editId || null);
-  if (conflito) {
-    alert(`O local escolhido já está reservado para "${conflito.nome}" nesse dia/horário. Escolha outro local.`);
-    return;
+  const locais = getLocaisChips();
+  // Trava final: mesmo que os chips já bloqueiem locais ocupados, confere de novo aqui
+  // (defesa contra corrida entre duas pessoas editando eventos ao mesmo tempo). Checa um
+  // local de cada vez pra apontar exatamente qual deles está em conflito.
+  for (const loc of locais) {
+    const conflito = eventoConflitante([loc], horariosDoObjeto(dias_horarios), editId || null);
+    if (conflito) {
+      alert(`O local "${LOCAIS[loc]||loc}" já está reservado para "${conflito.nome}" nesse dia/horário. Escolha outro.`);
+      return;
+    }
   }
   const mins = getChips('ev-ministerios-chips');
   // Presença só é lida/enviada se o usuário tem permissão (a seção fica oculta pra quem não tem,
@@ -336,7 +339,7 @@ async function saveEvento() {
         const up = await uploadArquivoEvento(arquivoFile, editId);
         arquivo_url = up.url; arquivo_nome = up.nome; arquivo_tipo = up.tipo;
       }
-      const dados = {nome,data:data_inicio,data_inicio,data_fim:data_fim||null,hora,dias_horarios,descricao:document.getElementById('ev-desc').value.trim(),banda,responsavel:responsavel||null,live:document.getElementById('ev-live').checked,som:document.getElementById('ev-som').checked,local,...presencaDados,ministerios:mins,convites,inscritos,arquivo_url,arquivo_nome,arquivo_tipo};
+      const dados = {nome,data:data_inicio,data_inicio,data_fim:data_fim||null,hora,dias_horarios,descricao:document.getElementById('ev-desc').value.trim(),banda,responsavel:responsavel||null,live:document.getElementById('ev-live').checked,som:document.getElementById('ev-som').checked,locais,...presencaDados,ministerios:mins,convites,inscritos,arquivo_url,arquivo_nome,arquivo_tipo};
       await sb(`eventos?id=eq.${editId}`,{method:'PATCH',body:JSON.stringify(dados)});
       if (e) Object.assign(e,dados);
       registrarLog('editar', 'evento', nome, `${currentProfile.nome} editou o evento "${nome}"`);
@@ -365,7 +368,7 @@ async function saveEvento() {
         // Upload after we have the ID — upload with temp name then update
         new_arquivo_url = '_pending_'; // will update after insert
       }
-      const dados = {nome,data:data_inicio,data_inicio,data_fim:data_fim||null,hora,dias_horarios,descricao:document.getElementById('ev-desc').value.trim(),banda,responsavel:responsavel||null,live:document.getElementById('ev-live').checked,som:document.getElementById('ev-som').checked,local,...presencaDados,ministerios:mins,inscritos:[],convites,arquivo_url:null,arquivo_nome:null,arquivo_tipo:null};
+      const dados = {nome,data:data_inicio,data_inicio,data_fim:data_fim||null,hora,dias_horarios,descricao:document.getElementById('ev-desc').value.trim(),banda,responsavel:responsavel||null,live:document.getElementById('ev-live').checked,som:document.getElementById('ev-som').checked,locais,...presencaDados,ministerios:mins,inscritos:[],convites,arquivo_url:null,arquivo_nome:null,arquivo_tipo:null};
       const rows = await sb('eventos',{method:'POST',body:JSON.stringify(dados)});
       if (rows && rows[0]) {
         const novoEv = {...rows[0],ministerios:mins,inscritos:[],convites};
@@ -400,7 +403,40 @@ async function deleteEv(id) {
 
 // ===== DIAS DO EVENTO =====
 // ===== DIAS DO EVENTO =====
-const LOCAIS = {salao_principal:'Salão Principal', multiuso:'Multiuso', quadra:'Quadra'};
+const LOCAIS = {
+  salao_principal: 'Salão Principal',
+  multiuso: 'Multiuso',
+  quadra: 'Quadra',
+  cozinha: 'Cozinha',
+  recepcao: 'Recepção',
+  espaco_1a_kids: 'Espaço 1ªkids',
+  estacionamento: 'Estacionamento',
+};
+
+// Um evento pode ter vários locais ao mesmo tempo (desde que exista em "locais"). "local"
+// (texto único) é o campo antigo, mantido só pra eventos criados antes dessa mudança.
+function eventoLocaisEfetivos(ev) {
+  if (ev?.locais && ev.locais.length) return ev.locais;
+  return ev?.local ? [ev.local] : [];
+}
+function textoLocais(ev) {
+  return eventoLocaisEfetivos(ev).map(l => LOCAIS[l] || l).join(', ');
+}
+
+// ===== CHIPS DE LOCAL (multi-seleção) =====
+function populateLocaisChips(selecionados) {
+  const el = document.getElementById('ev-locais-chips');
+  if (!el) return;
+  el.innerHTML = Object.entries(LOCAIS).map(([id, nome]) =>
+    `<div class="chip ${(selecionados||[]).includes(id) ? 'selected' : ''}" data-id="${id}" onclick="toggleLocalChip(this)">${nome}</div>`
+  ).join('');
+}
+function toggleLocalChip(el) {
+  if (el.classList.contains('disabled')) return;
+  el.classList.toggle('selected');
+  atualizarDisponibilidadeLocal();
+}
+function getLocaisChips() { return [...document.querySelectorAll('#ev-locais-chips .chip.selected')].map(c => c.dataset.id); }
 
 // ===== CONFLITO DE LOCAL =====
 // Converte um objeto {data: {inicio,fim}} numa lista plana [{data,inicio,fim}]
@@ -420,12 +456,15 @@ function horariosSobrepoem(aIni, aFim, bIni, bFim) {
   return aIni < bFim && bIni < aFim;
 }
 
-// Retorna o primeiro evento que já usa esse local em algum dos dias/horários propostos (excluindo o próprio, se estiver editando)
-function eventoConflitante(local, diasPropostos, excluirId) {
-  if (!local || !diasPropostos.length) return null;
+// Retorna o primeiro evento que já usa algum dos locais propostos em algum dos dias/horários
+// propostos (excluindo o próprio, se estiver editando). "locais" é sempre um array — mesmo
+// pra checar um só, já que agora um evento pode reservar vários locais ao mesmo tempo.
+function eventoConflitante(locais, diasPropostos, excluirId) {
+  if (!locais || !locais.length || !diasPropostos.length) return null;
   for (const ev of eventos) {
     if (ev.id === excluirId) continue;
-    if (ev.local !== local) continue;
+    const locaisEv = eventoLocaisEfetivos(ev);
+    if (!locaisEv.some(l => locais.includes(l))) continue;
     const diasEv = eventoDiasHorarios(ev);
     for (const dp of diasPropostos) {
       for (const de of diasEv) {
@@ -447,24 +486,28 @@ function lerDiasPropostosDoForm() {
   return horariosDoObjeto(dias_horarios);
 }
 
-// Trava (desabilita) no select de local qualquer local já ocupado nos dias/horários atuais do formulário
+// Trava (desmarca/desabilita) nos chips de local qualquer local já ocupado nos dias/horários
+// atuais do formulário.
 function atualizarDisponibilidadeLocal() {
-  const sel = document.getElementById('ev-local');
-  if (!sel) return;
+  const wrap = document.getElementById('ev-locais-chips');
+  if (!wrap) return;
   const editId = document.getElementById('ev-edit-id').value || null;
   const diasPropostos = lerDiasPropostosDoForm();
   const aviso = document.getElementById('ev-local-aviso');
-  let conflitoDoSelecionado = null;
-  [...sel.options].forEach(opt => {
-    if (!opt.value) return;
-    const conflito = eventoConflitante(opt.value, diasPropostos, editId);
-    opt.disabled = !!conflito;
-    opt.textContent = conflito ? `${LOCAIS[opt.value]} — ocupado (${conflito.nome})` : LOCAIS[opt.value];
-    if (conflito && sel.value === opt.value) conflitoDoSelecionado = conflito;
+  const desmarcados = [];
+  wrap.querySelectorAll('.chip').forEach(chip => {
+    const id = chip.dataset.id;
+    const conflito = eventoConflitante([id], diasPropostos, editId);
+    chip.classList.toggle('disabled', !!conflito);
+    chip.textContent = conflito ? `${LOCAIS[id]} — ocupado (${conflito.nome})` : LOCAIS[id];
+    if (conflito && chip.classList.contains('selected')) {
+      chip.classList.remove('selected');
+      desmarcados.push(LOCAIS[id]);
+    }
   });
-  if (conflitoDoSelecionado) {
-    sel.value = '';
-    if (aviso) { aviso.style.display = 'block'; aviso.textContent = `O local escolhido já está reservado para "${conflitoDoSelecionado.nome}" nesse dia/horário. Escolha outro.`; }
+  if (desmarcados.length) {
+    aviso.style.display = 'block';
+    aviso.textContent = `${desmarcados.join(', ')} já está(ão) reservado(s) nesse dia/horário e foi(ram) desmarcado(s). Escolha outro.`;
   } else if (aviso) {
     aviso.style.display = 'none';
   }
@@ -559,7 +602,7 @@ function preencherCulto(tipo) {
     document.querySelectorAll('[id^="hora-fim-"]').forEach(el => el.value = cfg.fim);
     // Só agora, com os horários certos, tenta selecionar o Salão Principal
     // (se já estiver ocupado nesse dia/horário, a checagem abaixo desmarca e avisa)
-    document.getElementById('ev-local').value = 'salao_principal';
+    populateLocaisChips(['salao_principal']);
     atualizarDisponibilidadeLocal();
   }, 60);
 }

@@ -19,7 +19,7 @@ function openModal(id, modoEdicao) {
       ['ev-nome','ev-desc','ev-banda','ev-responsavel'].forEach(f=>document.getElementById(f).value='');
       document.getElementById('ev-live').checked=false;
       document.getElementById('ev-som').checked=false;
-      document.getElementById('ev-local').value='';
+      populateLocaisChips([]);
       document.getElementById('ev-dias-container').innerHTML='';
       setTimeout(()=>atualizarDiasEvento(), 50);
       populateChips('ev-ministerios-chips');
