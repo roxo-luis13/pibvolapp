@@ -51,13 +51,13 @@ function renderPgsPublico() {
   renderPgPublicoLista(filtrados);
 }
 
-const PGPUB_RAIO_METROS = 5000;
-
 function renderPgPublicoMapa(lista) {
   if (!pgPublicoMap) {
     pgPublicoMap = L.map('pgpub-mapview').setView([PGPUB_CENTRO.lat, PGPUB_CENTRO.lng], 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors', maxZoom: 19, className: 'pgpub-tile-fun'
+    // Base simplificada (sem nomes de rua/pontos de referência) - só dá uma noção da região,
+    // não um mapa detalhado o suficiente pra apontar exatamente onde é.
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+      attribution: '&copy; Esri', maxZoom: 16
     }).addTo(pgPublicoMap);
     pgPublicoMarkers = L.layerGroup().addTo(pgPublicoMap);
   }
@@ -65,16 +65,15 @@ function renderPgPublicoMapa(lista) {
 
   lista.forEach(p => {
     if (p.lat == null || p.lng == null) return;
-    const abrir = () => abrirDetalhePg(p.id);
     const cor = pgPublicoCorVaga(p.vaga);
-    const circulo = L.circle([p.lat, p.lng], {
-      radius: PGPUB_RAIO_METROS, color: cor, weight: 1.5, fillColor: cor, fillOpacity: 0.15
+    const marker = L.marker([p.lat, p.lng], {
+      icon: L.divIcon({
+        className: '',
+        html: `<div class="pgpub-pin-wrap"><div class="pgpub-pin-dot" style="background:${cor}"></div><div class="pgpub-pin-label" style="background:${cor}">${p.nome}</div></div>`,
+        iconSize: [1, 1], iconAnchor: [0, 0]
+      })
     }).addTo(pgPublicoMarkers);
-    circulo.on('click', abrir);
-    const label = L.marker([p.lat, p.lng], {
-      icon: L.divIcon({ className: '', html: `<div class="pgpub-pin-label ${p.vaga}">${p.nome}</div>`, iconSize: [1, 1], iconAnchor: [0, 0] })
-    }).addTo(pgPublicoMarkers);
-    label.on('click', abrir);
+    marker.on('click', () => abrirDetalhePg(p.id));
   });
 
   setTimeout(() => pgPublicoMap.invalidateSize(), 50);
