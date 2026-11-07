@@ -70,7 +70,7 @@ async function buscarMeuEnderecoPg() {
 
   pgPublicoStatusBusca('Procurando...', '');
   try {
-    const query = valor.includes(',') ? valor : `${valor}, Campinas - SP, Brasil`;
+    const query = pgCompletarQueryEstadoSP(valor);
     const { lat, lng, nome } = await pgGeocodificarEndereco(query);
     pgPublicoMinhaLoc = { lat, lng };
 

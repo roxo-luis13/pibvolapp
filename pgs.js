@@ -102,10 +102,18 @@ async function pgGeocodificarPorCep(cep) {
 }
 
 async function pgGeocodificarEndereco(query) {
-  const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`);
+  const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=${encodeURIComponent(query)}`);
   const data = await resp.json();
   if (!resp.ok || !data || !data.length) throw new Error('Não encontramos esse endereço.');
   return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), nome: data[0].display_name };
+}
+
+// Completa o texto digitado com "SP, Brasil" quando a pessoa não informou isso, pra buscar
+// em qualquer cidade do estado (não só Campinas) - sem sobrescrever se ela já informou o estado/país.
+function pgCompletarQueryEstadoSP(valor) {
+  const low = valor.toLowerCase();
+  if (low.includes('brasil') || low.includes('brazil')) return valor;
+  return `${valor}, SP, Brasil`;
 }
 
 let pgModoLocal = 'bairro';
@@ -135,7 +143,7 @@ async function localizarPg() {
   try {
     const query = pgModoLocal === 'cep'
       ? await pgGeocodificarPorCep(valor)
-      : (valor.includes(',') ? valor : `${valor}, Campinas - SP, Brasil`);
+      : pgCompletarQueryEstadoSP(valor);
     const { lat, lng, nome } = await pgGeocodificarEndereco(query);
     desenharCirculoPg(lat, lng);
     pgDefinirStatusLocal('📍 ' + nome, 'ok');
