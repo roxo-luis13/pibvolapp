@@ -101,6 +101,16 @@ function nivelPodeGerenciarPgs(nivel) {
   return n.pode_criar_pgs || n.pode_editar_pgs || n.pode_excluir_pgs;
 }
 
+// Quem pode ver/aprovar pedidos de voluntário: admin, pastor, ou quem lidera
+// algum ministério (independente do nível) - o pedido em si já chega filtrado
+// pelo RLS, isso aqui só decide se mostra o item no menu.
+function podeVerPedidosVoluntario() {
+  if (!currentProfile) return false;
+  const nivel = getNivelAtivo();
+  if (nivelIsAdmin(nivel) || nivel === 'pastor') return true;
+  return ministerios.some(m => m.lider_id === currentProfile.id);
+}
+
 function nivelPodeGerenciarMinisterios(nivel) {
   const n = getNivelObj(nivel);
   return n.pode_criar_ministerios || n.pode_editar_ministerios || n.pode_excluir_ministerios;
@@ -143,7 +153,7 @@ function getNivelClass(nivel) {
   if (nivel === 'lider' || nivel === 'lider_de_banda' || nivel === 'lider_de_pg') return 'lider';
   return 'voluntario';
 }
-let ministerios = [], voluntarios = [], eventos = [], notificacoes = [], pgs = [];
+let ministerios = [], voluntarios = [], eventos = [], notificacoes = [], pgs = [], pedidosVoluntario = [];
 let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
 let selectedEvento = null, currentDetalheId = null, selectedDia = null;
 let sidebarCollapsed = false;

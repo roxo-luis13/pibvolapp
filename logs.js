@@ -32,6 +32,7 @@ const ICONES_LOG = {
   sessao: 'ti-login-2',
   alerta: 'ti-bell-exclamation',
   pg: 'ti-tent',
+  pedido_voluntario: 'ti-user-plus',
 };
 
 let logsAtividade = [];

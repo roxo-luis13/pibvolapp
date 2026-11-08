@@ -7,7 +7,7 @@ function navigate(sec, extra) {
   document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
   const el = document.getElementById('section-' + sec);
   if (el) el.classList.add('active');
-  const titles = {dashboard:'Dashboard',calendario:'Calendário',ministerios:'Ministérios',voluntarios:'Voluntários',eventos:'Eventos',pgs:'Gerenciar PGs',niveis:'Níveis de acesso',logs:'Log de atividade',perfil:'Meu perfil','ministerio-detalhe':'Detalhes do ministério'};
+  const titles = {dashboard:'Dashboard',calendario:'Calendário',ministerios:'Ministérios',voluntarios:'Voluntários',eventos:'Eventos',pgs:'Gerenciar PGs','pedidos-voluntario':'Pedidos de Voluntário',niveis:'Níveis de acesso',logs:'Log de atividade',perfil:'Meu perfil','ministerio-detalhe':'Detalhes do ministério'};
   document.getElementById('page-title').textContent = titles[sec] || '';
   const acts = document.getElementById('topbar-actions'); acts.innerHTML = '';
   const nav = getNivelAtivo();
@@ -20,7 +20,7 @@ function navigate(sec, extra) {
   if (nivelPodeGerenciarEventos(nav) && sec==='eventos') acts.innerHTML = `<button class="btn primary" onclick="openModal('modal-ev')"><i class="ti ti-plus"></i>Novo evento</button>`;
   if (nivelPodeGerenciarPgs(nav) && sec==='pgs') acts.innerHTML = `<button class="btn primary" onclick="openModalPg()"><i class="ti ti-plus"></i>Novo PG</button>`;
   if (nivelPodeVerNiveis(nav) && sec==='niveis') acts.innerHTML = `<button class="btn primary" onclick="openModalNivel()"><i class="ti ti-plus"></i>Novo nível</button>`;
-  const renders = {dashboard:renderDashboard,calendario:renderCalendario,ministerios:renderMinisterios,voluntarios:renderVoluntarios,eventos:renderEventos,pgs:renderPgs,niveis:renderNiveis,logs:renderLogs,perfil:renderPerfil};
+  const renders = {dashboard:renderDashboard,calendario:renderCalendario,ministerios:renderMinisterios,voluntarios:renderVoluntarios,eventos:renderEventos,pgs:renderPgs,'pedidos-voluntario':renderPedidosVoluntario,niveis:renderNiveis,logs:renderLogs,perfil:renderPerfil};
   if (renders[sec]) renders[sec]();
   if (sec==='ministerio-detalhe' && extra) renderDetalhe(extra);
 }
