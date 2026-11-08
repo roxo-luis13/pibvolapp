@@ -1,5 +1,4 @@
 // ===== PEDIDO PÚBLICO PARA SER VOLUNTÁRIO (tela inicial, sem login) =====
-let pedvolMinisteriosCarregados = false;
 let pedvolServe = false;
 
 async function abrirPedidoVoluntario() {
@@ -10,18 +9,29 @@ async function abrirPedidoVoluntario() {
   document.getElementById('pedvol-error').style.display = 'none';
   ['pedvol-nome','pedvol-email','pedvol-tel','pedvol-outro'].forEach(id => document.getElementById(id).value = '');
   pedvolSetServe(false);
-
-  if (!pedvolMinisteriosCarregados) {
-    try {
-      const lista = (await sb('ministerios?select=id,nome&order=nome')) || [];
-      const sel = document.getElementById('pedvol-ministerio');
-      sel.innerHTML = '<option value="">Selecione...</option>' +
-        lista.map(m => `<option value="${m.id}">${m.nome}</option>`).join('') +
-        '<option value="outros">Outro / não sei o nome</option>';
-      pedvolMinisteriosCarregados = true;
-    } catch (e) { console.error('Falha ao carregar ministérios:', e); }
-  }
   openModal('modal-pedido-vol');
+  carregarMinisteriosPedvol();
+}
+
+// Usa uma função pública (RPC) em vez de ler a tabela "ministerios" direto: essa tabela é
+// restrita a quem está logado, então quem abre esse formulário sem login (anônimo) sempre
+// recebia uma lista vazia - a função devolve só id+nome, o mínimo que o formulário precisa.
+async function carregarMinisteriosPedvol() {
+  const sel = document.getElementById('pedvol-ministerio');
+  const erroEl = document.getElementById('pedvol-min-erro');
+  erroEl.style.display = 'none';
+  sel.innerHTML = '<option value="">Carregando...</option>';
+  try {
+    const lista = (await sb('rpc/listar_ministerios_publico', { method: 'POST', body: '{}' })) || [];
+    sel.innerHTML = '<option value="">Selecione...</option>' +
+      lista.map(m => `<option value="${m.id}">${m.nome}</option>`).join('') +
+      '<option value="outros">Outro / não sei o nome</option>';
+  } catch (e) {
+    console.error('Falha ao carregar ministérios:', e);
+    sel.innerHTML = '<option value="">Selecione...</option><option value="outros">Outro / não sei o nome</option>';
+    erroEl.innerHTML = `Não conseguimos carregar a lista de ministérios. Você pode escolher "Outro" e digitar o nome, ou <a href="#" onclick="event.preventDefault();carregarMinisteriosPedvol()">tentar de novo</a>.`;
+    erroEl.style.display = 'block';
+  }
 }
 
 function pedvolSetServe(serve) {
