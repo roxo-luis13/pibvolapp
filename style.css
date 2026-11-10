@@ -534,13 +534,14 @@ hr{border:none;border-top:0.5px solid var(--border);margin:14px 0}
 .pgpub-card:hover{border-color:var(--pg-gold);transform:translateY(-1px)}
 .pgpub-card h3{font-family:'Caveat',cursive;font-size:24px;font-weight:700;margin:0 0 2px;color:var(--pg-gold)}
 .pgpub-card p{margin:0;font-size:13px;color:var(--pg-muted)}
-.pgpub-badge{font-family:'Work Sans',sans-serif;font-size:10.5px;font-weight:700;letter-spacing:.03em;padding:4px 9px;border-radius:100px;white-space:nowrap;flex-shrink:0}
-.pgpub-badge.aberto{background:var(--pg-blue);color:var(--pg-chalk)}
-.pgpub-badge.quase{background:var(--pg-gold);color:var(--pg-chalk)}
-.pgpub-badge.lotado{background:var(--pg-terracotta);color:var(--pg-cream)}
-.pgpub-pin-wrap{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;transform:translate(-50%,-50%)}
-.pgpub-pin-dot{width:13px;height:13px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.4)}
-.pgpub-pin-label{font-family:'Work Sans',sans-serif;font-size:11px;font-weight:700;color:var(--pg-chalk);padding:2px 9px;border-radius:100px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.pgpub-pin-dot{width:13px;height:13px;border-radius:50%;background:var(--pg-terracotta);border:2px solid #fff;box-shadow:0 1px 5px rgba(0,0,0,.4);transform:translate(-50%,-50%);cursor:pointer}
+/* Pilha de nomes: fica a 10px do ponto (PGPUB_LABEL_OFFSET_Y em pg-publico.js) */
+.pgpub-pin-stack{display:flex;flex-direction:column;align-items:center;gap:3px;transform:translate(-50%,10px)}
+.pgpub-pin-stack.cima{transform:translate(-50%,calc(-100% - 10px))}
+.pgpub-pin-stack.direita{align-items:flex-start;transform:translate(10px,-50%)}
+.pgpub-pin-stack.esquerda{align-items:flex-end;transform:translate(calc(-100% - 10px),-50%)}
+.pgpub-pin-label{font-family:'Work Sans',sans-serif;font-size:11px;font-weight:700;line-height:15px;height:19px;box-sizing:border-box;color:var(--pg-cream);background:var(--pg-terracotta);padding:2px 9px;border-radius:100px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.25);cursor:pointer}
+.pgpub-pin-label:hover{background:var(--pg-terracotta-dark)}
 .pgpub-overlay{position:fixed;inset:0;background:rgba(10,8,6,.5);opacity:0;pointer-events:none;transition:opacity .2s ease;z-index:1000}
 .pgpub-overlay.show{opacity:1;pointer-events:auto}
 .pgpub-detail{position:fixed;right:0;top:0;bottom:0;width:360px;max-width:88vw;background:var(--pg-chalk-2);box-shadow:-12px 0 30px rgba(0,0,0,.35);transform:translateX(100%);transition:transform .25s cubic-bezier(.2,.8,.2,1);z-index:1001;display:flex;flex-direction:column;overflow-y:auto}

@@ -1,8 +1,6 @@
 // ===== PEQUENOS GRUPOS (PGs) - administração =====
 const PG_CENTRO_PADRAO = { lat: -22.9099, lng: -47.0626 }; // Campinas/SP
 
-function badgeVagaClasse(v) { return v === 'aberto' ? 'success' : v === 'quase' ? 'warning' : 'danger'; }
-function badgeVagaTexto(v) { return v === 'aberto' ? 'Aberto' : v === 'quase' ? 'Quase lotado' : 'Lotado'; }
 
 function renderPgs() {
   const tbody = document.getElementById('pgs-tbody');
@@ -22,7 +20,6 @@ function renderPgs() {
       <td>${p.dia_semana || '—'}${p.horario ? ' às ' + p.horario.slice(0,5) : ''}</td>
       <td>${p.bairro || '—'}</td>
       <td>${p.tema || '—'}</td>
-      <td><span class="badge ${badgeVagaClasse(p.vaga)}">${badgeVagaTexto(p.vaga)}</span></td>
       <td>${p.ativo ? '<i class="ti ti-check" style="color:var(--success-text)"></i>' : '<i class="ti ti-x" style="color:var(--text-tertiary)"></i>'}</td>
       <td>${btns}</td>
     </tr>`;
@@ -34,7 +31,6 @@ function renderPgs() {
       <div class="pg-admin-card">
         <div class="pg-admin-card-top">
           <div class="pg-admin-card-nome">${p.nome}</div>
-          <span class="badge ${badgeVagaClasse(p.vaga)}">${badgeVagaTexto(p.vaga)}</span>
         </div>
         <div class="pg-admin-card-meta">${p.dia_semana || '—'}${p.horario ? ' às ' + p.horario.slice(0,5) : ''} · ${p.bairro || '—'}${p.tema ? ' · ' + p.tema : ''} · ${p.ativo ? 'Ativo' : 'Inativo'}</div>
         <div class="pg-admin-card-footer">
@@ -160,7 +156,6 @@ function openModalPg() {
   document.getElementById('pg-dia').value = 'Ter';
   document.getElementById('pg-horario').value = '20:00';
   document.getElementById('pg-frequencia').value = 'Semanal';
-  document.getElementById('pg-vaga').value = 'aberto';
   pgDefinirStatusLocal('', '');
   pgSetModoLocal('bairro');
   document.getElementById('pg-pessoas-wrap').style.display = 'none';
@@ -186,7 +181,6 @@ function editPg(id) {
   document.getElementById('pg-desc').value = p.descricao || '';
   document.getElementById('pg-whatsapp').value = p.whatsapp || '';
   document.getElementById('pg-participantes').value = p.participantes || '';
-  document.getElementById('pg-vaga').value = p.vaga || 'aberto';
   pgModoLocal = p.cep ? 'cep' : 'bairro';
   document.getElementById('pg-modo-bairro').classList.toggle('selected', pgModoLocal === 'bairro');
   document.getElementById('pg-modo-cep').classList.toggle('selected', pgModoLocal === 'cep');
@@ -273,7 +267,6 @@ async function savePg() {
     descricao: document.getElementById('pg-desc').value.trim(),
     whatsapp: document.getElementById('pg-whatsapp').value.trim(),
     participantes: parseInt(document.getElementById('pg-participantes').value) || 0,
-    vaga: document.getElementById('pg-vaga').value,
     lat: parseFloat(lat),
     lng: parseFloat(lng),
   };
