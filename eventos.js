@@ -617,6 +617,7 @@ function atualizarTodasAsViews() {
   try { renderMinisterios(); } catch(e) {}
   try { renderVoluntarios(); } catch(e) {}
   try { renderNotificacoes(); atualizarBadgeNotif(); } catch(e) {}
+  try { renderPedidosVoluntario(); } catch(e) {}
   // Se está vendo detalhes de um evento, atualizar
   if (selectedEvento) {
     const ev = eventos.find(e => e.id === selectedEvento.id);

@@ -12,6 +12,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="PIBVolApp">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Work+Sans:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -20,8 +23,151 @@
   <p>Carregando Igreja App...</p>
 </div>
 
+<div id="gate-screen">
+  <div class="login-box" style="max-width:420px">
+    <div class="login-logo">
+      <img src="logo.svg" alt="" class="brand-mark">
+      <h1>Igreja App</h1>
+      <p>PIBC</p>
+    </div>
+    <div class="gate-options">
+      <button type="button" class="btn primary gate-btn" onclick="showScreen('login')">
+        <i class="ti ti-user-check"></i>
+        <div><strong>Sou voluntário</strong><span>Acessar minha área de serviço</span></div>
+      </button>
+      <button type="button" class="btn gate-btn" onclick="showScreen('pg')">
+        <i class="ti ti-users-group"></i>
+        <div><strong>Pequenos Grupos</strong><span>Área aberta para todos</span></div>
+      </button>
+      <button type="button" class="btn gate-btn" onclick="abrirPedidoVoluntario()">
+        <i class="ti ti-user-plus"></i>
+        <div><strong>Quero ser voluntário</strong><span>Peça seu acesso ao app</span></div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-pedido-vol">
+  <div class="modal" style="max-width:440px">
+    <h2>Quero ser voluntário</h2>
+    <p style="font-size:12px;color:var(--text-secondary);margin-top:4px">Preencha seus dados — a liderança vai avaliar e liberar seu acesso ao app assim que aprovar.</p>
+    <div id="pedvol-form" style="margin-top:14px">
+      <div class="form-group"><label>Nome completo *</label><input id="pedvol-nome" type="text" placeholder="Seu nome completo"></div>
+      <div class="form-group"><label>Email *</label><input id="pedvol-email" type="email" placeholder="seu@email.com"></div>
+      <div class="form-group"><label>Celular *</label><input id="pedvol-tel" type="text" placeholder="(11) 99999-9999"></div>
+      <div class="form-group">
+        <label>Já serve em algum ministério?</label>
+        <div class="chips" style="margin-top:4px">
+          <div class="chip" id="pedvol-serve-sim" onclick="pedvolSetServe(true)">Sim</div>
+          <div class="chip selected" id="pedvol-serve-nao" onclick="pedvolSetServe(false)">Não</div>
+        </div>
+      </div>
+      <div class="form-group" id="pedvol-min-wrap" style="display:none">
+        <label>Qual ministério?</label>
+        <select id="pedvol-ministerio" onchange="pedvolToggleOutro()">
+          <option value="">Selecione...</option>
+          <option value="outros">Outro / não sei o nome</option>
+        </select>
+        <p id="pedvol-min-erro" class="alert danger" style="display:none;margin-top:8px;margin-bottom:0"></p>
+      </div>
+      <div class="form-group" id="pedvol-outro-wrap" style="display:none">
+        <label>Qual?</label>
+        <input id="pedvol-outro" type="text" placeholder="Nome do ministério">
+      </div>
+      <p style="font-size:11px;color:var(--text-tertiary);margin-top:-4px">Usamos esses dados só para avaliar seu pedido e criar seu acesso ao app.</p>
+    </div>
+    <div id="pedvol-sucesso" style="display:none;text-align:center;padding:20px 0">
+      <i class="ti ti-circle-check" style="font-size:40px;color:var(--success-text)"></i>
+      <p style="font-size:14px;margin-top:10px">Pedido enviado! A liderança vai avaliar e liberar seu acesso em breve.</p>
+    </div>
+    <p id="pedvol-error" class="alert danger" style="display:none"></p>
+    <div class="modal-footer" id="pedvol-footer">
+      <button class="btn" id="btn-pedvol-cancelar" onclick="closeModal('modal-pedido-vol')">Cancelar</button>
+      <button class="btn primary" id="btn-pedvol-enviar" onclick="enviarPedidoVoluntario()">Enviar pedido</button>
+    </div>
+  </div>
+</div>
+
+<div id="pg-screen">
+  <div class="pgpub-app">
+    <header class="pgpub-header">
+      <button type="button" class="pgpub-voltar" onclick="voltarDaAreaPg()" title="Voltar"><i class="ti ti-arrow-left"></i></button>
+      <div class="pgpub-header-main">
+        <p class="pgpub-eyebrow">PIBC · Pequenos Grupos</p>
+        <h1>Onde encontrar um PG</h1>
+      </div>
+      <div class="pgpub-controls">
+        <div class="pgpub-chips" id="pgpub-dia-chips"></div>
+        <div class="pgpub-viewtoggle">
+          <button type="button" id="pgpub-btn-lista" class="active" onclick="pgPublicoSetView('lista')"><i class="ti ti-list"></i>Lista</button>
+          <button type="button" id="pgpub-btn-mapa" onclick="pgPublicoSetView('mapa')"><i class="ti ti-map-2"></i>Mapa</button>
+        </div>
+      </div>
+    </header>
+    <div class="pgpub-busca">
+      <i class="ti ti-map-pin" style="color:var(--pg-gold)"></i>
+      <input type="text" id="pgpub-busca-input" placeholder="Seu endereço, bairro ou CEP" onkeydown="if(event.key==='Enter')buscarMeuEnderecoPg()">
+      <button type="button" onclick="buscarMeuEnderecoPg()">Buscar</button>
+      <button type="button" id="pgpub-busca-limpar" onclick="limparMinhaLocalizacaoPg()" style="display:none" title="Remover"><i class="ti ti-x"></i></button>
+    </div>
+    <p id="pgpub-busca-status" class="pgpub-busca-status"></p>
+    <main class="pgpub-main">
+      <div class="pgpub-mapview" id="pgpub-mapview" style="display:none">
+        <p class="pgpub-map-caption">Os pontos são aproximados — o endereço exato é combinado com o anfitrião após o contato.</p>
+      </div>
+      <div class="pgpub-listview" id="pgpub-listview"></div>
+      <div class="pgpub-empty" id="pgpub-empty" style="display:none"><i class="ti ti-tent"></i>Nenhum Pequeno Grupo cadastrado ainda. Volte em breve!</div>
+    </main>
+    <div class="pgpub-hero">
+      <div class="pgpub-hero-top">
+        <svg class="pgpub-hero-logo" viewBox="-42 -42 84 84" width="20" height="20" aria-hidden="true">
+          <g transform="rotate(0)"><path d="M0,-40 C20,-40 20,-2 0,6 C-20,-2 -20,-40 0,-40 Z"/></g>
+          <g transform="rotate(120)"><path d="M0,-40 C20,-40 20,-2 0,6 C-20,-2 -20,-40 0,-40 Z"/></g>
+          <g transform="rotate(240)"><path d="M0,-40 C20,-40 20,-2 0,6 C-20,-2 -20,-40 0,-40 Z"/></g>
+        </svg>
+        <p class="pgpub-hero-nome">Primeira Igreja Batista de Campinas</p>
+      </div>
+      <p class="pgpub-hero-missao">Fazer <span class="hl hl-terra">discípulos</span> de Jesus de todas as <span class="hl hl-gold">gerações</span> para amar e servir a <span class="hl hl-blue">cidade</span>.</p>
+      <div class="pgpub-valores">
+        <div class="pgpub-valor"><i class="ti ti-heart-handshake"></i><span>Acolhimento</span></div>
+        <div class="pgpub-valor"><i class="ti ti-book-2"></i><span>Discipulado</span></div>
+        <div class="pgpub-valor"><i class="ti ti-compass"></i><span>Missionalidade</span></div>
+        <div class="pgpub-valor"><i class="ti ti-scale"></i><span>Justiça</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pgpub-overlay" id="pgpub-overlay" onclick="fecharDetalhePg()"></div>
+  <div class="pgpub-detail" id="pgpub-detail">
+    <div class="pgpub-detail-top">
+      <div class="pgpub-detail-handle"></div>
+      <button type="button" class="pgpub-detail-close" onclick="fecharDetalhePg()">&times;</button>
+      <p class="pgpub-eyebrow" id="pgpub-d-tema">tema</p>
+      <h2 id="pgpub-d-nome">Nome do PG</h2>
+      <p class="pgpub-d-host" id="pgpub-d-host">Recebe: Anfitrião</p>
+    </div>
+    <div class="pgpub-detail-body">
+      <div class="pgpub-info-row">
+        <div class="pgpub-ic"><i class="ti ti-map-pin"></i></div>
+        <div class="pgpub-txt"><strong id="pgpub-d-bairro">Bairro</strong><span>Endereço exato combinado após contato</span></div>
+      </div>
+      <div class="pgpub-info-row">
+        <div class="pgpub-ic"><i class="ti ti-clock"></i></div>
+        <div class="pgpub-txt"><strong id="pgpub-d-horario">Dia às horário</strong><span id="pgpub-d-freq">Semanal</span></div>
+      </div>
+      <div class="pgpub-info-row">
+        <div class="pgpub-ic"><i class="ti ti-armchair"></i></div>
+        <div class="pgpub-txt"><strong>Tem sempre um lugar à mesa pra você</strong></div>
+      </div>
+      <div class="pgpub-desc" id="pgpub-d-desc">Descrição do grupo.</div>
+      <a class="pgpub-cta" id="pgpub-d-cta" href="#" target="_blank" rel="noopener">Quero participar</a>
+    </div>
+  </div>
+</div>
+
 <div id="login-screen">
   <div class="login-box">
+    <button type="button" class="btn sm" onclick="showScreen('gate')" style="margin-bottom:16px"><i class="ti ti-arrow-left"></i>Voltar</button>
     <div class="login-logo">
       <img src="logo.svg" alt="" class="brand-mark">
       <h1>Igreja App</h1>
@@ -64,10 +210,13 @@
       <div class="nav-section">Geral</div>
       <div class="nav-item active" onclick="navigate('dashboard');closeSidebarMobile()"><i class="ti ti-dashboard"></i><span class="nav-item-text">Dashboard</span><span class="nav-tooltip">Dashboard</span></div>
       <div class="nav-item" onclick="navigate('calendario');closeSidebarMobile()"><i class="ti ti-calendar"></i><span class="nav-item-text">Calendário</span><span class="nav-tooltip">Calendário</span></div>
+      <div class="nav-item" onclick="showScreen('pg');closeSidebarMobile()"><i class="ti ti-map-pin"></i><span class="nav-item-text">Pequenos Grupos</span><span class="nav-tooltip">Pequenos Grupos</span></div>
       <div class="nav-section" id="admin-section">Administração</div>
       <div class="nav-item" id="nav-ministerios" onclick="navigate('ministerios');closeSidebarMobile()"><i class="ti ti-users-group"></i><span class="nav-item-text">Ministérios</span><span class="nav-tooltip">Ministérios</span></div>
       <div class="nav-item" id="nav-voluntarios" onclick="navigate('voluntarios');closeSidebarMobile()"><i class="ti ti-user-check"></i><span class="nav-item-text">Voluntários</span><span class="nav-tooltip">Voluntários</span></div>
       <div class="nav-item" id="nav-eventos" onclick="navigate('eventos');closeSidebarMobile()"><i class="ti ti-calendar-event"></i><span class="nav-item-text">Eventos</span><span class="nav-tooltip">Eventos</span></div>
+      <div class="nav-item" id="nav-pgs" onclick="navigate('pgs');closeSidebarMobile()"><i class="ti ti-tent"></i><span class="nav-item-text">Gerenciar PGs</span><span class="nav-tooltip">Gerenciar PGs</span></div>
+      <div class="nav-item" id="nav-pedidos-voluntario" onclick="navigate('pedidos-voluntario');closeSidebarMobile()"><i class="ti ti-user-plus"></i><span class="nav-item-text">Pedidos de Voluntário</span><span class="nav-tooltip">Pedidos de Voluntário</span></div>
       <div class="nav-item" id="nav-niveis" onclick="navigate('niveis');closeSidebarMobile()"><i class="ti ti-shield-lock"></i><span class="nav-item-text">Níveis de acesso</span><span class="nav-tooltip">Níveis de acesso</span></div>
       <div class="nav-item" id="nav-logs" onclick="navigate('logs');closeSidebarMobile()"><i class="ti ti-history"></i><span class="nav-item-text">Log de atividade</span><span class="nav-tooltip">Log de atividade</span></div>
       <div class="nav-section">Conta</div>
@@ -384,6 +533,32 @@
         </div>
       </div>
 
+      <div class="section" id="section-pgs">
+        <div class="card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+            <div>
+              <h3 style="font-size:14px;font-weight:500">Pequenos Grupos (PGs)</h3>
+              <p style="font-size:12px;color:var(--text-tertiary);margin-top:3px">Aparecem na área pública de PGs, sem precisar de login.</p>
+            </div>
+            <span id="pgs-count" style="font-size:12px;color:var(--text-secondary)"></span>
+          </div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Nome</th><th>Dia / Horário</th><th>Bairro</th><th>Tema</th><th>Ativo</th><th></th></tr></thead>
+            <tbody id="pgs-tbody"></tbody></table>
+          </div>
+          <div id="pgs-cards-mobile" class="pg-admin-cards-mobile"></div>
+          <div id="pgs-empty" style="display:none" class="empty" style="padding:20px"><i class="ti ti-tent"></i>Nenhum Pequeno Grupo cadastrado ainda</div>
+        </div>
+      </div>
+
+      <div class="section" id="section-pedidos-voluntario">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+          <p style="font-size:12px;color:var(--text-tertiary)">Pedidos enviados pela tela inicial, antes do login. Aprovar cria o acesso da pessoa automaticamente.</p>
+          <span id="pedvol-count" style="font-size:12px;color:var(--text-secondary);flex-shrink:0"></span>
+        </div>
+        <div id="pedvol-lista"></div>
+      </div>
+
       <div class="section" id="section-niveis">
         <div class="grid-3" id="niveis-grid"></div>
       </div>
@@ -410,6 +585,7 @@
                 <option value="perfil">Perfil</option>
                 <option value="sessao">Sessão</option>
                 <option value="alerta">Alertas</option>
+                <option value="pg">Pequenos Grupos</option>
               </select>
             </div>
           </div>
@@ -647,6 +823,82 @@ Bateria: Pedro..." style="min-height:80px"></textarea></div>
   </div>
 </div>
 
+<div class="modal-backdrop" id="modal-pg">
+  <div class="modal" style="max-width:520px">
+    <h2 id="modal-pg-title">Criar Pequeno Grupo</h2>
+    <input type="hidden" id="pg-edit-id" value="">
+    <div class="form-group"><label>Nome do PG *</label><input id="pg-nome" type="text" placeholder="ex: Casa do Zaqueu"></div>
+    <div class="form-group"><label>Anfitrião(s)</label><input id="pg-anfitriao" type="text" placeholder="ex: João e Marcia"></div>
+    <div class="grid-2" style="gap:12px">
+      <div class="form-group"><label>Dia da semana</label>
+        <select id="pg-dia"><option value="Dom">Domingo</option><option value="Seg">Segunda</option><option value="Ter">Terça</option><option value="Qua">Quarta</option><option value="Qui">Quinta</option><option value="Sex">Sexta</option><option value="Sáb">Sábado</option></select>
+      </div>
+      <div class="form-group"><label>Horário</label><input id="pg-horario" type="time" value="20:00"></div>
+    </div>
+    <div class="grid-2" style="gap:12px">
+      <div class="form-group"><label>Frequência</label>
+        <select id="pg-frequencia"><option value="Semanal">Semanal</option><option value="Quinzenal">Quinzenal</option><option value="Mensal">Mensal</option></select>
+      </div>
+      <div class="form-group"><label>Tema / Público</label><input id="pg-tema" type="text" placeholder="ex: Casais, Jovens..."></div>
+    </div>
+    <div class="form-group"><label>Descrição</label><textarea id="pg-desc" placeholder="Descreva o grupo..." style="min-height:64px"></textarea></div>
+    <div class="form-group">
+      <label>Quem recebe a mensagem de quem quer participar?</label>
+      <div class="chips" style="margin:0 0 10px">
+        <div class="chip selected" id="pg-destino-lider" onclick="pgSetDestinoContato('lider')"><i class="ti ti-user"></i> Líder do PG</div>
+        <div class="chip" id="pg-destino-pastor" onclick="pgSetDestinoContato('pastor')"><i class="ti ti-crown"></i> Pastor responsável</div>
+      </div>
+      <div id="pg-destino-lider-wrap"><label>WhatsApp do líder</label><input id="pg-whatsapp" type="text" placeholder="5519999999999"></div>
+      <div id="pg-destino-pastor-wrap" style="display:none">
+        <label>Pastor responsável</label>
+        <select id="pg-pastor" onchange="pgAvisoPastorSemTel()"></select>
+        <p id="pg-pastor-aviso" class="pg-local-status erro" style="display:none"></p>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Localização aproximada</label>
+      <p style="font-size:11px;color:var(--text-secondary);margin-bottom:6px">Escolha como localizar o grupo — localizamos automaticamente e marcamos uma área de 5km ao redor, sem revelar o endereço exato.</p>
+      <div class="chips" style="margin:0 0 10px">
+        <div class="chip selected" id="pg-modo-bairro" onclick="pgSetModoLocal('bairro')">Por bairro</div>
+        <div class="chip" id="pg-modo-cep" onclick="pgSetModoLocal('cep')">Por CEP</div>
+      </div>
+      <div class="pg-local-row">
+        <div id="pg-bairro-wrap" style="flex:1"><div class="form-group" style="margin-bottom:0"><label>Bairro</label><input id="pg-bairro" type="text" placeholder="ex: Taquaral" onblur="localizarPg()"></div></div>
+        <div id="pg-cep-wrap" style="flex:1;display:none"><div class="form-group" style="margin-bottom:0"><label>CEP</label><input id="pg-cep" type="text" placeholder="13025-320" onblur="localizarPg()"></div></div>
+        <button type="button" class="btn sm" onclick="localizarPg()"><i class="ti ti-map-pin-search"></i>Localizar</button>
+      </div>
+      <p id="pg-local-status" class="pg-local-status"></p>
+      <div id="pg-mapa-picker" style="height:220px;border-radius:var(--radius);overflow:hidden;border:0.5px solid var(--border)"></div>
+      <input type="hidden" id="pg-lat" value=""><input type="hidden" id="pg-lng" value="">
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-pg')">Cancelar</button>
+      <button class="btn primary" onclick="savePg()" id="btn-save-pg">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-pg-detalhe">
+  <div class="modal" style="max-width:520px">
+    <h2 id="pgdet-nome"></h2>
+    <p id="pgdet-sub" style="font-size:12px;color:var(--text-secondary);margin-top:2px"></p>
+    <div id="pgdet-info" class="pgdet-info"></div>
+    <div class="form-group" style="margin-top:16px">
+      <label>Pessoas do grupo <span id="pgdet-pessoas-count" style="color:var(--text-tertiary);font-weight:400"></span></label>
+      <p style="font-size:11px;color:var(--text-secondary);margin-bottom:6px">Só uma lista de nomes para o líder, pastor e admin acompanharem — não cria cadastro nem login para elas.</p>
+      <div class="pg-local-row" id="pg-pessoa-add">
+        <input type="text" id="pg-pessoa-nome" placeholder="Nome da pessoa" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarPessoaPg();}">
+        <button type="button" class="btn sm" onclick="adicionarPessoaPg()"><i class="ti ti-plus"></i>Adicionar</button>
+      </div>
+      <div id="pg-pessoas-lista" class="pg-pessoas-lista"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-pg-detalhe')">Fechar</button>
+      <button class="btn primary" id="pgdet-btn-editar"><i class="ti ti-edit"></i>Editar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-backdrop" id="modal-inscricao">
   <div class="modal" style="max-width:520px">
     <h2 id="inscricao-titulo"></h2>
@@ -753,6 +1005,24 @@ Bateria: Pedro..." style="min-height:80px"></textarea></div>
         </div>
       </div>
 
+      <div class="perm-grupo">
+        <p class="perm-grupo-titulo"><i class="ti ti-users-group"></i> Pequenos Grupos</p>
+        <div class="perm-grid-3">
+          <label class="perm-check">
+            <input type="checkbox" id="p-criar-pg" style="accent-color:#7F77DD">
+            <span>Criar</span>
+          </label>
+          <label class="perm-check">
+            <input type="checkbox" id="p-editar-pg" style="accent-color:#7F77DD">
+            <span>Editar</span>
+          </label>
+          <label class="perm-check">
+            <input type="checkbox" id="p-excluir-pg" style="accent-color:#7F77DD">
+            <span>Excluir</span>
+          </label>
+        </div>
+      </div>
+
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="closeModal('modal-nivel')">Cancelar</button>
@@ -779,6 +1049,7 @@ Bateria: Pedro..." style="min-height:80px"></textarea></div>
   </div>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="db.js"></script>
 <script src="state.js"></script>
 <script src="permissions.js"></script>
@@ -793,6 +1064,9 @@ Bateria: Pedro..." style="min-height:80px"></textarea></div>
 <script src="niveis.js"></script>
 <script src="voluntarios.js"></script>
 <script src="eventos.js"></script>
+<script src="pgs.js"></script>
+<script src="pg-publico.js"></script>
+<script src="pedidos-voluntario.js"></script>
 <script src="perfil.js"></script>
 <script src="notificacoes.js"></script>
 <script src="logs.js"></script>

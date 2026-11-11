@@ -14,7 +14,7 @@ async function init() {
     } catch(e) {}
     localStorage.removeItem('igreja_session');
   }
-  showScreen('login');
+  showScreen('gate');
 }
 
 async function loadProfile(userId) {
@@ -40,13 +40,15 @@ async function loadProfile(userId) {
 }
 
 async function loadAllData() {
-  const [m, v, e, n, niv, g] = await Promise.all([
+  const [m, v, e, n, niv, g, pg, pv] = await Promise.all([
     sb('ministerios?select=*&order=nome'),
     sb('voluntarios?select=*&order=nome'),
     sb('eventos?select=*&order=data'),
     sb(`notificacoes?vol_id=eq.${currentProfile.id}&select=*&order=criado_em.desc`),
     sb('niveis_acesso?select=*&order=nome'),
-    sb('grupos_ministerios?select=*&order=nome')
+    sb('grupos_ministerios?select=*&order=nome'),
+    sb('pequenos_grupos?select=*&order=nome'),
+    sb('pedidos_voluntario?select=*&order=criado_em.desc')
   ]);
   ministerios = (m||[]).map(r => ({...r, ministerios: r.ministerios || [], inscritos: [], convites: []}));
   voluntarios = (v||[]).map(r => ({...r, ministerios: r.ministerios || []}));
@@ -54,6 +56,8 @@ async function loadAllData() {
   notificacoes = (n||[]);
   niveisAcesso = (niv||[]);
   gruposMinisterios = (g||[]);
+  pgs = (pg||[]);
+  pedidosVoluntario = (pv||[]);
   atualizarBadgeNotif();
   atualizarSelectNiveis();
 }
@@ -71,12 +75,14 @@ async function refetchDadosVivos() {
   if (agora - ultimoRefetch < 5000) return;
   ultimoRefetch = agora;
   try {
-    const [e, n] = await Promise.all([
+    const [e, n, pv] = await Promise.all([
       sb('eventos?select=*&order=data'),
-      sb(`notificacoes?vol_id=eq.${currentProfile.id}&select=*&order=criado_em.desc`)
+      sb(`notificacoes?vol_id=eq.${currentProfile.id}&select=*&order=criado_em.desc`),
+      sb('pedidos_voluntario?select=*&order=criado_em.desc')
     ]);
     if (e) eventos = e.map(r => ({...r, ministerios: r.ministerios||[], inscritos: r.inscritos||[], convites: r.convites||[]}));
     if (n) notificacoes = n;
+    if (pv) pedidosVoluntario = pv;
     atualizarTodasAsViews();
   } catch (err) { console.error('Falha ao atualizar dados automaticamente:', err); }
 }
@@ -234,7 +240,7 @@ function doLogout() {
   document.getElementById('login-senha').value = '';
   const btn = document.getElementById('btn-login');
   btn.innerHTML = '<i class="ti ti-login"></i>Entrar'; btn.disabled = false;
-  showScreen('login');
+  showScreen('gate');
 }
 
 // SHA-256 simples para senhas

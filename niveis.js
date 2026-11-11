@@ -39,13 +39,15 @@ function updateSidebarPreview() {
   const navMin = document.getElementById('nav-ministerios');
   const navVol = document.getElementById('nav-voluntarios');
   const navEv = document.getElementById('nav-eventos');
+  const navPgs = document.getElementById('nav-pgs');
   const navNiv = document.getElementById('nav-niveis');
   const adminSec = document.getElementById('admin-section');
   if (navMin) navMin.style.display = isLiderOuAdmin ? 'flex' : 'none';
   if (navVol) navVol.style.display = nivelPodeGerenciarVoluntarios(nivel) ? 'flex' : 'none';
   if (navEv) navEv.style.display = nivelPodeGerenciarEventos(nivel) ? 'flex' : 'none';
+  if (navPgs) navPgs.style.display = nivelPodeGerenciarPgs(nivel) ? 'flex' : 'none';
   if (navNiv) navNiv.style.display = 'none';
-  if (adminSec) adminSec.style.display = isLiderOuAdmin ? 'block' : 'none';
+  if (adminSec) adminSec.style.display = (isLiderOuAdmin || nivelPodeGerenciarPgs(nivel)) ? 'block' : 'none';
 }
 
 const NIVEL_PADRAO = ['admin','lider','voluntario'];
@@ -61,6 +63,9 @@ const PERMS = [
   {id:'pode_excluir_eventos',      label:'Excluir eventos',             grupo:'Eventos'},
   {id:'pode_ver_todos_ministerios',label:'Ver todos os ministérios',    grupo:'Visibilidade'},
   {id:'pode_ver_total_voluntarios',label:'Ver total de voluntários',    grupo:'Visibilidade'},
+  {id:'pode_criar_pgs',            label:'Criar Pequenos Grupos',       grupo:'Pequenos Grupos'},
+  {id:'pode_editar_pgs',           label:'Editar Pequenos Grupos',      grupo:'Pequenos Grupos'},
+  {id:'pode_excluir_pgs',          label:'Excluir Pequenos Grupos',     grupo:'Pequenos Grupos'},
 ];
 
 function getPerm(nivel, permId) {
@@ -123,7 +128,7 @@ function openModalNivel() {
   document.getElementById('nivel-nome').value = '';
   document.getElementById('nivel-nome').disabled = false;
   document.getElementById('nivel-desc').value = '';
-  ['p-criar-min','p-editar-min','p-excluir-min','p-cadastrar-vol','p-editar-vol','p-remover-vol','p-criar-ev','p-editar-ev','p-excluir-ev','p-ver-min','p-ver-total-vol'].forEach(id=>{
+  ['p-criar-min','p-editar-min','p-excluir-min','p-cadastrar-vol','p-editar-vol','p-remover-vol','p-criar-ev','p-editar-ev','p-excluir-ev','p-ver-min','p-ver-total-vol','p-criar-pg','p-editar-pg','p-excluir-pg'].forEach(id=>{
     const el = document.getElementById(id); if (el) el.checked = false;
   });
   openModal('modal-nivel');
@@ -152,6 +157,12 @@ function editNivel(id) {
   document.getElementById('p-ver-min').checked = !!n.pode_ver_todos_ministerios;
   const pVtv = document.getElementById('p-ver-total-vol');
   if (pVtv) pVtv.checked = !!n.pode_ver_total_voluntarios;
+  const pCriarPg = document.getElementById('p-criar-pg');
+  if (pCriarPg) pCriarPg.checked = !!n.pode_criar_pgs;
+  const pEditarPg = document.getElementById('p-editar-pg');
+  if (pEditarPg) pEditarPg.checked = !!n.pode_editar_pgs;
+  const pExcluirPg = document.getElementById('p-excluir-pg');
+  if (pExcluirPg) pExcluirPg.checked = !!n.pode_excluir_pgs;
   openModal('modal-nivel', true);
 }
 
@@ -172,6 +183,9 @@ async function saveNivel() {
     pode_excluir_eventos: document.getElementById('p-excluir-ev')?.checked || false,
     pode_ver_todos_ministerios: document.getElementById('p-ver-min').checked,
     pode_ver_total_voluntarios: document.getElementById('p-ver-total-vol')?.checked || false,
+    pode_criar_pgs: document.getElementById('p-criar-pg')?.checked || false,
+    pode_editar_pgs: document.getElementById('p-editar-pg')?.checked || false,
+    pode_excluir_pgs: document.getElementById('p-excluir-pg')?.checked || false,
   };
   const editId = document.getElementById('nivel-edit-id').value;
   try {

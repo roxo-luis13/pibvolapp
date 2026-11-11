@@ -73,11 +73,14 @@ function renderNotificacoes() {
       lembrete_2dias:{icon:'ti-calendar-time', bg:'var(--blue-bg)', color:'var(--blue-text)', titulo:'Evento em breve'},
       lembrete_30min:{icon:'ti-alarm', bg:'var(--coral-bg)', color:'var(--coral-text)', titulo:'Começa em 30 minutos'},
       alerta_pessoal:{icon:'ti-bell-exclamation', bg:'var(--coral-bg)', color:'var(--coral-text)', titulo:'Alerta'},
+      pedido_voluntario:{icon:'ti-user-plus', bg:'var(--teal-bg)', color:'var(--teal-text)', titulo:'Pedido de voluntário'},
     }[tipo] || {icon:'ti-bell', bg:'var(--purple-bg)', color:'var(--purple-text)', titulo:'Notificação'};
 
     let acoes = '';
     if (tipo === 'alerta_pessoal') {
       acoes = '';
+    } else if (tipo === 'pedido_voluntario') {
+      acoes = `<button class="btn sm" style="margin-top:6px" onclick="marcarLida('${n.id}');navigate('pedidos-voluntario');toggleNotificacoes()"><i class="ti ti-eye"></i>Ver pedido</button>`;
     } else if (tipo === 'convite' || tipo === 'lembrete_resposta_2sem' || tipo === 'lembrete_resposta_1sem') {
       const convite = ev?.convites?.find(c=>c.volId===currentProfile.id);
       const status = convite?.status||'pendente';
