@@ -85,6 +85,12 @@ function pgDefinirStatusLocal(msg, classe) {
   el.className = 'pg-local-status' + (classe ? ' ' + classe : '');
 }
 
+const PG_UF_NOME = { AC:'Acre', AL:'Alagoas', AP:'Amapá', AM:'Amazonas', BA:'Bahia', CE:'Ceará', DF:'Distrito Federal',
+  ES:'Espírito Santo', GO:'Goiás', MA:'Maranhão', MT:'Mato Grosso', MS:'Mato Grosso do Sul', MG:'Minas Gerais', PA:'Pará',
+  PB:'Paraíba', PR:'Paraná', PE:'Pernambuco', PI:'Piauí', RJ:'Rio de Janeiro', RN:'Rio Grande do Norte', RS:'Rio Grande do Sul',
+  RO:'Rondônia', RR:'Roraima', SC:'Santa Catarina', SP:'São Paulo', SE:'Sergipe', TO:'Tocantins' };
+
+// CEP -> lista de textos pra procurar no mapa, do mais preciso (rua) ao mais geral (bairro, cidade)
 async function pgGeocodificarPorCep(cep) {
   const limpo = cep.replace(/\D/g, '');
   if (limpo.length !== 8) throw new Error('CEP inválido.');
@@ -94,22 +100,64 @@ async function pgGeocodificarPorCep(cep) {
   if (!document.getElementById('pg-bairro').value.trim() && data.bairro) {
     document.getElementById('pg-bairro').value = data.bairro;
   }
-  return `${data.bairro || ''}, ${data.localidade} - ${data.uf}, Brasil`;
+  const local = `${data.localidade}, ${PG_UF_NOME[data.uf] || data.uf}, Brasil`;
+  return [
+    data.logradouro && `${data.logradouro}, ${local}`,
+    data.bairro && `${data.bairro}, ${local}`,
+    local,
+  ].filter(Boolean);
 }
 
-async function pgGeocodificarEndereco(query) {
-  const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=${encodeURIComponent(query)}`);
+// Textos pra procurar a partir do que a pessoa digitou (bairro, endereço...). A igreja é em
+// Campinas, então tenta primeiro como bairro de Campinas; se não achar, tenta no estado de SP
+// (outras cidades, ex: "Centro, Valinhos") e por último do jeito que foi digitado.
+function pgCandidatosBusca(valor) {
+  const low = valor.toLowerCase();
+  if (low.includes('brasil') || low.includes('brazil')) return [valor];
+  const lista = [];
+  if (!low.includes('campinas')) lista.push(`${valor}, Campinas, São Paulo, Brasil`);
+  lista.push(`${valor}, São Paulo, Brasil`, valor);
+  return lista;
+}
+
+const pgEspera = ms => new Promise(r => setTimeout(r, ms));
+let pgUltimaChamadaNominatim = 0;
+
+async function pgBuscarNominatim(query) {
+  // O serviço gratuito do OpenStreetMap aceita no máximo 1 busca por segundo
+  const falta = 1100 - (Date.now() - pgUltimaChamadaNominatim);
+  if (falta > 0) await pgEspera(falta);
+  pgUltimaChamadaNominatim = Date.now();
+  const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&accept-language=pt-BR&q=${encodeURIComponent(query)}`);
+  if (!resp.ok) return null;
   const data = await resp.json();
-  if (!resp.ok || !data || !data.length) throw new Error('Não encontramos esse endereço.');
+  if (!data || !data.length) return null;
   return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), nome: data[0].display_name };
 }
 
-// Completa o texto digitado com "SP, Brasil" quando a pessoa não informou isso, pra buscar
-// em qualquer cidade do estado (não só Campinas) - sem sobrescrever se ela já informou o estado/país.
-function pgCompletarQueryEstadoSP(valor) {
-  const low = valor.toLowerCase();
-  if (low.includes('brasil') || low.includes('brazil')) return valor;
-  return `${valor}, SP, Brasil`;
+// Segunda opção de mapa (Photon, também baseado no OpenStreetMap, mas com busca mais tolerante),
+// com preferência por resultados perto de Campinas
+async function pgBuscarPhoton(query) {
+  const resp = await fetch(`https://photon.komoot.io/api/?limit=1&lat=${PG_CENTRO_PADRAO.lat}&lon=${PG_CENTRO_PADRAO.lng}&q=${encodeURIComponent(query)}`);
+  if (!resp.ok) return null;
+  const data = await resp.json();
+  const f = data && data.features && data.features[0];
+  if (!f || (f.properties && f.properties.countrycode && f.properties.countrycode !== 'BR')) return null;
+  const pr = f.properties || {};
+  const nome = [pr.name, pr.district, pr.city, pr.state].filter(Boolean).join(', ');
+  return { lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0], nome };
+}
+
+// Recebe um texto ou uma lista de textos (em ordem de preferência) e devolve o primeiro que achar
+async function pgGeocodificarEndereco(consultas) {
+  const lista = Array.isArray(consultas) ? consultas : [consultas];
+  for (const q of lista) {
+    try { const r = await pgBuscarNominatim(q); if (r) return r; } catch (e) { console.warn('Nominatim falhou:', e); }
+  }
+  for (const q of lista) {
+    try { const r = await pgBuscarPhoton(q); if (r) return r; } catch (e) { console.warn('Photon falhou:', e); }
+  }
+  throw new Error('Não encontramos esse endereço.');
 }
 
 let pgModoLocal = 'bairro';
@@ -129,23 +177,35 @@ function limparCirculoPg() {
   document.getElementById('pg-lng').value = '';
 }
 
+let pgLocalizarSeq = 0;
+let pgUltimoValorLocalizado = '';
+
 async function localizarPg() {
   const valor = pgModoLocal === 'cep'
     ? document.getElementById('pg-cep').value.trim()
     : document.getElementById('pg-bairro').value.trim();
-  if (!valor) { pgDefinirStatusLocal('', ''); limparCirculoPg(); return; }
+  if (!valor) { pgDefinirStatusLocal('', ''); limparCirculoPg(); pgUltimoValorLocalizado = ''; return; }
+
+  // Sair do campo e clicar em "Localizar" disparam juntos: não busca de novo o mesmo valor
+  const chave = pgModoLocal + ':' + valor;
+  if (chave === pgUltimoValorLocalizado) return;
+  pgUltimoValorLocalizado = chave;
+  const minhaBusca = ++pgLocalizarSeq;
 
   pgDefinirStatusLocal('Localizando...', '');
   try {
-    const query = pgModoLocal === 'cep'
+    const consultas = pgModoLocal === 'cep'
       ? await pgGeocodificarPorCep(valor)
-      : pgCompletarQueryEstadoSP(valor);
-    const { lat, lng, nome } = await pgGeocodificarEndereco(query);
+      : pgCandidatosBusca(valor);
+    const { lat, lng, nome } = await pgGeocodificarEndereco(consultas);
+    if (minhaBusca !== pgLocalizarSeq) return; // chegou uma busca mais nova no meio do caminho
     desenharCirculoPg(lat, lng);
     pgDefinirStatusLocal('📍 ' + nome, 'ok');
   } catch (e) {
+    if (minhaBusca !== pgLocalizarSeq) return;
+    pgUltimoValorLocalizado = ''; // deixa tentar de novo
     limparCirculoPg();
-    pgDefinirStatusLocal('Não foi possível localizar: ' + e.message, 'erro');
+    pgDefinirStatusLocal('Não foi possível localizar: ' + e.message + (pgModoLocal === 'bairro' ? ' Confira o nome do bairro ou use o CEP.' : ''), 'erro');
   }
 }
 
@@ -187,6 +247,8 @@ function editPg(id) {
   document.getElementById('pg-bairro-wrap').style.display = pgModoLocal === 'bairro' ? '' : 'none';
   document.getElementById('pg-cep-wrap').style.display = pgModoLocal === 'cep' ? '' : 'none';
   pgDefinirStatusLocal(p.lat && p.lng ? '📍 Localização já definida' : '', p.lat && p.lng ? 'ok' : '');
+  // Já localizado: não refaz a busca se a pessoa só passar pelo campo sem mudar nada
+  pgUltimoValorLocalizado = (p.lat && p.lng) ? pgModoLocal + ':' + (pgModoLocal === 'cep' ? (p.cep || '') : (p.bairro || '')).trim() : '';
   closeModal('modal-pg-detalhe');
   openModal('modal-pg', true);
   setTimeout(() => initPgPickerMap(p.lat, p.lng), 50);

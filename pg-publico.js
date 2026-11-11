@@ -81,8 +81,7 @@ async function buscarMeuEnderecoPg() {
 
   pgPublicoStatusBusca('Procurando...', '');
   try {
-    const query = pgCompletarQueryEstadoSP(valor);
-    const { lat, lng, nome } = await pgGeocodificarEndereco(query);
+    const { lat, lng, nome } = await pgGeocodificarEndereco(pgCandidatosBusca(valor));
     pgPublicoMinhaLoc = { lat, lng };
 
     if (pgPublicoMeuMarker) pgPublicoMap.removeLayer(pgPublicoMeuMarker);
