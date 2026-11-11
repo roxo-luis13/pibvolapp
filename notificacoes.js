@@ -198,7 +198,7 @@ function renderConvidarLista(convitesAtuais) {
   const nivel = getNivelAtivo();
   const verTodos = nivelIsAdmin(nivel) || nivel === 'pastor';
   const meusMinIds = currentProfile.ministerios || [];
-  const minQueLidero = ministerios.filter(m => m.lider_id === currentProfile.id).map(m => m.id);
+  const minQueLidero = ministerios.filter(m => (m.lideres_ids||[]).includes(currentProfile.id)).map(m => m.id);
   const minsVisiveis = verTodos ? null : [...new Set([...meusMinIds, ...minQueLidero])];
 
   let lista = voluntarios.filter(v => {

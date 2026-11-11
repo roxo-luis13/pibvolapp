@@ -259,7 +259,7 @@
           <div id="detalhe-admin-btns"></div>
         </div>
         <div style="background:var(--bg-secondary);border-radius:var(--radius);padding:12px 16px;margin-bottom:16px;display:none" id="detalhe-lider-bar">
-          <span style="font-size:13px"><i class="ti ti-crown" style="color:#BA7517;margin-right:6px"></i>Líder: <strong id="detalhe-lider-nome"></strong></span>
+          <span style="font-size:13px"><i class="ti ti-crown" style="color:#BA7517;margin-right:6px"></i><span id="detalhe-lider-label">Líder</span>: <strong id="detalhe-lider-nome"></strong></span>
         </div>
         <div class="grid-2">
           <div class="card">
@@ -523,7 +523,7 @@
         <option value="green">Verde</option>
       </select>
     </div>
-    <div class="form-group"><label>Líder do grupo</label><select id="grupo-lider"><option value="">— Sem líder —</option></select></div>
+    <div class="form-group"><label>Líder(es) do grupo</label><div class="chips" id="grupo-lideres-chips"></div></div>
     <div class="modal-footer">
       <button class="btn" onclick="closeModal('modal-grupo')">Cancelar</button>
       <button class="btn primary" onclick="saveGrupo()">Salvar</button>
@@ -569,7 +569,7 @@
       <select id="min-cor"><option value="purple">Roxo</option><option value="teal">Verde-água</option><option value="blue">Azul</option><option value="coral">Coral</option><option value="amber">Âmbar</option><option value="pink">Rosa</option><option value="green">Verde</option></select>
     </div>
     <div class="form-group"><label>Grupo</label><select id="min-grupo"><option value="">— Sem grupo —</option></select></div>
-    <div class="form-group"><label>Líder do ministério</label><select id="min-lider"><option value="">— Sem líder —</option></select></div>
+    <div class="form-group"><label>Líder(es) do ministério</label><div class="chips" id="min-lideres-chips"></div></div>
     <div class="modal-footer">
       <button class="btn" onclick="closeModal('modal-min')">Cancelar</button>
       <button class="btn primary" onclick="saveMinisterio()">Salvar</button>

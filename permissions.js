@@ -59,16 +59,16 @@ function nivelPodeVerNiveis(nivel) {
 function podEditarMinisterio(minId) {
   if (!perm(getNivelAtivo(), 'pode_editar_ministerios')) return false;
   if (nivelIsAdmin(getNivelAtivo())) return true;
-  // Não-admin: só pode editar se for o líder do ministério
+  // Não-admin: só pode editar se for um dos líderes do ministério
   const m = ministerios.find(m => m.id === minId);
-  return m && m.lider_id === currentProfile.id;
+  return m && (m.lideres_ids||[]).includes(currentProfile.id);
 }
 
 function podExcluirMinisterio(minId) {
   if (!perm(getNivelAtivo(), 'pode_excluir_ministerios')) return false;
   if (nivelIsAdmin(getNivelAtivo())) return true;
   const m = ministerios.find(m => m.id === minId);
-  return m && m.lider_id === currentProfile.id;
+  return m && (m.lideres_ids||[]).includes(currentProfile.id);
 }
 
 function nivelIsLiderOuAdmin(nivel) {

@@ -5,6 +5,13 @@
 // entrar, uma única vez por pessoa (controlado via localStorage, por aparelho).
 const NOVIDADES = [
   {
+    id: '2026-11-11-varios-lideres',
+    titulo: 'Novidades do app',
+    itens: [
+      'Ministérios e grupos de ministérios agora podem ter mais de uma pessoa responsável (líder) ao mesmo tempo, não só uma.',
+    ],
+  },
+  {
     id: '2026-11-11-aviso-novidades',
     titulo: 'Novidades do app',
     itens: [
