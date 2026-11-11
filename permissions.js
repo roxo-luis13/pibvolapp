@@ -149,4 +149,5 @@ function showScreen(s) {
     fab.style.display = s==='app' ? 'flex' : 'none';
     if (s!=='app') fecharAssistente();
   }
+  if (s==='app' && typeof verificarNovidades === 'function') setTimeout(verificarNovidades, 500);
 }

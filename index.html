@@ -47,6 +47,20 @@
   </div>
 </div>
 
+<div class="modal-backdrop" id="modal-novidade">
+  <div class="modal" style="max-width:420px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <i class="ti ti-sparkles" style="font-size:20px;color:#7F77DD"></i>
+      <h2 id="novidade-titulo" style="margin:0">Novidades do app</h2>
+    </div>
+    <p style="font-size:12px;color:var(--text-secondary);margin:6px 0 14px">O que mudou na última atualização:</p>
+    <ul id="novidade-lista" style="margin:0 0 4px;padding-left:18px;display:flex;flex-direction:column;gap:8px;font-size:13px;line-height:1.5;color:var(--text-primary)"></ul>
+    <div class="modal-footer">
+      <button class="btn primary full" onclick="fecharNovidade()"><i class="ti ti-check"></i>Entendi</button>
+    </div>
+  </div>
+</div>
+
 <div class="app" id="main-app">
   <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
   <div class="sidebar" id="sidebar">
@@ -782,6 +796,7 @@ Bateria: Pedro..." style="min-height:80px"></textarea></div>
 <script src="db.js"></script>
 <script src="state.js"></script>
 <script src="permissions.js"></script>
+<script src="changelog.js"></script>
 <script src="utils.js"></script>
 <script src="assistente.js"></script>
 <script src="sidebar.js"></script>
