@@ -12,10 +12,10 @@ function renderPgs() {
 
   tbody.innerHTML = pgs.map(p => {
     const btns = `<div style="display:flex;gap:4px">
-      ${canEdit ? `<button class="btn sm" onclick="editPg('${p.id}')"><i class="ti ti-edit"></i></button>` : ''}
-      ${canExcluir ? `<button class="btn sm danger" onclick="deletePg('${p.id}')"><i class="ti ti-trash"></i></button>` : ''}
+      ${canEdit ? `<button class="btn sm" onclick="event.stopPropagation();editPg('${p.id}')"><i class="ti ti-edit"></i></button>` : ''}
+      ${canExcluir ? `<button class="btn sm danger" onclick="event.stopPropagation();deletePg('${p.id}')"><i class="ti ti-trash"></i></button>` : ''}
     </div>`;
-    return `<tr>
+    return `<tr class="pg-admin-clicavel" onclick="abrirDetalhePgAdmin('${p.id}')" title="Ver detalhes e pessoas do PG">
       <td>${p.nome}</td>
       <td>${p.dia_semana || '—'}${p.horario ? ' às ' + p.horario.slice(0,5) : ''}</td>
       <td>${p.bairro || '—'}</td>
@@ -28,16 +28,16 @@ function renderPgs() {
   const cardsMobile = document.getElementById('pgs-cards-mobile');
   if (cardsMobile) {
     cardsMobile.innerHTML = pgs.map(p => `
-      <div class="pg-admin-card">
+      <div class="pg-admin-card pg-admin-clicavel" onclick="abrirDetalhePgAdmin('${p.id}')">
         <div class="pg-admin-card-top">
           <div class="pg-admin-card-nome">${p.nome}</div>
         </div>
         <div class="pg-admin-card-meta">${p.dia_semana || '—'}${p.horario ? ' às ' + p.horario.slice(0,5) : ''} · ${p.bairro || '—'}${p.tema ? ' · ' + p.tema : ''} · ${p.ativo ? 'Ativo' : 'Inativo'}</div>
         <div class="pg-admin-card-footer">
-          <span></span>
+          <span style="font-size:12px;color:var(--text-secondary)"><i class="ti ti-eye"></i> Ver detalhes</span>
           <div style="display:flex;gap:6px">
-            ${canEdit ? `<button class="btn sm" onclick="editPg('${p.id}')"><i class="ti ti-edit"></i>Editar</button>` : ''}
-            ${canExcluir ? `<button class="btn sm danger" onclick="deletePg('${p.id}')"><i class="ti ti-trash"></i>Excluir</button>` : ''}
+            ${canEdit ? `<button class="btn sm" onclick="event.stopPropagation();editPg('${p.id}')"><i class="ti ti-edit"></i>Editar</button>` : ''}
+            ${canExcluir ? `<button class="btn sm danger" onclick="event.stopPropagation();deletePg('${p.id}')"><i class="ti ti-trash"></i>Excluir</button>` : ''}
           </div>
         </div>
       </div>`).join('');
@@ -152,15 +152,14 @@ async function localizarPg() {
 function openModalPg() {
   document.getElementById('modal-pg-title').textContent = 'Criar Pequeno Grupo';
   document.getElementById('pg-edit-id').value = '';
-  ['pg-nome','pg-anfitriao','pg-bairro','pg-cep','pg-tema','pg-desc','pg-whatsapp','pg-participantes'].forEach(f => document.getElementById(f).value = '');
+  ['pg-nome','pg-anfitriao','pg-bairro','pg-cep','pg-tema','pg-desc','pg-whatsapp'].forEach(f => document.getElementById(f).value = '');
   document.getElementById('pg-dia').value = 'Ter';
   document.getElementById('pg-horario').value = '20:00';
   document.getElementById('pg-frequencia').value = 'Semanal';
   pgDefinirStatusLocal('', '');
   pgSetModoLocal('bairro');
-  document.getElementById('pg-pessoas-wrap').style.display = 'none';
-  pgPessoasPgId = null;
-  pgPessoasAtual = [];
+  pgPreencherPastores(null);
+  pgSetDestinoContato('lider');
   openModal('modal-pg');
   setTimeout(() => initPgPickerMap(null, null), 50);
 }
@@ -180,21 +179,95 @@ function editPg(id) {
   document.getElementById('pg-tema').value = p.tema || '';
   document.getElementById('pg-desc').value = p.descricao || '';
   document.getElementById('pg-whatsapp').value = p.whatsapp || '';
-  document.getElementById('pg-participantes').value = p.participantes || '';
+  pgPreencherPastores(p.pastor_id);
+  pgSetDestinoContato(p.contato_destino === 'pastor' ? 'pastor' : 'lider');
   pgModoLocal = p.cep ? 'cep' : 'bairro';
   document.getElementById('pg-modo-bairro').classList.toggle('selected', pgModoLocal === 'bairro');
   document.getElementById('pg-modo-cep').classList.toggle('selected', pgModoLocal === 'cep');
   document.getElementById('pg-bairro-wrap').style.display = pgModoLocal === 'bairro' ? '' : 'none';
   document.getElementById('pg-cep-wrap').style.display = pgModoLocal === 'cep' ? '' : 'none';
   pgDefinirStatusLocal(p.lat && p.lng ? '📍 Localização já definida' : '', p.lat && p.lng ? 'ok' : '');
-  document.getElementById('pg-pessoas-wrap').style.display = '';
-  pgPessoasPgId = id;
-  carregarPessoasPg(id);
+  closeModal('modal-pg-detalhe');
   openModal('modal-pg', true);
   setTimeout(() => initPgPickerMap(p.lat, p.lng), 50);
 }
 
+// ===== Quem recebe a mensagem de "Quero participar": líder do PG ou pastor responsável =====
+let pgDestinoContato = 'lider';
+
+function pgSetDestinoContato(destino) {
+  pgDestinoContato = destino;
+  document.getElementById('pg-destino-lider').classList.toggle('selected', destino === 'lider');
+  document.getElementById('pg-destino-pastor').classList.toggle('selected', destino === 'pastor');
+  document.getElementById('pg-destino-lider-wrap').style.display = destino === 'lider' ? '' : 'none';
+  document.getElementById('pg-destino-pastor-wrap').style.display = destino === 'pastor' ? '' : 'none';
+  pgAvisoPastorSemTel();
+}
+
+// Só pessoas cadastradas no app com acesso de pastor
+function pgPastores() {
+  return voluntarios.filter(v => v.nivel === 'pastor').sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+}
+
+function pgPreencherPastores(selecionadoId) {
+  const sel = document.getElementById('pg-pastor');
+  const pastores = pgPastores();
+  sel.innerHTML = '<option value="">Selecione o pastor...</option>' +
+    pastores.map(v => `<option value="${v.id}">${v.nome}</option>`).join('');
+  sel.value = pastores.some(v => v.id === selecionadoId) ? selecionadoId : '';
+}
+
+function pgTelValido(tel) {
+  const n = (tel || '').replace(/\D/g, '');
+  return n.length >= 10;
+}
+
+function pgAvisoPastorSemTel() {
+  const aviso = document.getElementById('pg-pastor-aviso');
+  const v = voluntarios.find(x => x.id === document.getElementById('pg-pastor').value);
+  const semTel = pgDestinoContato === 'pastor' && v && !pgTelValido(v.tel);
+  aviso.textContent = semTel ? `${v.nome} não tem celular cadastrado no app — o botão "Quero participar" não vai aparecer até o celular ser preenchido no cadastro dele.` : '';
+  aviso.style.display = semTel ? 'block' : 'none';
+}
+
+// ===== Detalhes do PG (gerência): informações + pessoas do grupo =====
+function abrirDetalhePgAdmin(id) {
+  const p = pgs.find(x => x.id === id);
+  if (!p) return;
+  const canEdit = perm(getNivelAtivo(), 'pode_editar_pgs') || perm(getNivelAtivo(), 'pode_criar_pgs');
+  const pastor = p.pastor_id ? voluntarios.find(v => v.id === p.pastor_id) : null;
+  const contato = p.contato_destino === 'pastor'
+    ? `Pastor responsável: ${pastor ? pastor.nome : '—'}${pastor && !pgTelValido(pastor.tel) ? ' (sem celular cadastrado)' : ''}`
+    : `Líder do PG${p.whatsapp ? ' · ' + p.whatsapp : ' (sem WhatsApp cadastrado)'}`;
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const linha = (icone, titulo, valor) => valor ? `<div class="pgdet-row"><i class="ti ${icone}"></i><div><span>${titulo}</span><br>${esc(valor)}</div></div>` : '';
+
+  document.getElementById('pgdet-nome').textContent = p.nome;
+  document.getElementById('pgdet-sub').textContent = (p.tema ? p.tema + ' · ' : '') + (p.ativo ? 'Ativo' : 'Inativo');
+  document.getElementById('pgdet-info').innerHTML =
+    linha('ti-home', 'Anfitrião(s)', p.anfitriao) +
+    linha('ti-clock', 'Quando', `${p.dia_semana || '—'}${p.horario ? ' às ' + p.horario.slice(0,5) : ''} · ${p.frequencia || 'Semanal'}`) +
+    linha('ti-map-pin', 'Local', [p.bairro, p.cep].filter(Boolean).join(' · ') || '—') +
+    linha('ti-brand-whatsapp', 'Mensagem de quem quer participar vai para', contato) +
+    linha('ti-notes', 'Descrição', p.descricao);
+
+  document.getElementById('pg-pessoa-add').style.display = canEdit ? '' : 'none';
+  document.getElementById('pg-pessoa-nome').value = '';
+  const btnEditar = document.getElementById('pgdet-btn-editar');
+  btnEditar.style.display = canEdit ? '' : 'none';
+  btnEditar.onclick = () => editPg(id);
+
+  pgPessoasPgId = id;
+  pgPessoasPodeEditar = canEdit;
+  pgPessoasAtual = [];
+  document.getElementById('pg-pessoas-lista').innerHTML = '<p class="pg-pessoas-vazio">Carregando...</p>';
+  document.getElementById('pgdet-pessoas-count').textContent = '';
+  openModal('modal-pg-detalhe');
+  carregarPessoasPg(id);
+}
+
 // ===== Lista de pessoas do grupo (só nomes, sem cadastro) =====
+let pgPessoasPodeEditar = false;
 let pgPessoasAtual = [];
 let pgPessoasPgId = null;
 
@@ -211,6 +284,7 @@ async function carregarPessoasPg(pgId) {
 function renderPessoasPg() {
   const el = document.getElementById('pg-pessoas-lista');
   if (!el) return;
+  document.getElementById('pgdet-pessoas-count').textContent = pgPessoasAtual.length ? `(${pgPessoasAtual.length})` : '';
   if (!pgPessoasAtual.length) {
     el.innerHTML = '<p class="pg-pessoas-vazio">Nenhuma pessoa na lista ainda.</p>';
     return;
@@ -218,7 +292,7 @@ function renderPessoasPg() {
   el.innerHTML = pgPessoasAtual.map(p => `
     <div class="pg-pessoa-chip">
       <span>${p.nome}</span>
-      <button type="button" onclick="removerPessoaPg('${p.id}')" title="Remover"><i class="ti ti-x"></i></button>
+      ${pgPessoasPodeEditar ? `<button type="button" onclick="removerPessoaPg('${p.id}')" title="Remover"><i class="ti ti-x"></i></button>` : ''}
     </div>`).join('');
 }
 
@@ -254,6 +328,8 @@ async function savePg() {
   const lat = document.getElementById('pg-lat').value;
   const lng = document.getElementById('pg-lng').value;
   if (!lat || !lng) { alert('Informe o bairro ou o CEP e aguarde localizar no mapa antes de salvar.'); return; }
+  const pastorId = document.getElementById('pg-pastor').value;
+  if (pgDestinoContato === 'pastor' && !pastorId) { alert('Escolha o pastor responsável que vai receber as mensagens.'); return; }
 
   const dados = {
     nome,
@@ -266,7 +342,8 @@ async function savePg() {
     tema: document.getElementById('pg-tema').value.trim(),
     descricao: document.getElementById('pg-desc').value.trim(),
     whatsapp: document.getElementById('pg-whatsapp').value.trim(),
-    participantes: parseInt(document.getElementById('pg-participantes').value) || 0,
+    contato_destino: pgDestinoContato,
+    pastor_id: pgDestinoContato === 'pastor' ? pastorId : null,
     lat: parseFloat(lat),
     lng: parseFloat(lng),
   };

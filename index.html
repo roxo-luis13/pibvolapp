@@ -99,8 +99,8 @@
       <div class="pgpub-controls">
         <div class="pgpub-chips" id="pgpub-dia-chips"></div>
         <div class="pgpub-viewtoggle">
-          <button type="button" id="pgpub-btn-mapa" class="active" onclick="pgPublicoSetView('mapa')">Mapa</button>
-          <button type="button" id="pgpub-btn-lista" onclick="pgPublicoSetView('lista')">Lista</button>
+          <button type="button" id="pgpub-btn-lista" class="active" onclick="pgPublicoSetView('lista')"><i class="ti ti-list"></i>Lista</button>
+          <button type="button" id="pgpub-btn-mapa" onclick="pgPublicoSetView('mapa')"><i class="ti ti-map-2"></i>Mapa</button>
         </div>
       </div>
     </header>
@@ -112,10 +112,10 @@
     </div>
     <p id="pgpub-busca-status" class="pgpub-busca-status"></p>
     <main class="pgpub-main">
-      <div class="pgpub-mapview" id="pgpub-mapview">
+      <div class="pgpub-mapview" id="pgpub-mapview" style="display:none">
         <p class="pgpub-map-caption">Os pontos são aproximados — o endereço exato é combinado com o anfitrião após o contato.</p>
       </div>
-      <div class="pgpub-listview" id="pgpub-listview" style="display:none"></div>
+      <div class="pgpub-listview" id="pgpub-listview"></div>
       <div class="pgpub-empty" id="pgpub-empty" style="display:none"><i class="ti ti-tent"></i>Nenhum Pequeno Grupo cadastrado ainda. Volte em breve!</div>
     </main>
     <div class="pgpub-hero">
@@ -156,8 +156,8 @@
         <div class="pgpub-txt"><strong id="pgpub-d-horario">Dia às horário</strong><span id="pgpub-d-freq">Semanal</span></div>
       </div>
       <div class="pgpub-info-row">
-        <div class="pgpub-ic"><i class="ti ti-users"></i></div>
-        <div class="pgpub-txt"><strong id="pgpub-d-part">0 pessoas</strong><span>Sempre tem uma cadeira vazia pra você</span></div>
+        <div class="pgpub-ic"><i class="ti ti-armchair"></i></div>
+        <div class="pgpub-txt"><strong>Tem sempre um lugar à mesa pra você</strong></div>
       </div>
       <div class="pgpub-desc" id="pgpub-d-desc">Descrição do grupo.</div>
       <a class="pgpub-cta" id="pgpub-d-cta" href="#" target="_blank" rel="noopener">Quero participar</a>
@@ -842,9 +842,18 @@ Bateria: Pedro..." style="min-height:80px"></textarea></div>
       <div class="form-group"><label>Tema / Público</label><input id="pg-tema" type="text" placeholder="ex: Casais, Jovens..."></div>
     </div>
     <div class="form-group"><label>Descrição</label><textarea id="pg-desc" placeholder="Descreva o grupo..." style="min-height:64px"></textarea></div>
-    <div class="grid-2" style="gap:12px">
-      <div class="form-group"><label>WhatsApp de contato</label><input id="pg-whatsapp" type="text" placeholder="5519999999999"></div>
-      <div class="form-group"><label>Participantes (aprox.)</label><input id="pg-participantes" type="number" min="0" placeholder="0"></div>
+    <div class="form-group">
+      <label>Quem recebe a mensagem de quem quer participar?</label>
+      <div class="chips" style="margin:0 0 10px">
+        <div class="chip selected" id="pg-destino-lider" onclick="pgSetDestinoContato('lider')"><i class="ti ti-user"></i> Líder do PG</div>
+        <div class="chip" id="pg-destino-pastor" onclick="pgSetDestinoContato('pastor')"><i class="ti ti-crown"></i> Pastor responsável</div>
+      </div>
+      <div id="pg-destino-lider-wrap"><label>WhatsApp do líder</label><input id="pg-whatsapp" type="text" placeholder="5519999999999"></div>
+      <div id="pg-destino-pastor-wrap" style="display:none">
+        <label>Pastor responsável</label>
+        <select id="pg-pastor" onchange="pgAvisoPastorSemTel()"></select>
+        <p id="pg-pastor-aviso" class="pg-local-status erro" style="display:none"></p>
+      </div>
     </div>
     <div class="form-group">
       <label>Localização aproximada</label>
@@ -862,18 +871,30 @@ Bateria: Pedro..." style="min-height:80px"></textarea></div>
       <div id="pg-mapa-picker" style="height:220px;border-radius:var(--radius);overflow:hidden;border:0.5px solid var(--border)"></div>
       <input type="hidden" id="pg-lat" value=""><input type="hidden" id="pg-lng" value="">
     </div>
-    <div class="form-group" id="pg-pessoas-wrap" style="display:none">
-      <label>Pessoas do grupo</label>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-pg')">Cancelar</button>
+      <button class="btn primary" onclick="savePg()" id="btn-save-pg">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-pg-detalhe">
+  <div class="modal" style="max-width:520px">
+    <h2 id="pgdet-nome"></h2>
+    <p id="pgdet-sub" style="font-size:12px;color:var(--text-secondary);margin-top:2px"></p>
+    <div id="pgdet-info" class="pgdet-info"></div>
+    <div class="form-group" style="margin-top:16px">
+      <label>Pessoas do grupo <span id="pgdet-pessoas-count" style="color:var(--text-tertiary);font-weight:400"></span></label>
       <p style="font-size:11px;color:var(--text-secondary);margin-bottom:6px">Só uma lista de nomes para o líder, pastor e admin acompanharem — não cria cadastro nem login para elas.</p>
-      <div class="pg-local-row">
+      <div class="pg-local-row" id="pg-pessoa-add">
         <input type="text" id="pg-pessoa-nome" placeholder="Nome da pessoa" style="flex:1" onkeydown="if(event.key==='Enter'){event.preventDefault();adicionarPessoaPg();}">
         <button type="button" class="btn sm" onclick="adicionarPessoaPg()"><i class="ti ti-plus"></i>Adicionar</button>
       </div>
       <div id="pg-pessoas-lista" class="pg-pessoas-lista"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn" onclick="closeModal('modal-pg')">Cancelar</button>
-      <button class="btn primary" onclick="savePg()" id="btn-save-pg">Salvar</button>
+      <button class="btn" onclick="closeModal('modal-pg-detalhe')">Fechar</button>
+      <button class="btn primary" id="pgdet-btn-editar"><i class="ti ti-edit"></i>Editar</button>
     </div>
   </div>
 </div>

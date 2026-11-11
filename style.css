@@ -99,6 +99,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   .pg-local-row{flex-wrap:wrap}
   .pg-local-row button{width:100%;justify-content:center;margin-bottom:0}
 }
+.pgdet-info{display:grid;gap:8px;margin-top:14px}
+.pgdet-row{display:flex;gap:10px;align-items:flex-start;font-size:13px}
+.pgdet-row i{font-size:16px;color:var(--text-secondary);margin-top:1px;flex-shrink:0}
+.pgdet-row span{color:var(--text-secondary)}
+.pg-admin-clicavel{cursor:pointer}
+tr.pg-admin-clicavel:hover td{background:var(--bg-secondary)}
 .pg-pessoas-lista{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .pg-pessoas-vazio{font-size:12px;color:var(--text-tertiary);margin-top:4px}
 .pg-pessoa-chip{display:flex;align-items:center;gap:6px;background:var(--bg-secondary);border:0.5px solid var(--border);border-radius:999px;padding:5px 6px 5px 12px;font-size:12px}
@@ -521,9 +527,11 @@ hr{border:none;border-top:0.5px solid var(--border);margin:14px 0}
 .pgpub-chip{font-family:'Work Sans',sans-serif;font-size:13px;font-weight:600;padding:6px 13px;border-radius:100px;border:1.5px solid var(--pg-chalk-3);background:var(--pg-chalk-2);color:var(--pg-muted);cursor:pointer;transition:all .15s ease}
 .pgpub-chip:hover{border-color:var(--pg-gold);color:var(--pg-cream)}
 .pgpub-chip.active{background:var(--pg-terracotta);border-color:var(--pg-terracotta);color:var(--pg-cream)}
-.pgpub-viewtoggle{display:flex;background:var(--pg-chalk-2);border-radius:100px;padding:3px;gap:2px;border:1px solid var(--pg-chalk-3)}
-.pgpub-viewtoggle button{font-family:'Work Sans',sans-serif;font-size:13px;font-weight:700;padding:6px 14px;border-radius:100px;border:none;background:transparent;color:var(--pg-muted);cursor:pointer}
-.pgpub-viewtoggle button.active{background:var(--pg-blue);color:var(--pg-chalk)}
+.pgpub-viewtoggle{display:flex;background:var(--pg-chalk-2);border-radius:100px;padding:4px;gap:4px;border:1.5px solid var(--pg-gold);box-shadow:0 0 0 3px rgba(227,187,77,.15)}
+.pgpub-viewtoggle button{display:flex;align-items:center;gap:6px;font-family:'Work Sans',sans-serif;font-size:14px;font-weight:700;padding:8px 16px;border-radius:100px;border:none;background:transparent;color:var(--pg-cream);cursor:pointer;transition:background .15s ease,color .15s ease}
+.pgpub-viewtoggle button i{font-size:17px}
+.pgpub-viewtoggle button:not(.active):hover{background:var(--pg-chalk-3)}
+.pgpub-viewtoggle button.active{background:var(--pg-gold);color:var(--pg-chalk)}
 .pgpub-main{position:relative;flex:1;min-height:0;overflow:hidden}
 .pgpub-mapview{position:relative;height:100%;min-height:140px;background:var(--pg-chalk-2)}
 .pgpub-map-caption{position:absolute;left:16px;bottom:14px;z-index:401;font-family:'Work Sans',sans-serif;font-size:10.5px;font-weight:600;color:var(--pg-cream);background:rgba(39,35,32,.85);padding:6px 10px;border-radius:10px;max-width:260px;line-height:1.5;pointer-events:none}
@@ -575,7 +583,11 @@ hr{border:none;border-top:0.5px solid var(--border);margin:14px 0}
   .pgpub-chips{flex-wrap:nowrap;overflow-x:auto;flex:1;min-width:0;scrollbar-width:none;-webkit-overflow-scrolling:touch}
   .pgpub-chips::-webkit-scrollbar{display:none}
   .pgpub-chip{flex-shrink:0;padding:5px 11px;font-size:12.5px}
-  .pgpub-viewtoggle{flex-shrink:0}
+  /* No celular, Lista/Mapa ganha uma linha própria, larga, acima dos dias */
+  .pgpub-controls{flex-wrap:wrap}
+  .pgpub-viewtoggle{order:-1;width:100%}
+  .pgpub-viewtoggle button{flex:1;justify-content:center;padding:9px 12px}
+  .pgpub-chips{width:100%;flex:none}
   .pgpub-busca{padding:9px 14px;gap:8px}
   .pgpub-busca button{padding:8px 12px}
   .pgpub-busca-status{padding:0 14px 8px}

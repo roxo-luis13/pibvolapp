@@ -15,9 +15,18 @@ function voltarDaAreaPg() {
 
 async function abrirAreaPgPublica() {
   montarChipsDia();
+  pgPublicoSetView('lista'); // a área sempre abre na lista
   const empty = document.getElementById('pgpub-empty');
   try {
-    pgsPublicos = (await sb('pequenos_grupos?select=*&ativo=eq.true&order=nome')) || [];
+    const [lista, contatos] = await Promise.all([
+      sb('pequenos_grupos?select=*&ativo=eq.true&order=nome'),
+      // Número de quem recebe a mensagem (líder ou pastor responsável), resolvido no banco:
+      // quem está sem login não pode ler o cadastro do pastor direto.
+      sb('rpc/contatos_pgs_publico', { method: 'POST', body: '{}' }).catch(e => { console.error('Falha ao carregar contatos dos PGs:', e); return []; })
+    ]);
+    const porPg = {};
+    (contatos || []).forEach(c => { porPg[c.pg_id] = c.whatsapp; });
+    pgsPublicos = (lista || []).map(p => ({ ...p, contato: porPg[p.id] !== undefined ? porPg[p.id] : p.whatsapp }));
   } catch (e) {
     console.error('Falha ao carregar Pequenos Grupos:', e);
     pgsPublicos = [];
@@ -321,10 +330,9 @@ function abrirDetalhePg(id) {
   document.getElementById('pgpub-d-bairro').textContent = p.bairro || 'Bairro não informado';
   document.getElementById('pgpub-d-horario').textContent = (p.dia_semana || '—') + (p.horario ? ' às ' + p.horario.slice(0,5) : '');
   document.getElementById('pgpub-d-freq').textContent = p.frequencia || 'Semanal';
-  document.getElementById('pgpub-d-part').textContent = (p.participantes || 0) + ' pessoas';
   document.getElementById('pgpub-d-desc').textContent = p.descricao || 'Sem descrição.';
   const cta = document.getElementById('pgpub-d-cta');
-  const numero = (p.whatsapp || '').replace(/\D/g, '');
+  const numero = pgPublicoNumeroWhatsapp(p.contato);
   if (numero) {
     cta.href = 'https://wa.me/' + numero + '?text=' + encodeURIComponent('Olá! Tenho interesse em participar do PG "' + p.nome + '"');
     cta.style.display = 'block';
@@ -333,6 +341,14 @@ function abrirDetalhePg(id) {
   }
   document.getElementById('pgpub-overlay').classList.add('show');
   document.getElementById('pgpub-detail').classList.add('show');
+}
+
+// Aceita o número como foi cadastrado ("(19) 99999-9999", "5519999999999"...) e devolve
+// no formato do wa.me, com o 55 do Brasil quando faltar.
+function pgPublicoNumeroWhatsapp(tel) {
+  let n = (tel || '').replace(/\D/g, '');
+  if (n.length === 10 || n.length === 11) n = '55' + n;
+  return n.length >= 12 ? n : '';
 }
 
 function fecharDetalhePg() {
