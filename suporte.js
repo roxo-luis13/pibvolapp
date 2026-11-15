@@ -12,6 +12,12 @@ const SUPORTE_SISTEMAS = {
   outro:       { label: 'Outro',       artigo: 'outro sistema',  icon: 'ti-tool' },
 };
 const SUPORTE_SISTEMAS_ROTEIRO = ['som', 'transmissao', 'multimidia'];
+// Etapas de cada roteiro, na ordem em que aparecem
+const SUPORTE_TIPOS = {
+  ligar:    { label: 'Ligar',            icon: 'ti-power',      vazio: 'para ligar' },
+  durante:  { label: 'Durante o culto',  icon: 'ti-player-play', vazio: 'para durante o culto em' },
+  desligar: { label: 'Desligar',         icon: 'ti-plug-off',   vazio: 'para desligar' },
+};
 // Por enquanto só o Salão Principal; a estrutura já aceita outros locais depois.
 const SUPORTE_LOCAL_PADRAO = 'salao_principal';
 
@@ -109,8 +115,7 @@ function renderSuporteSequenciamento() {
           <div class="suporte-roteiro-head">
             <div class="suporte-sis-titulo"><span class="suporte-sis-icone"><i class="ti ${cfg.icon}"></i></span>${cfg.label}</div>
             <div class="suporte-seg">
-              <button class="${tipo === 'ligar' ? 'active' : ''}" onclick="suporteTrocarTipo('${sis}','ligar')"><i class="ti ti-power"></i>Ligar</button>
-              <button class="${tipo === 'desligar' ? 'active' : ''}" onclick="suporteTrocarTipo('${sis}','desligar')"><i class="ti ti-plug-off"></i>Desligar</button>
+              ${Object.entries(SUPORTE_TIPOS).map(([t, tc]) => `<button class="${tipo === t ? 'active' : ''}" onclick="suporteTrocarTipo('${sis}','${t}')"><i class="ti ${tc.icon}"></i>${tc.label}</button>`).join('')}
             </div>
           </div>
           ${passos.length ? `
@@ -133,7 +138,7 @@ function renderSuporteSequenciamento() {
                 ${gestor ? `<button class="btn sm" onclick="abrirEditorRoteiro('${sis}','${tipo}')"><i class="ti ti-edit"></i>Editar</button>` : ''}
               </div>
             </div>`
-          : `<div class="empty" style="padding:22px 12px;font-size:13px"><i class="ti ti-list-numbers" style="font-size:28px"></i>Nenhum roteiro para ${tipo} ${cfg.artigo} ainda.
+          : `<div class="empty" style="padding:22px 12px;font-size:13px"><i class="ti ti-list-numbers" style="font-size:28px"></i>Nenhum roteiro ${SUPORTE_TIPOS[tipo].vazio} ${cfg.artigo} ainda.
               ${gestor ? `<div style="margin-top:10px"><button class="btn sm primary" onclick="abrirEditorRoteiro('${sis}','${tipo}')"><i class="ti ti-plus"></i>Cadastrar roteiro</button></div>` : ''}</div>`}
         </div>`;
       }).join('')}
@@ -166,7 +171,7 @@ function abrirEditorRoteiro(sis, tipo) {
   document.getElementById('roteiro-sistema').value = sis;
   document.getElementById('roteiro-tipo').value = tipo;
   document.getElementById('modal-roteiro-title').textContent =
-    `${tipo === 'ligar' ? 'Ligar' : 'Desligar'} — ${SUPORTE_SISTEMAS[sis].label} (Salão Principal)`;
+    `${SUPORTE_TIPOS[tipo].label} — ${SUPORTE_SISTEMAS[sis].label} (Salão Principal)`;
   renderEditorPassos();
   openModal('modal-roteiro');
 }
@@ -248,7 +253,7 @@ async function salvarRoteiro() {
     });
     delete suporteChecklist[`${sistema}-${tipo}`];
     registrarLog('editar', 'suporte', `Roteiro ${tipo} ${SUPORTE_SISTEMAS[sistema].label}`,
-      `${currentProfile.nome} atualizou o roteiro de ${tipo} ${SUPORTE_SISTEMAS[sistema].artigo} (Salão Principal) — ${passos.length} passo(s)`);
+      `${currentProfile.nome} atualizou o roteiro "${SUPORTE_TIPOS[tipo].label}" ${SUPORTE_SISTEMAS[sistema].artigo === 'outro sistema' ? '' : 'd' + SUPORTE_SISTEMAS[sistema].artigo} (Salão Principal) — ${passos.length} passo(s)`);
     closeModal('modal-roteiro');
     await renderSuporte();
   } catch (e) {

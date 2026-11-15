@@ -12,3 +12,7 @@ create policy "suporte-fotos troca gestores" on storage.objects for update
   with check (bucket_id = 'suporte-fotos' and public.current_pode_gerir_suporte());
 create policy "suporte-fotos remocao gestores" on storage.objects for delete
   using (bucket_id = 'suporte-fotos' and public.current_pode_gerir_suporte());
+
+-- Etapa "Durante o culto" nos roteiros
+alter table public.suporte_procedimentos drop constraint if exists suporte_procedimentos_tipo_check;
+alter table public.suporte_procedimentos add constraint suporte_procedimentos_tipo_check check (tipo in ('ligar','durante','desligar'));
