@@ -122,6 +122,7 @@ function renderSuporteSequenciamento() {
                   <div style="flex:1;min-width:0">
                     <p>${suporteEsc(p.texto)}</p>
                     ${p.alerta ? `<p class="suporte-alerta"><i class="ti ti-alert-triangle"></i>${suporteEsc(p.alerta)}</p>` : ''}
+                    ${p.foto ? `<img class="suporte-passo-foto" src="${suporteEsc(p.foto)}" alt="Foto do passo ${i + 1}" loading="lazy" onclick="event.stopPropagation();suporteAbrirFoto('${suporteEsc(p.foto)}')">` : ''}
                   </div>
                 </li>`).join('')}
             </ol>
@@ -160,8 +161,8 @@ function suporteReiniciarChecklist(chave) {
 function abrirEditorRoteiro(sis, tipo) {
   if (!podeGerirSuporte()) return;
   const rot = suporteRoteiro(sis, tipo);
-  suporteEditorPassos = (rot?.passos || []).map(p => ({ texto: p.texto || '', alerta: p.alerta || '' }));
-  if (!suporteEditorPassos.length) suporteEditorPassos.push({ texto: '', alerta: '' });
+  suporteEditorPassos = (rot?.passos || []).map(p => ({ texto: p.texto || '', alerta: p.alerta || '', foto: p.foto || null }));
+  if (!suporteEditorPassos.length) suporteEditorPassos.push({ texto: '', alerta: '', foto: null });
   document.getElementById('roteiro-sistema').value = sis;
   document.getElementById('roteiro-tipo').value = tipo;
   document.getElementById('modal-roteiro-title').textContent =
@@ -174,7 +175,7 @@ function suporteSalvarCamposEditor() {
   document.querySelectorAll('#roteiro-passos .roteiro-passo').forEach((el, i) => {
     if (!suporteEditorPassos[i]) return;
     suporteEditorPassos[i].texto = el.querySelector('textarea').value;
-    suporteEditorPassos[i].alerta = el.querySelector('input').value;
+    suporteEditorPassos[i].alerta = el.querySelector('.roteiro-alerta').value;
   });
 }
 
@@ -186,7 +187,13 @@ function renderEditorPassos() {
       <div class="roteiro-passo-num">${i + 1}</div>
       <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px">
         <textarea rows="2" placeholder="O que fazer neste passo (ex: Ligar o estabilizador da mesa de som)">${suporteEsc(p.texto)}</textarea>
-        <input type="text" placeholder="Alerta opcional (ex: nunca ligar as caixas antes da mesa)" value="${suporteEsc(p.alerta)}">
+        <input type="text" class="roteiro-alerta" placeholder="Alerta opcional (ex: nunca ligar as caixas antes da mesa)" value="${suporteEsc(p.alerta)}">
+        <div class="roteiro-foto">
+          ${p.enviando ? '<span class="roteiro-foto-status"><span class="spin" style="border-top-color:var(--text-secondary);border-color:rgba(0,0,0,.15)"></span>Enviando foto...</span>'
+            : p.foto ? `<img src="${suporteEsc(p.foto)}" alt="Foto do passo ${i + 1}" onclick="suporteAbrirFoto('${suporteEsc(p.foto)}')">
+                <button type="button" class="btn sm" onclick="removerFotoPasso(${i})"><i class="ti ti-photo-off"></i>Remover foto</button>`
+            : `<label class="btn sm"><i class="ti ti-camera"></i>Adicionar foto<input type="file" accept="image/*" style="display:none" onchange="enviarFotoPasso(${i}, this.files[0])"></label>`}
+        </div>
       </div>
       <div class="roteiro-passo-acoes">
         <button type="button" title="Subir" ${i === 0 ? 'disabled' : ''} onclick="moverPassoRoteiro(${i},-1)"><i class="ti ti-chevron-up"></i></button>
@@ -198,7 +205,7 @@ function renderEditorPassos() {
 
 function adicionarPassoRoteiro() {
   suporteSalvarCamposEditor();
-  suporteEditorPassos.push({ texto: '', alerta: '' });
+  suporteEditorPassos.push({ texto: '', alerta: '', foto: null });
   renderEditorPassos();
   const tas = document.querySelectorAll('#roteiro-passos textarea');
   tas[tas.length - 1]?.focus();
@@ -223,8 +230,10 @@ async function salvarRoteiro() {
   const sistema = document.getElementById('roteiro-sistema').value;
   const tipo = document.getElementById('roteiro-tipo').value;
   const passos = suporteEditorPassos
-    .map(p => ({ texto: p.texto.trim(), alerta: p.alerta.trim() || null }))
+    .map(p => ({ texto: p.texto.trim(), alerta: p.alerta.trim() || null, foto: p.foto || null }))
     .filter(p => p.texto);
+  if (suporteEditorPassos.some(p => p.enviando)) return alert('Espere as fotos terminarem de enviar.');
+  if (suporteEditorPassos.some(p => p.foto && !p.texto.trim())) return alert('Todo passo com foto precisa de um texto explicando o que fazer.');
   const btn = document.getElementById('roteiro-btn-salvar');
   btn.disabled = true;
   try {
@@ -464,4 +473,80 @@ function suporteChutarSistema(texto) {
   if (/(projetor|telao|telão|tela|slide|letra|propresenter|holyrics|tv|hdmi|video)/.test(t)) return 'multimidia';
   if (/(som|mesa|microfone|mic|caixa|retorno|audio|chiado|microfonia|fone|in.?ear)/.test(t)) return 'som';
   return 'outro';
+}
+
+// ----- Fotos dos passos (bucket público "suporte-fotos"; só gestores enviam, via RLS) -----
+
+// Reduz a foto no próprio aparelho (máx. 1600px, JPEG) — foto de celular chega a 5-10 MB.
+function suporteReduzirImagem(file, maxLado = 1600, qualidade = 0.82) {
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const escala = Math.min(1, maxLado / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * escala);
+      canvas.height = Math.round(img.height * escala);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(b => resolve(b || file), 'image/jpeg', qualidade);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); }; // formato que o navegador não abre (ex: HEIC): envia como está
+    img.src = url;
+  });
+}
+
+async function suporteUploadFoto(file, prefixo) {
+  const blob = await suporteReduzirImagem(file);
+  const tipo = blob.type || file.type || 'image/jpeg';
+  const ext = tipo === 'image/jpeg' ? 'jpg' : (tipo.split('/')[1] || 'jpg');
+  const path = `${prefixo}/${Date.now()}-${Math.random().toString(36).slice(2, 7)}.${ext}`;
+  const res = await fetch(`${SUPA_URL}/storage/v1/object/suporte-fotos/${path}`, {
+    method: 'POST',
+    headers: { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + (session?.access_token || SUPA_KEY), 'Content-Type': tipo },
+    body: blob,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || err.error || ('erro ' + res.status));
+  }
+  return `${SUPA_URL}/storage/v1/object/public/suporte-fotos/${path}`;
+}
+
+async function enviarFotoPasso(i, file) {
+  if (!file) return;
+  suporteSalvarCamposEditor();
+  const passo = suporteEditorPassos[i];
+  if (!passo) return;
+  passo.enviando = true;
+  renderEditorPassos();
+  try {
+    const sis = document.getElementById('roteiro-sistema').value;
+    const tipo = document.getElementById('roteiro-tipo').value;
+    passo.foto = await suporteUploadFoto(file, `${SUPORTE_LOCAL_PADRAO}/${sis}-${tipo}`);
+  } catch (e) {
+    alert('Não foi possível enviar a foto: ' + e.message);
+  }
+  passo.enviando = false;
+  suporteSalvarCamposEditor();
+  renderEditorPassos();
+}
+
+function removerFotoPasso(i) {
+  suporteSalvarCamposEditor();
+  if (suporteEditorPassos[i]) suporteEditorPassos[i].foto = null;
+  renderEditorPassos();
+}
+
+function suporteAbrirFoto(url) {
+  let box = document.getElementById('suporte-lightbox');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'suporte-lightbox';
+    box.onclick = () => box.classList.remove('open');
+    box.innerHTML = '<img alt="Foto do passo"><button type="button" aria-label="Fechar"><i class="ti ti-x"></i></button>';
+    document.body.appendChild(box);
+  }
+  box.querySelector('img').src = url;
+  box.classList.add('open');
 }
