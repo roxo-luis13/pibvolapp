@@ -24,7 +24,8 @@ const SUPORTE_LOCAL_PADRAO = 'salao_principal';
 let suporteProcedimentos = [];
 let suporteProblemas = [];
 let suporteAba = 'sequenciamento';
-let suporteTipoPorSistema = { som: 'ligar', transmissao: 'ligar', multimidia: 'ligar' };
+// Etapa aberta em cada card (null = fechado: só o título e os botões das etapas)
+let suporteTipoPorSistema = { som: null, transmissao: null, multimidia: null };
 let suporteChecklist = {}; // { 'som-ligar': [0,2,...] } — só na aba atual
 let suporteCarregado = false;
 let suporteEditorPassos = [];
@@ -111,12 +112,26 @@ function renderSuporteSequenciamento() {
         const chave = `${sis}-${tipo}`;
         const feitos = suporteChecklist[chave] || [];
         const cfg = SUPORTE_SISTEMAS[sis];
-        return `<div class="card suporte-roteiro">
+        if (!tipo) {
+          return `<div class="card suporte-roteiro fechado">
+          <div class="suporte-roteiro-head">
+            <div class="suporte-sis-titulo"><span class="suporte-sis-icone"><i class="ti ${cfg.icon}"></i></span>${cfg.label}</div>
+            <div class="suporte-seg">
+              ${Object.entries(SUPORTE_TIPOS).map(([t, tc]) => {
+                const n = (suporteRoteiro(sis, t)?.passos || []).length;
+                return `<button onclick="suporteTrocarTipo('${sis}','${t}')"><i class="ti ${tc.icon}"></i>${tc.label}${n ? `<span class="suporte-seg-n">${n}</span>` : ''}</button>`;
+              }).join('')}
+            </div>
+          </div>
+        </div>`;
+        }
+        return `<div class="card suporte-roteiro aberto">
           <div class="suporte-roteiro-head">
             <div class="suporte-sis-titulo"><span class="suporte-sis-icone"><i class="ti ${cfg.icon}"></i></span>${cfg.label}</div>
             <div class="suporte-seg">
               ${Object.entries(SUPORTE_TIPOS).map(([t, tc]) => `<button class="${tipo === t ? 'active' : ''}" onclick="suporteTrocarTipo('${sis}','${t}')"><i class="ti ${tc.icon}"></i>${tc.label}</button>`).join('')}
             </div>
+            <button class="suporte-fechar" type="button" title="Fechar" onclick="suporteTrocarTipo('${sis}',null)"><i class="ti ti-chevron-up"></i></button>
           </div>
           ${passos.length ? `
             <div class="suporte-progresso"><div style="width:${Math.round(feitos.length / passos.length * 100)}%"></div></div>
@@ -146,7 +161,8 @@ function renderSuporteSequenciamento() {
 }
 
 function suporteTrocarTipo(sis, tipo) {
-  suporteTipoPorSistema[sis] = tipo;
+  // tocar de novo na etapa que já está aberta fecha o card
+  suporteTipoPorSistema[sis] = (tipo && suporteTipoPorSistema[sis] !== tipo) ? tipo : null;
   renderSuporteSequenciamento();
 }
 
