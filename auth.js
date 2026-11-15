@@ -1,32 +1,42 @@
 // ===== AUTENTICAÇÃO =====
 let pendingLoginEmail = null, pendingSenhaHash = null; // guardam o email/hash usados no login enquanto o primeiro acesso não é concluído
 // ===== INIT =====
+// Link de divulgação (…/pequenosgrupos ou …/pg) chega aqui como #pg: abre direto a área pública
+function linkDiretoAreaPg() {
+  return ['#pg', '#pequenosgrupos'].includes(location.hash.toLowerCase());
+}
+
 async function init() {
+  const diretoPg = linkDiretoAreaPg();
+  if (diretoPg) showScreen('pg');
   const saved = localStorage.getItem('igreja_session');
   if (saved) {
     try {
       const s = JSON.parse(saved);
       if (s?.user?.id) {
         session = s;
-        await loadProfile(s.user.id);
+        // Pelo link dos PGs, quem já tem login continua na área pública; a sessão é
+        // restaurada por trás, pro "voltar" levar ao app
+        await loadProfile(s.user.id, { manterTela: diretoPg });
         return;
       }
     } catch(e) {}
     localStorage.removeItem('igreja_session');
   }
-  showScreen('login');
+  if (!diretoPg) showScreen('gate');
 }
 
-async function loadProfile(userId) {
+async function loadProfile(userId, opcoes = {}) {
   const rows = await sb(`voluntarios?id=eq.${userId}&select=*`);
-  if (!rows || !rows.length) { showScreen('login'); return; }
+  if (!rows || !rows.length) { if (!opcoes.manterTela) showScreen('login'); return; }
+  if (opcoes.manterTela && rows[0].primeiro_acesso) return; // termina o primeiro acesso pelo login normal
   currentProfile = rows[0];
   if (currentProfile.primeiro_acesso) {
     showFirstAccess();
     return;
   }
   await loadAllData();
-  showScreen('app');
+  if (!opcoes.manterTela) showScreen('app');
   updateSidebar();
   checkMobileLayout();
   ativarNotificacoesPush();
@@ -40,13 +50,15 @@ async function loadProfile(userId) {
 }
 
 async function loadAllData() {
-  const [m, v, e, n, niv, g] = await Promise.all([
+  const [m, v, e, n, niv, g, pg, pv] = await Promise.all([
     sb('ministerios?select=*&order=nome'),
     sb('voluntarios?select=*&order=nome'),
     sb('eventos?select=*&order=data'),
     sb(`notificacoes?vol_id=eq.${currentProfile.id}&select=*&order=criado_em.desc`),
     sb('niveis_acesso?select=*&order=nome'),
-    sb('grupos_ministerios?select=*&order=nome')
+    sb('grupos_ministerios?select=*&order=nome'),
+    sb('pequenos_grupos?select=*&order=nome'),
+    sb('pedidos_voluntario?select=*&order=criado_em.desc')
   ]);
   ministerios = (m||[]).map(r => ({...r, ministerios: r.ministerios || [], inscritos: [], convites: []}));
   voluntarios = (v||[]).map(r => ({...r, ministerios: r.ministerios || []}));
@@ -54,6 +66,8 @@ async function loadAllData() {
   notificacoes = (n||[]);
   niveisAcesso = (niv||[]);
   gruposMinisterios = (g||[]);
+  pgs = (pg||[]);
+  pedidosVoluntario = (pv||[]);
   atualizarBadgeNotif();
   atualizarSelectNiveis();
 }
@@ -71,12 +85,14 @@ async function refetchDadosVivos() {
   if (agora - ultimoRefetch < 5000) return;
   ultimoRefetch = agora;
   try {
-    const [e, n] = await Promise.all([
+    const [e, n, pv] = await Promise.all([
       sb('eventos?select=*&order=data'),
-      sb(`notificacoes?vol_id=eq.${currentProfile.id}&select=*&order=criado_em.desc`)
+      sb(`notificacoes?vol_id=eq.${currentProfile.id}&select=*&order=criado_em.desc`),
+      sb('pedidos_voluntario?select=*&order=criado_em.desc')
     ]);
     if (e) eventos = e.map(r => ({...r, ministerios: r.ministerios||[], inscritos: r.inscritos||[], convites: r.convites||[]}));
     if (n) notificacoes = n;
+    if (pv) pedidosVoluntario = pv;
     atualizarTodasAsViews();
   } catch (err) { console.error('Falha ao atualizar dados automaticamente:', err); }
 }
@@ -234,7 +250,7 @@ function doLogout() {
   document.getElementById('login-senha').value = '';
   const btn = document.getElementById('btn-login');
   btn.innerHTML = '<i class="ti ti-login"></i>Entrar'; btn.disabled = false;
-  showScreen('login');
+  showScreen('gate');
 }
 
 // SHA-256 simples para senhas
