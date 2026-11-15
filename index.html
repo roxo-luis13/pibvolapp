@@ -64,6 +64,7 @@
       <div class="nav-section">Geral</div>
       <div class="nav-item active" onclick="navigate('dashboard');closeSidebarMobile()"><i class="ti ti-dashboard"></i><span class="nav-item-text">Dashboard</span><span class="nav-tooltip">Dashboard</span></div>
       <div class="nav-item" onclick="navigate('calendario');closeSidebarMobile()"><i class="ti ti-calendar"></i><span class="nav-item-text">Calendário</span><span class="nav-tooltip">Calendário</span></div>
+      <div class="nav-item" id="nav-suporte" onclick="navigate('suporte');closeSidebarMobile()"><i class="ti ti-tool"></i><span class="nav-item-text">Suporte técnico</span><span class="nav-tooltip">Suporte técnico</span></div>
       <div class="nav-section" id="admin-section">Administração</div>
       <div class="nav-item" id="nav-ministerios" onclick="navigate('ministerios');closeSidebarMobile()"><i class="ti ti-users-group"></i><span class="nav-item-text">Ministérios</span><span class="nav-tooltip">Ministérios</span></div>
       <div class="nav-item" id="nav-voluntarios" onclick="navigate('voluntarios');closeSidebarMobile()"><i class="ti ti-user-check"></i><span class="nav-item-text">Voluntários</span><span class="nav-tooltip">Voluntários</span></div>
@@ -410,11 +411,28 @@
                 <option value="perfil">Perfil</option>
                 <option value="sessao">Sessão</option>
                 <option value="alerta">Alertas</option>
+                <option value="suporte">Suporte técnico</option>
               </select>
             </div>
           </div>
           <div id="logs-lista"></div>
         </div>
+      </div>
+
+      <div class="section" id="section-suporte">
+        <div class="suporte-ia-banner" onclick="abrirAssistente()">
+          <div class="suporte-ia-icone"><i class="ti ti-robot"></i></div>
+          <div style="flex:1;min-width:0">
+            <p style="font-size:15px;font-weight:600">Pergunte ao Voluntário IA</p>
+            <p style="font-size:12px;opacity:.9;margin-top:2px">Deu problema no som, na transmissão ou na multimídia? Descreva o que está acontecendo que eu procuro nos problemas já resolvidos.</p>
+          </div>
+          <button class="btn sm" type="button"><i class="ti ti-message-circle"></i>Perguntar</button>
+        </div>
+        <div class="suporte-tabs" id="suporte-tabs">
+          <button class="suporte-tab active" data-aba="sequenciamento" onclick="trocarAbaSuporte('sequenciamento')"><i class="ti ti-list-numbers"></i>Ligar e desligar</button>
+          <button class="suporte-tab" data-aba="problemas" onclick="trocarAbaSuporte('problemas')"><i class="ti ti-bug"></i>Problemas e soluções <span class="suporte-badge" id="suporte-badge-pendentes" style="display:none"></span></button>
+        </div>
+        <div id="suporte-conteudo"></div>
       </div>
 
       <div class="section" id="section-perfil">
@@ -761,17 +779,62 @@ Bateria: Pedro..." style="min-height:80px"></textarea></div>
   </div>
 </div>
 
+<div class="modal-backdrop" id="modal-roteiro">
+  <div class="modal" style="max-width:560px">
+    <h2 id="modal-roteiro-title">Editar roteiro</h2>
+    <input type="hidden" id="roteiro-sistema"><input type="hidden" id="roteiro-tipo">
+    <p style="font-size:12px;color:var(--text-secondary);margin:-8px 0 14px">Escreva os passos na ordem em que devem ser feitos. Use o alerta para avisos importantes.</p>
+    <div id="roteiro-passos"></div>
+    <button type="button" class="btn sm" style="margin-top:4px" onclick="adicionarPassoRoteiro()"><i class="ti ti-plus"></i>Adicionar passo</button>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-roteiro')">Cancelar</button>
+      <button class="btn primary" id="roteiro-btn-salvar" onclick="salvarRoteiro()">Salvar roteiro</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-problema">
+  <div class="modal">
+    <h2 id="modal-prob-title">Reportar problema</h2>
+    <input type="hidden" id="prob-edit-id">
+    <div class="form-group"><label>Sistema *</label>
+      <select id="prob-sistema">
+        <option value="som">Som</option><option value="transmissao">Transmissão</option>
+        <option value="multimidia">Multimídia</option><option value="outro">Outro</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Título curto *</label><input id="prob-titulo" type="text" maxlength="120" placeholder="ex: Microfone sem fio 2 sem som"></div>
+    <div class="form-group"><label>O que aconteceu? *</label><textarea id="prob-sintoma" rows="3" placeholder="Descreva o que você viu/ouviu, em que momento e em qual equipamento"></textarea></div>
+    <div class="form-group"><label>Conseguiu resolver?</label>
+      <div style="display:flex;gap:16px;font-size:13px">
+        <label style="display:flex;align-items:center;gap:6px;font-weight:400;margin:0"><input type="radio" name="prob-resolvido" id="prob-resolvido-sim" style="width:auto" onchange="atualizarCampoSolucao()" checked>Sim</label>
+        <label style="display:flex;align-items:center;gap:6px;font-weight:400;margin:0"><input type="radio" name="prob-resolvido" id="prob-resolvido-nao" style="width:auto" onchange="atualizarCampoSolucao()">Ainda não</label>
+      </div>
+    </div>
+    <div class="form-group" id="prob-solucao-grupo"><label>Como resolveu? *</label><textarea id="prob-solucao" rows="4" placeholder="Passo a passo do que foi feito para resolver"></textarea></div>
+    <p id="prob-aviso-aprovacao" style="display:none;font-size:12px;color:var(--text-secondary);background:var(--bg-secondary);padding:8px 10px;border-radius:var(--radius)"><i class="ti ti-info-circle"></i> Um líder vai revisar antes do registro aparecer para todos e ser usado pelo Voluntário IA.</p>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('modal-problema')">Cancelar</button>
+      <button class="btn" id="prob-btn-aprovar" style="display:none" onclick="salvarProblema(true)"><i class="ti ti-check"></i>Salvar e aprovar</button>
+      <button class="btn primary" onclick="salvarProblema(false)">Salvar</button>
+    </div>
+  </div>
+</div>
+
 <div id="assistente-fab" style="display:none" onclick="toggleAssistente()" title="Pergunte ao assistente"><i class="ti ti-robot"></i></div>
 <div id="assistente-painel" style="display:none">
   <div class="assistente-header">
     <div style="display:flex;align-items:center;gap:8px">
       <i class="ti ti-robot" style="font-size:17px;color:var(--purple-text)"></i>
-      <p style="font-size:14px;font-weight:600">Assistente</p>
+      <p style="font-size:14px;font-weight:600" id="assistente-titulo">Assistente</p>
     </div>
     <button type="button" class="assistente-fechar" onclick="fecharAssistente()"><i class="ti ti-x"></i></button>
   </div>
   <div id="assistente-mensagens" class="assistente-mensagens">
     <div class="assistente-msg bot">Oi! Pode perguntar sobre seus ministérios, eventos e escalas, pedir pra eu criar ou editar um evento, ou avisar alguém. Toda ação só é feita depois que você confirmar.</div>
+  </div>
+  <div id="assistente-mensagens-suporte" class="assistente-mensagens" style="display:none">
+    <div class="assistente-msg bot">Oi! Sou o Voluntário IA 🤖🔧 Me conta o que está acontecendo com o som, a transmissão ou a multimídia, que eu procuro nos problemas já resolvidos. Ex.: "microfone 2 sem som" ou "como ligo a transmissão?".</div>
   </div>
   <div class="assistente-input-row">
     <input id="assistente-input" type="text" placeholder="Pergunte algo..." maxlength="600" onkeydown="if(event.key==='Enter')enviarPerguntaAssistente()">
@@ -796,5 +859,6 @@ Bateria: Pedro..." style="min-height:80px"></textarea></div>
 <script src="perfil.js"></script>
 <script src="notificacoes.js"></script>
 <script src="logs.js"></script>
+<script src="suporte.js"></script>
 </body>
 </html>

@@ -22,6 +22,9 @@ pibvolapp/
 ├── eventos.js          # Criação e edição de eventos
 ├── perfil.js           # Perfil do usuário
 ├── notificacoes.js     # Sistema de notificações
+├── suporte.js          # Suporte técnico (roteiros, problemas e soluções)
+├── assistente.js       # Assistente de IA (modo geral e "Voluntário IA")
+├── supabase/           # Código das Edge Functions e migrações SQL
 └── utils.js            # Utilitários gerais
 ```
 
@@ -35,6 +38,14 @@ URL: `https://knxdadcfphqadskwscya.supabase.co`
 - `eventos` — eventos com datas, horários e locais
 - `notificacoes` — convites e notificações
 - `niveis_acesso` — permissões configuráveis
+- `suporte_procedimentos` — roteiros de ligar/desligar som, transmissão e multimídia (por local)
+- `suporte_problemas` — base de problemas e soluções (voluntário registra, líder aprova)
+
+## Suporte técnico
+Seção visível para todos os voluntários:
+- **Ligar e desligar**: roteiros passo a passo em modo checklist (Salão Principal). Só admin, pastor e líder editam.
+- **Problemas e soluções**: qualquer voluntário reporta; o registro só aparece para todos (e para a IA) depois que um líder aprova. Líderes recebem notificação.
+- **Voluntário IA**: o assistente flutuante entra em "modo suporte" nessa seção e responde só com base nos problemas aprovados e nos roteiros. Se não houver registro parecido, ele avisa e, quando o voluntário diz que deu certo, pede para registrar o problema e a solução.
 
 ## Deploy
 GitHub Pages: https://roxo-luis13.github.io/pibvolapp
