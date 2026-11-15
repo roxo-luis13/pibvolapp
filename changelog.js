@@ -5,6 +5,15 @@
 // entrar, uma única vez por pessoa (controlado via localStorage, por aparelho).
 const NOVIDADES = [
   {
+    id: '2026-11-15-suporte-tecnico',
+    titulo: 'Novidades do app',
+    itens: [
+      'Nova aba "Suporte técnico" no menu: passo a passo com fotos para ligar e desligar o som do Salão Principal.',
+      'Deu problema no som, na transmissão ou na multimídia? Registre o problema e como resolveu em "Problemas e soluções" (um líder aprova antes de aparecer para todos).',
+      'Pergunte ao "Voluntário IA", o botão roxo nessa aba: ele procura nos problemas já resolvidos e te ajuda.',
+    ],
+  },
+  {
     id: '2026-11-11-varios-lideres',
     titulo: 'Novidades do app',
     itens: [

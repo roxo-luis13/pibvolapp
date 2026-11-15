@@ -10,6 +10,7 @@ function abrirAssistente() {
   painel.style.display = 'flex';
   fab.classList.add('open');
   fab.innerHTML = '<i class="ti ti-x"></i>';
+  assistenteContainer()?.scrollTo?.(0, 1e6);
   setTimeout(() => document.getElementById('assistente-input')?.focus(), 50);
 }
 
@@ -19,7 +20,47 @@ function fecharAssistente() {
   if (!painel || !fab) return;
   painel.style.display = 'none';
   fab.classList.remove('open');
-  fab.innerHTML = '<i class="ti ti-robot"></i>';
+  fab.innerHTML = assistenteFabConteudo();
+}
+
+// ===== MODO DO ASSISTENTE =====
+// 'geral'  = assistente normal (eventos, escalas, ações)
+// 'suporte' = "Voluntário IA" — usado na seção Suporte técnico: consulta a base de problemas
+//             e roteiros. Cada modo tem sua própria conversa (histórico e mensagens).
+let modoAssistente = 'geral';
+let historicoSuporte = [];
+
+function assistenteFabConteudo() {
+  return modoAssistente === 'suporte'
+    ? '<i class="ti ti-robot"></i><span class="assistente-fab-label">Voluntário IA</span>'
+    : '<i class="ti ti-robot"></i>';
+}
+
+function assistenteContainer() {
+  return document.getElementById(modoAssistente === 'suporte' ? 'assistente-mensagens-suporte' : 'assistente-mensagens');
+}
+
+function setModoAssistente(modo) {
+  if (modo !== 'suporte') modo = 'geral';
+  const mudou = modo !== modoAssistente;
+  modoAssistente = modo;
+  const fab = document.getElementById('assistente-fab');
+  const painel = document.getElementById('assistente-painel');
+  if (!fab || !painel) return;
+  const suporte = modo === 'suporte';
+  fab.classList.toggle('suporte', suporte);
+  painel.classList.toggle('suporte', suporte);
+  fab.title = suporte ? 'Pergunte ao Voluntário IA' : 'Pergunte ao assistente';
+  if (!fab.classList.contains('open')) fab.innerHTML = assistenteFabConteudo();
+  document.getElementById('assistente-titulo').textContent = suporte ? 'Voluntário IA · Suporte técnico' : 'Assistente';
+  document.getElementById('assistente-mensagens').style.display = suporte ? 'none' : 'flex';
+  document.getElementById('assistente-mensagens-suporte').style.display = suporte ? 'flex' : 'none';
+  const input = document.getElementById('assistente-input');
+  if (input) input.placeholder = suporte ? 'Descreva o problema (ex: microfone 2 sem som)' : 'Pergunte algo...';
+  if (mudou && suporte) {
+    // chama atenção pro botão quando entra na aba de suporte
+    fab.classList.remove('pulsar'); void fab.offsetWidth; fab.classList.add('pulsar');
+  }
 }
 
 function toggleAssistente() {
@@ -35,7 +76,7 @@ function toggleAssistente() {
 let historicoAssistente = [];
 
 function assistenteAddMsg(texto, tipo) {
-  const wrap = document.getElementById('assistente-mensagens');
+  const wrap = assistenteContainer();
   if (!wrap) return null;
   const div = document.createElement('div');
   div.className = 'assistente-msg ' + tipo;
@@ -56,7 +97,7 @@ let acoesPendentesAssistente = {};
 let acaoAssistenteSeq = 0;
 
 function assistenteRenderCartaoAcao(resposta, acao) {
-  const wrap = document.getElementById('assistente-mensagens');
+  const wrap = assistenteContainer();
   if (!wrap) return;
   const id = 'assistente-acao-' + (++acaoAssistenteSeq);
   acoesPendentesAssistente[id] = acao;
@@ -232,6 +273,8 @@ async function enviarPerguntaAssistente() {
   const pergunta = input.value.trim();
   if (!pergunta || input.disabled) return;
 
+  if (modoAssistente === 'suporte') return enviarPerguntaSuporte(pergunta, input, btn);
+
   input.value = '';
   input.disabled = true; btn.disabled = true;
   assistenteAddMsg(pergunta, 'user');
@@ -267,4 +310,113 @@ async function enviarPerguntaAssistente() {
   }
 
   input.disabled = false; btn.disabled = false; input.focus();
+}
+
+// ===== VOLUNTÁRIO IA (modo suporte) =====
+// Perguntas feitas desde o último "deu certo / não resolveu" — viram o "o que aconteceu"
+// sugerido quando a pessoa vai registrar o problema.
+let suportePerguntasAbertas = [];
+let suporteFeedbackSeq = 0;
+let suporteFeedbacks = {};
+
+async function enviarPerguntaSuporte(pergunta, input, btn) {
+  input.value = '';
+  input.disabled = true; btn.disabled = true;
+  assistenteAddMsg(pergunta, 'user');
+  suportePerguntasAbertas.push(pergunta);
+  const loadingEl = assistenteAddMsg('Procurando nos problemas já resolvidos...', 'loading');
+  try {
+    const resp = await fetch(`${SUPA_URL}/functions/v1/assistente-ia`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPA_KEY,
+        'Authorization': 'Bearer ' + (session?.access_token || SUPA_KEY),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ pergunta, modo: 'suporte', historico: historicoSuporte.slice(-12) })
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (loadingEl) loadingEl.remove();
+    if (!resp.ok) {
+      assistenteAddMsg(data.error || 'Não consegui responder agora. Tente novamente.', 'erro');
+    } else {
+      const resposta = data.resposta || 'Não consegui gerar uma resposta.';
+      assistenteAddMsg(resposta, 'bot');
+      assistenteRenderFeedbackSuporte(!!data.encontrou, Array.isArray(data.fontes) ? data.fontes : []);
+      historicoSuporte.push({ role: 'user', texto: pergunta }, { role: 'assistant', texto: resposta });
+      if (historicoSuporte.length > 30) historicoSuporte = historicoSuporte.slice(-30);
+    }
+  } catch (e) {
+    if (loadingEl) loadingEl.remove();
+    assistenteAddMsg('Erro de conexão. Verifique sua internet e tente de novo.', 'erro');
+  }
+  input.disabled = false; btn.disabled = false; input.focus();
+}
+
+function assistenteRenderFeedbackSuporte(encontrou, fontes) {
+  const wrap = assistenteContainer();
+  if (!wrap) return;
+  // Só o feedback mais recente fica ativo
+  wrap.querySelectorAll('.assistente-feedback').forEach(el => el.remove());
+  const id = 'suporte-fb-' + (++suporteFeedbackSeq);
+  suporteFeedbacks = { [id]: { encontrou, fontes } };
+  const div = document.createElement('div');
+  div.className = 'assistente-feedback';
+  div.id = id;
+  div.innerHTML = `
+    <p>${encontrou ? 'Funcionou?' : 'Quando conseguir resolver, me conta:'}</p>
+    <div style="display:flex;gap:6px">
+      <button class="btn sm primary" onclick="suporteFeedback('${id}',true)"><i class="ti ti-check"></i>Deu certo</button>
+      <button class="btn sm" onclick="suporteFeedback('${id}',false)"><i class="ti ti-x"></i>Não resolveu</button>
+    </div>`;
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function suporteSintomaSugerido() {
+  return suportePerguntasAbertas.join('\n').slice(0, 1500);
+}
+
+function suporteBotaoRegistrar(texto, resolvido) {
+  const wrap = assistenteContainer();
+  if (!wrap) return;
+  const div = document.createElement('div');
+  div.className = 'assistente-msg bot';
+  div.style.whiteSpace = 'normal';
+  div.innerHTML = `<p style="margin-bottom:8px;white-space:pre-wrap">${assistenteEscapeHtml(texto)}</p>` +
+    `<button class="btn sm primary" style="width:100%;justify-content:center" onclick="suporteAbrirRegistroDoChat(${resolvido})">` +
+    `<i class="ti ti-clipboard-plus"></i>${resolvido ? 'Registrar problema e solução' : 'Registrar problema'}</button>`;
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function suporteAbrirRegistroDoChat(resolvido) {
+  const sintoma = suporteSintomaSugerido();
+  fecharAssistente(); // a conversa fica guardada; o painel só sai da frente do formulário
+  abrirModalProblema(null, {
+    sistema: typeof suporteChutarSistema === 'function' ? suporteChutarSistema(sintoma) : 'som',
+    titulo: (suportePerguntasAbertas[0] || '').slice(0, 80),
+    sintoma,
+    resolvido,
+  });
+  suportePerguntasAbertas = [];
+}
+
+async function suporteFeedback(id, deuCerto) {
+  const fb = suporteFeedbacks[id];
+  document.getElementById(id)?.remove();
+  if (!fb) return;
+  delete suporteFeedbacks[id];
+  assistenteAddMsg(deuCerto ? 'Deu certo!' : 'Não resolveu.', 'user');
+  historicoSuporte.push({ role: 'user', texto: deuCerto ? '(o voluntário disse que deu certo)' : '(o voluntário disse que não resolveu)' });
+
+  if (deuCerto && fb.encontrou) {
+    for (const pid of fb.fontes) await alternarUtil(pid, true);
+    assistenteAddMsg('Que bom! 🙌 Marquei que essa solução ajudou — assim ela aparece primeiro para os próximos.', 'bot');
+    suportePerguntasAbertas = [];
+  } else if (deuCerto) {
+    suporteBotaoRegistrar('Que ótimo! 🙌 Como esse problema ainda não estava registrado, me ensina: registre o que aconteceu e como vocês resolveram. Depois que um líder aprovar, eu passo a saber responder.', true);
+  } else {
+    suporteBotaoRegistrar('Poxa. 😕 Chame o líder ou o responsável técnico para ajudar. Se quiser, registre o problema agora (mesmo sem solução) para os líderes ficarem sabendo — e quando resolverem, atualizem com a solução.', false);
+  }
 }

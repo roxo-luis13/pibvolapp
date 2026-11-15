@@ -31,6 +31,9 @@ const ICONES_LOG = {
   perfil: 'ti-id',
   sessao: 'ti-login-2',
   alerta: 'ti-bell-exclamation',
+  pg: 'ti-tent',
+  pedido_voluntario: 'ti-user-plus',
+  suporte: 'ti-tool',
 };
 
 let logsAtividade = [];
