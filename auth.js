@@ -1,32 +1,42 @@
 // ===== AUTENTICAÇÃO =====
 let pendingLoginEmail = null, pendingSenhaHash = null; // guardam o email/hash usados no login enquanto o primeiro acesso não é concluído
 // ===== INIT =====
+// Link de divulgação (…/pequenosgrupos ou …/pg) chega aqui como #pg: abre direto a área pública
+function linkDiretoAreaPg() {
+  return ['#pg', '#pequenosgrupos'].includes(location.hash.toLowerCase());
+}
+
 async function init() {
+  const diretoPg = linkDiretoAreaPg();
+  if (diretoPg) showScreen('pg');
   const saved = localStorage.getItem('igreja_session');
   if (saved) {
     try {
       const s = JSON.parse(saved);
       if (s?.user?.id) {
         session = s;
-        await loadProfile(s.user.id);
+        // Pelo link dos PGs, quem já tem login continua na área pública; a sessão é
+        // restaurada por trás, pro "voltar" levar ao app
+        await loadProfile(s.user.id, { manterTela: diretoPg });
         return;
       }
     } catch(e) {}
     localStorage.removeItem('igreja_session');
   }
-  showScreen('gate');
+  if (!diretoPg) showScreen('gate');
 }
 
-async function loadProfile(userId) {
+async function loadProfile(userId, opcoes = {}) {
   const rows = await sb(`voluntarios?id=eq.${userId}&select=*`);
-  if (!rows || !rows.length) { showScreen('login'); return; }
+  if (!rows || !rows.length) { if (!opcoes.manterTela) showScreen('login'); return; }
+  if (opcoes.manterTela && rows[0].primeiro_acesso) return; // termina o primeiro acesso pelo login normal
   currentProfile = rows[0];
   if (currentProfile.primeiro_acesso) {
     showFirstAccess();
     return;
   }
   await loadAllData();
-  showScreen('app');
+  if (!opcoes.manterTela) showScreen('app');
   updateSidebar();
   checkMobileLayout();
   ativarNotificacoesPush();

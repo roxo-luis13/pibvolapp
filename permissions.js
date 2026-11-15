@@ -179,4 +179,13 @@ function showScreen(s) {
     if (s!=='app') fecharAssistente();
   }
   if (s==='pg' && typeof abrirAreaPgPublica === 'function') abrirAreaPgPublica();
+  // Mantém #pg no endereço só enquanto está na área de PGs (recarregar volta pra ela)
+  try {
+    const temHashPg = ['#pg', '#pequenosgrupos'].includes(location.hash.toLowerCase());
+    // No site oficial (GitHub Pages) mostra ".../pibvolapp/" em vez de ".../pibvolapp/index.html".
+    // Em outros hosts (ex: raw.githack) mantém o index.html, que é necessário pra recarregar.
+    const caminho = location.hostname.endsWith('github.io') ? location.pathname.replace(/index\.html$/, '') : location.pathname;
+    if (s === 'pg' && (!temHashPg || caminho !== location.pathname)) history.replaceState(null, '', caminho + location.search + '#pg');
+    if (s !== 'pg' && s !== 'loading' && (temHashPg || caminho !== location.pathname)) history.replaceState(null, '', caminho + location.search);
+  } catch (e) {}
 }
