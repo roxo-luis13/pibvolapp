@@ -680,3 +680,23 @@ hr{border:none;border-top:0.5px solid var(--border);margin:14px 0}
 /* 3 etapas (Ligar / Durante o culto / Desligar): a barra ocupa a linha inteira embaixo do título */
 .suporte-roteiro-head .suporte-seg{width:100%}
 .suporte-roteiro-head .suporte-seg button{flex:1;justify-content:center;padding:6px 4px;white-space:nowrap}
+/* Cards de roteiro compactos: fechados mostram só título + etapas; aberto ocupa a linha toda */
+.suporte-roteiros{align-items:start}
+.suporte-roteiro.fechado .suporte-roteiro-head{margin-bottom:0}
+.suporte-roteiro.aberto{grid-column:1/-1}
+.suporte-roteiro-head{position:relative}
+.suporte-fechar{position:absolute;top:0;right:0;width:32px;height:32px;border-radius:50%;border:0.5px solid var(--border);background:var(--bg-primary);color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px}
+.suporte-seg-n{margin-left:4px;font-size:10px;font-weight:600;background:var(--purple-bg);color:var(--purple-text);border-radius:999px;padding:0 6px;line-height:16px}
+/* fotos dos passos menores (tocar abre em tela cheia) */
+.suporte-passo-foto{width:auto;max-width:100%;max-height:120px;object-fit:contain;background:var(--bg-secondary)}
+.suporte-roteiro.fechado{padding:14px 16px}
+.suporte-roteiro.fechado .suporte-roteiro-head{gap:8px}
+.suporte-roteiro.fechado .suporte-sis-icone{width:28px;height:28px;font-size:15px}
+.suporte-roteiro.fechado .suporte-sis-titulo{font-size:14px}
+.suporte-roteiros{gap:10px}
+@media(max-width:560px){
+  .suporte-ia-banner{padding:12px 14px;gap:10px;margin-bottom:12px}
+  .suporte-ia-banner .suporte-ia-icone{width:36px;height:36px;font-size:19px}
+  .suporte-ia-banner p:first-child{font-size:14px !important}
+  .suporte-ia-banner p + p{display:none}
+}
