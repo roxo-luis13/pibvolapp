@@ -33,6 +33,7 @@ const ICONES_LOG = {
   alerta: 'ti-bell-exclamation',
   pg: 'ti-tent',
   pedido_voluntario: 'ti-user-plus',
+  suporte: 'ti-tool',
 };
 
 let logsAtividade = [];

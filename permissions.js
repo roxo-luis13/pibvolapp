@@ -178,6 +178,7 @@ function showScreen(s) {
     fab.style.display = s==='app' ? 'flex' : 'none';
     if (s!=='app') fecharAssistente();
   }
+  if (s==='app' && typeof verificarNovidades === 'function') setTimeout(verificarNovidades, 500);
   if (s==='pg' && typeof abrirAreaPgPublica === 'function') abrirAreaPgPublica();
   // Mantém #pg no endereço só enquanto está na área de PGs (recarregar volta pra ela)
   try {
