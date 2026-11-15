@@ -56,7 +56,7 @@ function renderMinisterios() {
   gruposMinisterios.forEach(g => {
     const mins = comGrupo[g.id];
     if (!mins || !mins.length) return;
-    const lider = voluntarios.find(v => v.id === g.lider_id);
+    const lideresGrupo = voluntarios.filter(v => (g.lideres_ids||[]).includes(v.id));
     // Estado de colapso — persistir em memória
     const collapsed = grupoCollapsed[g.id] || false;
     const grupoEl = document.createElement('div');
@@ -67,7 +67,7 @@ function renderMinisterios() {
       </div>
       <div class="grupo-info">
         <div class="grupo-nome">${g.nome}</div>
-        ${lider ? `<div class="grupo-lider"><i class="ti ti-crown" style="font-size:10px;color:var(--amber-text)"></i> ${lider.nome}</div>` : ''}
+        ${lideresGrupo.length ? `<div class="grupo-lider"><i class="ti ti-crown" style="font-size:10px;color:var(--amber-text)"></i> ${lideresGrupo.map(l=>l.nome).join(', ')}</div>` : ''}
         ${g.descricao ? `<div style="font-size:11px;color:var(--text-tertiary);margin-top:1px">${g.descricao}</div>` : ''}
       </div>
       <div class="grupo-trailing">
@@ -107,13 +107,13 @@ function locked(mId) {
 function buildMinCard(m, isAdmin, podeCriarMin) {
   const locked = !canAccess(m.id);
   const vols = voluntarios.filter(v=>(v.ministerios||[]).includes(m.id));
-  const lider = voluntarios.find(v=>v.id===m.lider_id);
+  const lideresMin = voluntarios.filter(v=>(m.lideres_ids||[]).includes(v.id));
   const div = document.createElement('div');
   div.className = 'ministry-card' + (locked?' locked':'');
   div.style.cssText = 'display:flex;flex-direction:column';
   let html = `<div class="icon" style="background:var(--${m.cor}-bg)">${locked?`<i class="ti ti-lock" style="font-size:18px;color:var(--${m.cor}-text)"></i>`:ICONES[m.icone]||'⭐'}</div>`;
   html += `<h3>${m.nome}</h3><p style="flex:1;margin-bottom:8px">${m.descricao||''}</p>`;
-  if (lider) html += `<p style="font-size:11px;color:var(--text-secondary);margin-bottom:8px"><i class="ti ti-crown" style="font-size:11px;margin-right:3px"></i>Líder: ${lider.nome}</p>`;
+  if (lideresMin.length) html += `<p style="font-size:11px;color:var(--text-secondary);margin-bottom:8px"><i class="ti ti-crown" style="font-size:11px;margin-right:3px"></i>${lideresMin.length>1?'Líderes':'Líder'}: ${lideresMin.map(l=>l.nome).join(', ')}</p>`;
   html += `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:12px;color:var(--text-secondary)">${vols.length} voluntário(s)</span>${locked?'<span class="tag" style="background:var(--bg-secondary);color:var(--text-tertiary)">Sem acesso</span>':`<span class="tag ${m.cor}">Aberto</span>`}</div>`;
   if (!locked) html += `<button class="btn sm" style="width:100%;justify-content:center;margin-bottom:6px" data-open="${m.id}"><i class="ti ti-eye"></i>Ver ministério</button>`;
   const minBtns = [];
@@ -140,17 +140,20 @@ function renderDetalhe(id) {
   if (podEditarMinisterio(id)) detBtns.push(`<button class="btn sm" onclick="editMinisterio('${id}')"><i class="ti ti-edit"></i>Editar</button>`);
   if (podExcluirMinisterio(id)) detBtns.push(`<button class="btn sm danger" onclick="deleteMinisterio('${id}',true)"><i class="ti ti-trash"></i>Excluir</button>`);
   document.getElementById('detalhe-admin-btns').innerHTML = detBtns.length ? `<div style="display:flex;gap:6px">${detBtns.join('')}</div>` : '';
-  const lider = voluntarios.find(v=>v.id===m.lider_id);
+  const lideresDetalhe = voluntarios.filter(v=>(m.lideres_ids||[]).includes(v.id));
   const liderBar = document.getElementById('detalhe-lider-bar');
-  if (lider) { liderBar.style.display='block'; document.getElementById('detalhe-lider-nome').textContent=lider.nome; }
-  else { liderBar.style.display='none'; }
+  if (lideresDetalhe.length) {
+    liderBar.style.display='block';
+    document.getElementById('detalhe-lider-label').textContent = lideresDetalhe.length>1?'Líderes':'Líder';
+    document.getElementById('detalhe-lider-nome').textContent = lideresDetalhe.map(l=>l.nome).join(', ');
+  } else { liderBar.style.display='none'; }
   document.getElementById('detalhe-add-vol-btn').innerHTML = isLiderOuAdmin ? `<button class="btn sm primary" onclick="openAddVolMin('${id}')"><i class="ti ti-user-plus"></i>Adicionar</button>` : '';
   const vols = voluntarios.filter(v=>(v.ministerios||[]).includes(id));
   document.getElementById('detalhe-vols').innerHTML = vols.length ? vols.map(v=>`
     <div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:0.5px solid var(--border)">
       <div class="avatar ${getNivelClass(v.nivel)}" style="width:36px;height:36px;font-size:12px;flex-shrink:0">${ini(v.nome)}</div>
       <div style="flex:1;min-width:0">
-        <div style="display:flex;align-items:center;gap:6px"><p style="font-size:13px;font-weight:500">${v.nome}</p>${m.lider_id===v.id?'<span style="font-size:10px;background:var(--amber-bg);color:var(--amber-text);padding:1px 6px;border-radius:4px">Líder</span>':''}</div>
+        <div style="display:flex;align-items:center;gap:6px"><p style="font-size:13px;font-weight:500">${v.nome}</p>${(m.lideres_ids||[]).includes(v.id)?'<span style="font-size:10px;background:var(--amber-bg);color:var(--amber-text);padding:1px 6px;border-radius:4px">Líder</span>':''}</div>
         <p style="font-size:11px;color:var(--text-secondary)">${v.email} · ${v.tel||'sem telefone'}</p>
       </div>
       ${isLiderOuAdmin?`<button class="btn sm danger" onclick="removeVolFromMin('${v.id}','${id}')"><i class="ti ti-x"></i></button>`:''}
@@ -222,7 +225,7 @@ function openModalGrupo() {
   document.getElementById('grupo-desc').value = '';
   document.getElementById('grupo-icone').value = 'ti-layout-grid';
   document.getElementById('grupo-cor').value = 'purple';
-  populateGrupoLiderSelect(null);
+  populateLideresChips('grupo-lideres-chips', []);
   openModal('modal-grupo');
 }
 
@@ -234,13 +237,8 @@ function editGrupo(id) {
   document.getElementById('grupo-desc').value = g.descricao||'';
   document.getElementById('grupo-icone').value = g.icone||'ti-layout-grid';
   document.getElementById('grupo-cor').value = g.cor||'purple';
-  populateGrupoLiderSelect(g.lider_id||null);
+  populateLideresChips('grupo-lideres-chips', g.lideres_ids||[]);
   openModal('modal-grupo', true);
-}
-
-function populateGrupoLiderSelect(selectedId) {
-  document.getElementById('grupo-lider').innerHTML = '<option value="">— Sem líder —</option>' +
-    voluntarios.map(v=>`<option value="${v.id}"${v.id===selectedId?' selected':''}>${v.nome}</option>`).join('');
 }
 
 async function saveGrupo() {
@@ -251,7 +249,7 @@ async function saveGrupo() {
     descricao: document.getElementById('grupo-desc').value.trim(),
     icone: document.getElementById('grupo-icone').value,
     cor: document.getElementById('grupo-cor').value,
-    lider_id: document.getElementById('grupo-lider').value || null
+    lideres_ids: getChips('grupo-lideres-chips')
   };
   const editId = document.getElementById('grupo-edit-id').value;
   try {
@@ -293,7 +291,7 @@ function openModalMin() {
   document.getElementById('min-desc').value = '';
   document.getElementById('min-icone').value = 'ti-music';
   document.getElementById('min-cor').value = 'purple';
-  populateLiderSelect(null);
+  populateLideresChips('min-lideres-chips', []);
   populateGrupoSelect(null);
   openModal('modal-min');
 }
@@ -305,9 +303,13 @@ function populateGrupoSelect(selectedId) {
     gruposMinisterios.map(g=>`<option value="${g.id}"${g.id===selectedId?' selected':''}>${g.nome}</option>`).join('');
 }
 
-function populateLiderSelect(selectedId) {
-  document.getElementById('min-lider').innerHTML = '<option value="">— Sem líder —</option>' +
-    voluntarios.map(v=>`<option value="${v.id}"${v.id===selectedId?' selected':''}>${v.nome}</option>`).join('');
+// Multi-seleção de pessoas responsáveis (líder de ministério, líder de grupo) - a mesma
+// pessoa pode liderar junto com outras, por isso é uma lista de chips, não um select único.
+function populateLideresChips(containerId, selectedIds) {
+  const ids = selectedIds || [];
+  document.getElementById(containerId).innerHTML = voluntarios.map(v =>
+    `<div class="chip${ids.includes(v.id)?' selected':''}" data-id="${v.id}" onclick="this.classList.toggle('selected')">${v.nome}</div>`
+  ).join('');
 }
 
 function editMinisterio(id) {
@@ -318,7 +320,7 @@ function editMinisterio(id) {
   document.getElementById('min-desc').value = m.descricao||'';
   document.getElementById('min-icone').value = m.icone;
   document.getElementById('min-cor').value = m.cor;
-  populateLiderSelect(m.lider_id||null);
+  populateLideresChips('min-lideres-chips', m.lideres_ids||[]);
   populateGrupoSelect(m.grupo_id||null);
   openModal('modal-min', true);
 }
@@ -326,7 +328,7 @@ function editMinisterio(id) {
 async function saveMinisterio() {
   const nome = document.getElementById('min-nome').value.trim();
   if (!nome) { alert('Nome é obrigatório.'); return; }
-  const dados = {nome, descricao:document.getElementById('min-desc').value.trim(), icone:document.getElementById('min-icone').value, cor:document.getElementById('min-cor').value, lider_id:document.getElementById('min-lider').value||null, grupo_id:document.getElementById('min-grupo')?.value||null};
+  const dados = {nome, descricao:document.getElementById('min-desc').value.trim(), icone:document.getElementById('min-icone').value, cor:document.getElementById('min-cor').value, lideres_ids:getChips('min-lideres-chips'), grupo_id:document.getElementById('min-grupo')?.value||null};
   const editId = document.getElementById('min-edit-id').value;
   if (editId) {
     await sb(`ministerios?id=eq.${editId}`,{method:'PATCH',body:JSON.stringify(dados)});
