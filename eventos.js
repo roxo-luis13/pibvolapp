@@ -574,8 +574,10 @@ document.querySelectorAll('.modal-backdrop').forEach(m=>{m.addEventListener('cli
 document.getElementById('login-email').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 document.getElementById('login-senha').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 
-// Iniciar
-init();
+// Iniciar só depois que TODOS os scripts da página carregarem: este arquivo vem antes de
+// pgs.js / pg-publico.js etc., e o link direto dos PGs (#pg) abre essa área logo no início.
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+else init();
 
 
 // ===== PREENCHIMENTO RÁPIDO DE CULTOS =====
