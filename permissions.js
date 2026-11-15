@@ -179,4 +179,10 @@ function showScreen(s) {
     if (s!=='app') fecharAssistente();
   }
   if (s==='pg' && typeof abrirAreaPgPublica === 'function') abrirAreaPgPublica();
+  // Mantém #pg no endereço só enquanto está na área de PGs (recarregar volta pra ela)
+  try {
+    const temHashPg = ['#pg', '#pequenosgrupos'].includes(location.hash.toLowerCase());
+    if (s === 'pg' && !temHashPg) history.replaceState(null, '', location.pathname + location.search + '#pg');
+    if (s !== 'pg' && s !== 'loading' && temHashPg) history.replaceState(null, '', location.pathname + location.search);
+  } catch (e) {}
 }
