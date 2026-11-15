@@ -357,8 +357,9 @@ async function saveEvento() {
       const minsNovos = mins.filter(id => !(e.ministerios||[]).includes(id));
       for (const minId of minsNovos) {
         const m = ministerios.find(m => m.id === minId);
-        if (m && m.lider_id && m.lider_id !== currentProfile.id) {
-          await sb('notificacoes',{method:'POST',prefer:'return=minimal',body:JSON.stringify({vol_id:m.lider_id,tipo:'lider_evento',ev_id:editId,ev_nome:nome,ev_data:data_inicio,ev_hora:hora,mensagem:'Seu ministério foi adicionado a este evento. Mobilize sua equipe.'})});
+        for (const liderId of (m?.lideres_ids||[])) {
+          if (liderId === currentProfile.id) continue;
+          await sb('notificacoes',{method:'POST',prefer:'return=minimal',body:JSON.stringify({vol_id:liderId,tipo:'lider_evento',ev_id:editId,ev_nome:nome,ev_data:data_inicio,ev_hora:hora,mensagem:'Seu ministério foi adicionado a este evento. Mobilize sua equipe.'})});
         }
       }
     } else {
@@ -381,8 +382,9 @@ async function saveEvento() {
         // Notificar líderes dos ministérios vinculados
         for (const minId of mins) {
           const m = ministerios.find(m => m.id === minId);
-          if (m && m.lider_id && m.lider_id !== currentProfile.id) {
-            await sb('notificacoes',{method:'POST',prefer:'return=minimal',body:JSON.stringify({vol_id:m.lider_id,tipo:'lider_evento',ev_id:rows[0].id,ev_nome:nome,ev_data:data_inicio,ev_hora:hora,mensagem:'Seu ministério foi adicionado a este evento. Mobilize sua equipe.'})});
+          for (const liderId of (m?.lideres_ids||[])) {
+            if (liderId === currentProfile.id) continue;
+            await sb('notificacoes',{method:'POST',prefer:'return=minimal',body:JSON.stringify({vol_id:liderId,tipo:'lider_evento',ev_id:rows[0].id,ev_nome:nome,ev_data:data_inicio,ev_hora:hora,mensagem:'Seu ministério foi adicionado a este evento. Mobilize sua equipe.'})});
           }
         }
       }
