@@ -143,7 +143,7 @@ Deno.serve(async (req) => {
   const [euRes, todosRes, minsRes, niveisRes, eventosRes, presencaRes] = await Promise.all([
     supabase.from("voluntarios").select("id,nome,nivel,ministerios").eq("id", uid).maybeSingle(),
     supabase.from("voluntarios").select("id,nome,ministerios"),
-    supabase.from("ministerios").select("id,nome,lider_id"),
+    supabase.from("ministerios").select("id,nome,lideres_ids"),
     supabase.from("niveis_acesso").select("nome,pode_ver_todos_ministerios,pode_criar_eventos,pode_editar_eventos"),
     supabase
       .from("eventos")
@@ -200,7 +200,7 @@ Deno.serve(async (req) => {
   const minNome = (id: string) => ministerios.find((m) => m.id === id)?.nome || id;
 
   const meusMinIds: string[] = eu.ministerios || [];
-  const minsQueLidero = ministerios.filter((m) => m.lider_id === uid).map((m) => m.id);
+  const minsQueLidero = ministerios.filter((m) => (m.lideres_ids || []).includes(uid)).map((m) => m.id);
   const minsRelevantes = new Set([...meusMinIds, ...minsQueLidero]);
 
   function statusDoUsuarioNoEvento(ev: any): string | null {
@@ -250,7 +250,7 @@ Deno.serve(async (req) => {
 
   const ministeriosCtx = (podeVerTudo ? ministerios : ministerios.filter((m) => minsRelevantes.has(m.id))).map((m) => ({
     nome: m.nome,
-    lider: m.lider_id ? nomeDe(m.lider_id) : null,
+    lideres: (m.lideres_ids || []).map(nomeDe),
     qtd_voluntarios: todosVoluntarios.filter((v) => (v.ministerios || []).includes(m.id)).length,
   }));
 
