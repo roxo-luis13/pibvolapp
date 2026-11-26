@@ -30,7 +30,7 @@ async function savePerfil() {
   const nome = document.getElementById('edit-nome').value.trim();
   if (!nome) { alert('Nome é obrigatório.'); return; }
   const tel = document.getElementById('edit-tel').value.trim();
-  await sb(`voluntarios?id=eq.${currentProfile.id}`,{method:'PATCH',body:JSON.stringify({nome,tel})});
+  await sb(`voluntarios?id=eq.${currentProfile.id}`,{method:'PATCH',prefer:'return=minimal',body:JSON.stringify({nome,tel})});
   currentProfile.nome = nome; currentProfile.tel = tel;
   const v = voluntarios.find(v=>v.id===currentProfile.id); if (v) { v.nome=nome; v.tel=tel; }
   registrarLog('editar', 'perfil', nome, `${nome} atualizou o próprio perfil`);
@@ -75,7 +75,7 @@ async function alterarSenha() {
 
 async function saveMinisteriosPerfil() {
   const checked = [...document.querySelectorAll('#perfil-ministerios input:checked')].map(c=>c.value);
-  await sb(`voluntarios?id=eq.${currentProfile.id}`,{method:'PATCH',body:JSON.stringify({ministerios:checked})});
+  await sb(`voluntarios?id=eq.${currentProfile.id}`,{method:'PATCH',prefer:'return=minimal',body:JSON.stringify({ministerios:checked})});
   currentProfile.ministerios = checked;
   const v = voluntarios.find(v=>v.id===currentProfile.id); if (v) v.ministerios = checked;
   registrarLog('editar', 'perfil', currentProfile.nome, `${currentProfile.nome} atualizou seus ministérios`);

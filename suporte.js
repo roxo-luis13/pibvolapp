@@ -82,6 +82,8 @@ function trocarAbaSuporte(aba) {
 }
 
 function renderSuporteAba() {
+  // Se a aba foi aberta sem os dados terem carregado (ex.: arquivo antigo em cache), carrega agora
+  if (!suporteCarregado) { renderSuporte(); return; }
   document.querySelectorAll('#suporte-tabs .suporte-tab').forEach(b => b.classList.toggle('active', b.dataset.aba === suporteAba));
   const pendentes = suporteProblemas.filter(p => p.status === 'pendente').length;
   const badge = document.getElementById('suporte-badge-pendentes');
