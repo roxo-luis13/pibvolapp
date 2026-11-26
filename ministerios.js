@@ -170,7 +170,7 @@ async function removeVolFromMin(volId, minId) {
   if (!confirm('Remover este voluntário do ministério?')) return;
   const v = voluntarios.find(v=>v.id===volId); if (!v) return;
   const mins = (v.ministerios||[]).filter(x=>x!==minId);
-  await sb(`voluntarios?id=eq.${volId}`, {method:'PATCH',body:JSON.stringify({ministerios:mins})});
+  await sb(`voluntarios?id=eq.${volId}`, {method:'PATCH',prefer:'return=minimal',body:JSON.stringify({ministerios:mins})});
   v.ministerios = mins;
   const nomeMin = ministerios.find(m=>m.id===minId)?.nome || '';
   registrarLog('remover_membro', 'ministerio', nomeMin, `${currentProfile.nome} removeu ${v.nome} do ministério "${nomeMin}"`);
@@ -199,7 +199,7 @@ async function saveAddVolMin() {
     const v = voluntarios.find(v=>v.id===vid);
     if (v && !(v.ministerios||[]).includes(minId)) {
       const mins = [...(v.ministerios||[]),minId];
-      await sb(`voluntarios?id=eq.${vid}`,{method:'PATCH',body:JSON.stringify({ministerios:mins})});
+      await sb(`voluntarios?id=eq.${vid}`,{method:'PATCH',prefer:'return=minimal',body:JSON.stringify({ministerios:mins})});
       v.ministerios = mins;
       registrarLog('adicionar_membro', 'ministerio', nomeMin, `${currentProfile.nome} adicionou ${v.nome} ao ministério "${nomeMin}"`);
     }
@@ -350,7 +350,7 @@ async function deleteMinisterio(id, goBack) {
   registrarLog('excluir', 'ministerio', m.nome, `${currentProfile.nome} excluiu o ministério "${m.nome}"`);
   for (const v of voluntarios.filter(v=>(v.ministerios||[]).includes(id))) {
     const mins = v.ministerios.filter(x=>x!==id);
-    await sb(`voluntarios?id=eq.${v.id}`,{method:'PATCH',body:JSON.stringify({ministerios:mins})});
+    await sb(`voluntarios?id=eq.${v.id}`,{method:'PATCH',prefer:'return=minimal',body:JSON.stringify({ministerios:mins})});
     v.ministerios = mins;
   }
   if (goBack) navigate('ministerios'); else renderMinisterios();

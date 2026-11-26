@@ -227,7 +227,7 @@ Atenção: ${emUso.length} voluntário(s) usam este nível. Eles serão alterado
     await sb(`niveis_acesso?id=eq.${id}`, {method:'DELETE', prefer:'return=minimal'});
     // Se havia voluntários com este nível, atualizar para voluntario
     for (const v of emUso) {
-      await sb(`voluntarios?id=eq.${v.id}`, {method:'PATCH', body:JSON.stringify({nivel:'voluntario'})});
+      await sb(`voluntarios?id=eq.${v.id}`, {method:'PATCH', prefer:'return=minimal', body:JSON.stringify({nivel:'voluntario'})});
       v.nivel = 'voluntario';
     }
     registrarLog('excluir', 'nivel', n.nome, `${currentProfile.nome} excluiu o nível de acesso "${n.nome}"`);

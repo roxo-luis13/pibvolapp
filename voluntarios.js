@@ -115,7 +115,7 @@ async function saveVoluntario() {
   try {
     if (editId) {
       const dados = {nome,email,tel,nivel,ministerios:mins};
-      await sb(`voluntarios?id=eq.${editId}`,{method:'PATCH',body:JSON.stringify(dados)});
+      await sb(`voluntarios?id=eq.${editId}`,{method:'PATCH',prefer:'return=minimal',body:JSON.stringify(dados)});
       const v = voluntarios.find(v=>v.id===editId); if (v) Object.assign(v,dados);
       if (editId===currentProfile.id) { Object.assign(currentProfile,dados); updateSidebar(); }
       registrarLog('editar', 'voluntario', nome, `${currentProfile.nome} editou o cadastro de ${nome}`);
@@ -124,7 +124,7 @@ async function saveVoluntario() {
       if (dup) { alert('Já existe um voluntário com este email.'); btn.innerHTML='Salvar'; btn.disabled=false; return; }
       const hash = await sha256('123456');
       const dados = {nome,email,tel,nivel,ministerios:mins,senha_hash:hash,primeiro_acesso:true};
-      const rows = await sb('voluntarios',{method:'POST',body:JSON.stringify(dados)});
+      const rows = await sb('voluntarios?select=id,nome,email,tel,nivel,ministerios,primeiro_acesso,criado_em',{method:'POST',body:JSON.stringify(dados)});
       if (rows && rows[0]) voluntarios.push(rows[0]);
       registrarLog('criar', 'voluntario', nome, `${currentProfile.nome} cadastrou o voluntário ${nome}`);
     }
@@ -260,7 +260,7 @@ async function deleteVol(id) {
   if (id===currentProfile.id) { alert('Você não pode remover seu próprio cadastro.'); return; }
   if (!confirm('Remover voluntário?')) return;
   const nomeVol = voluntarios.find(v=>v.id===id)?.nome || '';
-  await sb(`voluntarios?id=eq.${id}`,{method:'DELETE'});
+  await sb(`voluntarios?id=eq.${id}`,{method:'DELETE',prefer:'return=minimal'});
   voluntarios = voluntarios.filter(v=>v.id!==id);
   registrarLog('excluir', 'voluntario', nomeVol, `${currentProfile.nome} removeu o voluntário ${nomeVol}`);
   renderVoluntarios(); renderDashboard();

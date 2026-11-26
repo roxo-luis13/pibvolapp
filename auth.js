@@ -27,7 +27,7 @@ async function init() {
 }
 
 async function loadProfile(userId, opcoes = {}) {
-  const rows = await sb(`voluntarios?id=eq.${userId}&select=*`);
+  const rows = await sb(`voluntarios?id=eq.${userId}&select=id,nome,email,tel,nivel,ministerios,primeiro_acesso,criado_em`);
   if (!rows || !rows.length) { if (!opcoes.manterTela) showScreen('login'); return; }
   if (opcoes.manterTela && rows[0].primeiro_acesso) return; // termina o primeiro acesso pelo login normal
   currentProfile = rows[0];
@@ -52,7 +52,7 @@ async function loadProfile(userId, opcoes = {}) {
 async function loadAllData() {
   const [m, v, e, n, niv, g, pg, pv] = await Promise.all([
     sb('ministerios?select=*&order=nome'),
-    sb('voluntarios?select=*&order=nome'),
+    sb('voluntarios?select=id,nome,email,tel,nivel,ministerios,primeiro_acesso,criado_em&order=nome'),
     sb('eventos?select=*&order=data'),
     sb(`notificacoes?vol_id=eq.${currentProfile.id}&select=*&order=criado_em.desc`),
     sb('niveis_acesso?select=*&order=nome'),
